@@ -1,2 +1,1 @@
 *.txt filter=lfs diff=lfs merge=lfs -text
-D:/InfiniteCraft/CodesPunctuation[[:space:]]Seed[[:space:]]-[[:space:]]100%[[:space:]]gen[[:space:]]7.txt filter=lfs diff=lfs merge=lfs -text

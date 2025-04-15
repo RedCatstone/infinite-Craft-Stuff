@@ -1,4 +1,5 @@
 /target
 js-lib
 Cargo.lock
-Recipe Files In/*
+Recipe Files In
+Recipe Files Out

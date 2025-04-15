@@ -22,6 +22,7 @@ struct GlobalOptions {
 
 
 
+
 const GLOBAL_OPTIONS: GlobalOptions = GlobalOptions {
     saved_recipes_files_location: "Recipe Files Out",
 };

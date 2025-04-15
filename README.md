@@ -11,12 +11,12 @@ This includes 3 things:
 ```
 git clone https://github.com/RedCatstone/infinite-Craft-Stuff/tree/master
 ```
-3. setup a "combination"-proxy server which does:
+3. a simple `cargo run --release` does the rest!
+   (all settings you need are found in the main.rs file)
+
+4. if you want the code to combine stuff, setup a "combination"-proxy server which does:
 
 `http://localhost:3000/?first=Fire&second=Water` -> `{ result: result_text, emoji: result_emoji, isNew: result_isNew }`
 (basically just forwarding a request directly from `https://neal.fun/infinite-craft/api/infinite-craft/pair?first=Fire&second=Water`
 > [!WARNING]  
 > this repo does not show you how you can set this up.
-
-4. a simple `cargo run --release` does the rest!
-   (all settings you need are found in the main.rs file)

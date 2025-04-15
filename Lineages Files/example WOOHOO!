@@ -1,0 +1,6044 @@
+1 Steps - 10 Elements
+2 Steps - 19 Elements
+3 Steps - 52 Elements
+4 Steps - 130 Elements
+5 Steps - 275 Elements
+Total Elements: 486
+
+
+
+
+1 - Volcano:
+Fire + Fire = Volcano
+
+
+1 - Plant:
+Water + Earth = Plant
+
+
+1 - Mountain:
+Earth + Earth = Mountain
+
+
+1 - Wave:
+Water + Wind = Wave
+
+
+1 - Steam:
+Water + Fire = Steam
+
+
+1 - Tornado:
+Wind + Wind = Tornado
+
+
+1 - Lake:
+Water + Water = Lake
+
+
+1 - Lava:
+Fire + Earth = Lava
+
+
+1 - Dust:
+Wind + Earth = Dust
+
+
+1 - Smoke:
+Fire + Wind = Smoke
+
+
+2 - Fog:
+Fire + Wind = Smoke
+Water + Smoke = Fog
+
+
+2 - Hurricane:
+Wind + Wind = Tornado
+Tornado + Tornado = Hurricane
+
+
+2 - Ocean:
+Water + Water = Lake
+Lake + Lake = Ocean
+
+
+2 - Engine:
+Water + Fire = Steam
+Fire + Steam = Engine
+
+
+2 - Tree:
+Water + Earth = Plant
+Plant + Plant = Tree
+
+
+2 - Storm:
+Water + Water = Lake
+Wind + Lake = Storm
+ ...
+Water + Wind = Wave
+Wind + Wave = Storm
+
+
+2 - Planet:
+Wind + Earth = Dust
+Earth + Dust = Planet
+
+
+2 - Mountain Range:
+Earth + Earth = Mountain
+Mountain + Mountain = Mountain Range
+
+
+2 - Avalanche:
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+
+
+2 - Ash:
+Wind + Earth = Dust
+Fire + Dust = Ash
+
+
+2 - Stone:
+Fire + Earth = Lava
+Water + Lava = Stone
+
+
+2 - Tsunami:
+Wind + Wind = Tornado
+Water + Tornado = Tsunami
+ ...
+Water + Wind = Wave
+Wave + Wave = Tsunami
+
+
+2 - Dandelion:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+
+
+2 - Sand:
+Wind + Earth = Dust
+Dust + Dust = Sand
+ ...
+Water + Wind = Wave
+Earth + Wave = Sand
+
+
+2 - Mud:
+Wind + Earth = Dust
+Water + Dust = Mud
+ ...
+Water + Fire = Steam
+Earth + Steam = Mud
+
+
+2 - Sandstorm:
+Wind + Earth = Dust
+Wind + Dust = Sandstorm
+
+
+2 - Cloud:
+Fire + Wind = Smoke
+Wind + Smoke = Cloud
+ ...
+Water + Fire = Steam
+Water + Steam = Cloud
+
+
+2 - Eruption:
+Fire + Fire = Volcano
+Wind + Volcano = Eruption
+
+
+2 - Swamp:
+Water + Water = Lake
+Earth + Lake = Swamp
+ ...
+Water + Earth = Plant
+Water + Plant = Swamp
+
+
+3 - Wine:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+
+
+3 - Dragon:
+Water + Earth = Plant
+Water + Plant = Swamp
+Fire + Swamp = Dragon
+ ...
+Water + Water = Lake
+Earth + Lake = Swamp
+Fire + Swamp = Dragon
+
+
+3 - Desert:
+Water + Wind = Wave
+Earth + Wave = Sand
+Sand + Sand = Desert
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Sand + Sand = Desert
+
+
+3 - Obsidian:
+Fire + Earth = Lava
+Water + Lava = Stone
+Lava + Stone = Obsidian
+
+
+3 - Boulder:
+Fire + Earth = Lava
+Water + Lava = Stone
+Stone + Stone = Boulder
+
+
+3 - Island:
+Water + Water = Lake
+Lake + Lake = Ocean
+Earth + Ocean = Island
+ ...
+Water + Water = Lake
+Fire + Fire = Volcano
+Volcano + Lake = Island
+ ...
+Wind + Wind = Tornado
+Water + Tornado = Tsunami
+Earth + Tsunami = Island
+ ...
+Water + Wind = Wave
+Wave + Wave = Tsunami
+Earth + Tsunami = Island
+
+
+3 - Weed:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Plant + Dandelion = Weed
+
+
+3 - Dust Storm:
+Wind + Wind = Tornado
+Earth + Tornado = Dust
+Tornado + Dust = Dust Storm
+ ...
+Wind + Earth = Dust
+Wind + Dust = Sandstorm
+Wind + Sandstorm = Dust Storm
+
+
+3 - Lightning:
+Fire + Wind = Smoke
+Wind + Smoke = Cloud
+Fire + Cloud = Lightning
+ ...
+Water + Fire = Steam
+Water + Steam = Cloud
+Fire + Cloud = Lightning
+
+
+3 - River:
+Water + Earth = Plant
+Plant + Plant = Tree
+Water + Tree = River
+
+
+3 - Sea:
+Water + Water = Lake
+Lake + Lake = Ocean
+Ocean + Ocean = Sea
+
+
+3 - Phoenix:
+Wind + Earth = Dust
+Fire + Dust = Ash
+Fire + Ash = Phoenix
+
+
+3 - Rock:
+Fire + Earth = Lava
+Water + Lava = Stone
+Water + Stone = Rock
+
+
+3 - Puddle:
+Wind + Earth = Dust
+Fire + Dust = Ash
+Water + Ash = Puddle
+
+
+3 - Incense:
+Water + Earth = Plant
+Fire + Plant = Smoke
+Plant + Smoke = Incense
+
+
+3 - Seed:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Wind + Dandelion = Seed
+
+
+3 - Rain:
+Water + Water = Lake
+Wind + Lake = Storm
+Water + Storm = Rain
+ ...
+Water + Wind = Wave
+Wind + Wave = Storm
+Water + Storm = Rain
+ ...
+Fire + Wind = Smoke
+Wind + Smoke = Cloud
+Cloud + Cloud = Rain
+ ...
+Water + Fire = Steam
+Water + Steam = Cloud
+Steam + Cloud = Rain
+
+
+3 - Cinder:
+Wind + Earth = Dust
+Fire + Dust = Ash
+Ash + Dust = Cinder
+
+
+3 - Moon:
+Wind + Earth = Dust
+Earth + Dust = Planet
+Earth + Planet = Moon
+
+
+3 - Ice:
+Fire + Wind = Smoke
+Water + Smoke = Fog
+Water + Fog = Ice
+ ...
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Water + Avalanche = Ice
+
+
+3 - Glass:
+Water + Wind = Wave
+Earth + Wave = Sand
+Fire + Sand = Glass
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Sand = Glass
+
+
+3 - Pollen:
+Water + Earth = Plant
+Wind + Earth = Dust
+Plant + Dust = Pollen
+
+
+3 - Star:
+Wind + Earth = Dust
+Earth + Dust = Planet
+Planet + Planet = Star
+
+
+3 - Landslide:
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Earth + Avalanche = Landslide
+
+
+3 - Bog:
+Water + Earth = Plant
+Water + Plant = Swamp
+Swamp + Swamp = Bog
+ ...
+Water + Water = Lake
+Earth + Lake = Swamp
+Swamp + Swamp = Bog
+
+
+3 - Beach:
+Water + Wind = Wave
+Earth + Wave = Sand
+Wave + Sand = Beach
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Water + Sand = Beach
+
+
+3 - Fjord:
+Water + Water = Lake
+Earth + Earth = Mountain
+Lake + Mountain = Fjord
+
+
+3 - Marsh:
+Water + Earth = Plant
+Water + Plant = Swamp
+Water + Swamp = Marsh
+ ...
+Water + Water = Lake
+Earth + Lake = Swamp
+Lake + Swamp = Marsh
+
+
+3 - Tractor:
+Water + Fire = Steam
+Fire + Steam = Engine
+Earth + Engine = Tractor
+
+
+3 - Aeolus:
+Earth + Earth = Mountain
+Mountain + Mountain = Mountain Range
+Wind + Mountain Range = Aeolus
+
+
+3 - Mist:
+Fire + Wind = Smoke
+Water + Smoke = Fog
+Earth + Fog = Mist
+ ...
+Water + Earth = Plant
+Water + Plant = Swamp
+Wind + Swamp = Mist
+ ...
+Water + Water = Lake
+Earth + Lake = Swamp
+Wind + Swamp = Mist
+
+
+3 - Soil:
+Wind + Earth = Dust
+Fire + Dust = Ash
+Earth + Ash = Soil
+
+
+3 - Oasis:
+Wind + Earth = Dust
+Wind + Dust = Sandstorm
+Water + Sandstorm = Oasis
+
+
+3 - Clay:
+Water + Fire = Steam
+Earth + Steam = Mud
+Earth + Mud = Clay
+ ...
+Wind + Earth = Dust
+Water + Dust = Mud
+Dust + Mud = Clay
+
+
+3 - Dune:
+Water + Wind = Wave
+Earth + Wave = Sand
+Wind + Sand = Dune
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Wind + Sand = Dune
+ ...
+Wind + Earth = Dust
+Wind + Dust = Sandstorm
+Earth + Sandstorm = Dune
+
+
+3 - Dandelion Patch:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Dandelion + Dandelion = Dandelion Patch
+
+
+3 - Lily:
+Water + Earth = Plant
+Water + Water = Lake
+Plant + Lake = Lily
+
+
+3 - Sun:
+Wind + Earth = Dust
+Earth + Dust = Planet
+Fire + Planet = Sun
+
+
+3 - Destruction:
+Wind + Wind = Tornado
+Water + Tornado = Tsunami
+Tornado + Tsunami = Destruction
+
+
+3 - Forest:
+Water + Earth = Plant
+Plant + Plant = Tree
+Plant + Tree = Forest
+
+
+3 - Fish:
+Water + Water = Lake
+Lake + Lake = Ocean
+Water + Ocean = Fish
+
+
+3 - Seaweed:
+Water + Earth = Plant
+Water + Wind = Wave
+Plant + Wave = Seaweed
+
+
+3 - Flower:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Earth + Dandelion = Flower
+
+
+3 - Surf:
+Fire + Wind = Smoke
+Water + Wind = Wave
+Smoke + Wave = Surf
+ ...
+Water + Fire = Steam
+Water + Wind = Wave
+Steam + Wave = Surf
+
+
+3 - Windmill:
+Water + Fire = Steam
+Fire + Steam = Engine
+Wind + Engine = Windmill
+
+
+3 - Rocket:
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+
+
+3 - Snow:
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Wind + Avalanche = Snow
+
+
+3 - Tea:
+Water + Earth = Plant
+Water + Fire = Steam
+Steam + Plant = Tea
+
+
+3 - Venus Flytrap:
+Water + Earth = Plant
+Water + Plant = Swamp
+Plant + Swamp = Venus Flytrap
+
+
+3 - Leaf:
+Water + Earth = Plant
+Plant + Plant = Tree
+Wind + Tree = Leaf
+
+
+3 - Train:
+Water + Fire = Steam
+Fire + Steam = Engine
+Steam + Engine = Train
+
+
+3 - Brick:
+Water + Fire = Steam
+Earth + Steam = Mud
+Fire + Mud = Brick
+ ...
+Wind + Earth = Dust
+Water + Dust = Mud
+Fire + Mud = Brick
+
+
+4 - Lens:
+Water + Wind = Wave
+Earth + Wave = Sand
+Fire + Sand = Glass
+Fire + Glass = Lens
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Sand = Glass
+Fire + Glass = Lens
+
+
+4 - Mountain Dew:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Earth + Earth = Mountain
+Dandelion + Mountain = Mountain Dew
+
+
+4 - Quagmire:
+Water + Water = Lake
+Earth + Lake = Swamp
+Earth + Swamp = Mud
+Swamp + Mud = Quagmire
+ ...
+Water + Fire = Steam
+Earth + Steam = Mud
+Steam + Mud = Swamp
+Swamp + Mud = Quagmire
+ ...
+Water + Earth = Plant
+Water + Plant = Swamp
+Earth + Swamp = Mud
+Swamp + Mud = Quagmire
+ ...
+Wind + Earth = Dust
+Water + Dust = Mud
+Water + Mud = Swamp
+Swamp + Mud = Quagmire
+
+
+4 - Wood:
+Water + Earth = Plant
+Plant + Plant = Tree
+Wind + Wind = Tornado
+Tree + Tornado = Wood
+ ...
+Water + Earth = Plant
+Plant + Plant = Tree
+Wind + Earth = Dust
+Tree + Dust = Wood
+ ...
+Water + Earth = Plant
+Plant + Plant = Tree
+Plant + Tree = Forest
+Tree + Forest = Wood
+
+
+4 - Waterfall:
+Fire + Earth = Lava
+Water + Lava = Stone
+Stone + Stone = Boulder
+Water + Boulder = Waterfall
+
+
+4 - Pond:
+Water + Earth = Plant
+Water + Water = Lake
+Plant + Lake = Lily
+Water + Lily = Pond
+ ...
+Wind + Earth = Dust
+Fire + Dust = Ash
+Water + Ash = Puddle
+Puddle + Puddle = Pond
+
+
+4 - Dust Bowl:
+Wind + Earth = Dust
+Wind + Dust = Sandstorm
+Wind + Sandstorm = Dust Storm
+Sandstorm + Dust Storm = Dust Bowl
+
+
+4 - Geysir:
+Water + Fire = Steam
+Fire + Earth = Lava
+Water + Lava = Stone
+Steam + Stone = Geysir
+
+
+4 - Snowman:
+Water + Earth = Plant
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Plant + Avalanche = Snowman
+ ...
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Wind + Avalanche = Snow
+Earth + Snow = Snowman
+
+
+4 - Car:
+Water + Earth = Plant
+Water + Fire = Steam
+Fire + Steam = Engine
+Plant + Engine = Car
+
+
+4 - Jungle:
+Water + Earth = Plant
+Plant + Plant = Tree
+Plant + Tree = Forest
+Forest + Forest = Jungle
+
+
+4 - Wall:
+Wind + Earth = Dust
+Water + Dust = Mud
+Fire + Mud = Brick
+Brick + Brick = Wall
+ ...
+Water + Fire = Steam
+Earth + Steam = Mud
+Fire + Mud = Brick
+Brick + Brick = Wall
+
+
+4 - Swamp Thing:
+Water + Earth = Plant
+Water + Plant = Swamp
+Plant + Swamp = Venus Flytrap
+Venus Flytrap + Swamp = Swamp Thing
+
+
+4 - Titanic:
+Water + Fire = Steam
+Wind + Wind = Tornado
+Water + Tornado = Tsunami
+Tsunami + Steam = Titanic
+ ...
+Water + Fire = Steam
+Water + Wind = Wave
+Wave + Wave = Tsunami
+Tsunami + Steam = Titanic
+
+
+4 - Sea Serpent:
+Water + Earth = Plant
+Water + Plant = Swamp
+Fire + Swamp = Dragon
+Water + Dragon = Sea Serpent
+ ...
+Water + Water = Lake
+Earth + Lake = Swamp
+Fire + Swamp = Dragon
+Water + Dragon = Sea Serpent
+
+
+4 - Kiln:
+Wind + Earth = Dust
+Water + Dust = Mud
+Fire + Mud = Brick
+Fire + Brick = Kiln
+ ...
+Water + Fire = Steam
+Earth + Steam = Mud
+Fire + Mud = Brick
+Fire + Brick = Kiln
+
+
+4 - Mummy:
+Wind + Earth = Dust
+Wind + Dust = Sandstorm
+Water + Sandstorm = Oasis
+Oasis + Dust = Mummy
+
+
+4 - Frog:
+Water + Earth = Plant
+Water + Plant = Swamp
+Wind + Plant = Dandelion
+Dandelion + Swamp = Frog
+
+
+4 - Blizzard:
+Wind + Wind = Tornado
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Tornado + Avalanche = Blizzard
+ ...
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Wind + Avalanche = Snow
+Wind + Snow = Blizzard
+
+
+4 - Vineyard:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Earth + Wine = Vineyard
+
+
+4 - Loch Ness Monster:
+Water + Water = Lake
+Earth + Lake = Swamp
+Fire + Swamp = Dragon
+Lake + Dragon = Loch Ness Monster
+
+
+4 - Wind Farm:
+Water + Fire = Steam
+Fire + Steam = Engine
+Wind + Engine = Windmill
+Windmill + Windmill = Wind Farm
+
+
+4 - Surfing:
+Water + Fire = Steam
+Water + Wind = Wave
+Steam + Wave = Surf
+Wind + Surf = Surfing
+ ...
+Fire + Wind = Smoke
+Water + Wind = Wave
+Smoke + Wave = Surf
+Wind + Surf = Surfing
+
+
+4 - Electricity:
+Fire + Wind = Smoke
+Wind + Smoke = Cloud
+Fire + Cloud = Lightning
+Water + Lightning = Electricity
+ ...
+Water + Fire = Steam
+Fire + Steam = Engine
+Wind + Engine = Windmill
+Wind + Windmill = Electricity
+ ...
+Water + Fire = Steam
+Water + Steam = Cloud
+Fire + Cloud = Lightning
+Water + Lightning = Electricity
+
+
+4 - Blade:
+Fire + Earth = Lava
+Water + Lava = Stone
+Lava + Stone = Obsidian
+Stone + Obsidian = Blade
+
+
+4 - Submarine:
+Water + Fire = Steam
+Fire + Steam = Engine
+Steam + Engine = Train
+Water + Train = Submarine
+
+
+4 - Space Ship:
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Engine + Rocket = Space Ship
+
+
+4 - Tide:
+Wind + Earth = Dust
+Earth + Dust = Planet
+Earth + Planet = Moon
+Water + Moon = Tide
+
+
+4 - Sail:
+Water + Water = Lake
+Lake + Lake = Ocean
+Ocean + Ocean = Sea
+Wind + Sea = Sail
+
+
+4 - Frost:
+Fire + Wind = Smoke
+Water + Smoke = Fog
+Water + Fog = Ice
+Fog + Ice = Frost
+
+
+4 - Sandcastle:
+Water + Wind = Wave
+Earth + Wave = Sand
+Wave + Sand = Beach
+Beach + Sand = Sandcastle
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Water + Sand = Beach
+Beach + Sand = Sandcastle
+
+
+4 - Bong:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Plant + Dandelion = Weed
+Water + Weed = Bong
+
+
+4 - Smog:
+Wind + Earth = Dust
+Fire + Wind = Smoke
+Water + Smoke = Fog
+Fog + Dust = Smog
+
+
+4 - Flood:
+Water + Water = Lake
+Wind + Lake = Storm
+Water + Storm = Rain
+Rain + Storm = Flood
+ ...
+Water + Wind = Wave
+Wind + Wave = Storm
+Water + Storm = Rain
+Rain + Storm = Flood
+
+
+4 - Steamboat:
+Water + Fire = Steam
+Wind + Wind = Tornado
+Tornado + Tornado = Hurricane
+Steam + Hurricane = Steamboat
+
+
+4 - Energy:
+Water + Fire = Steam
+Fire + Steam = Engine
+Wind + Engine = Windmill
+Steam + Windmill = Energy
+
+
+4 - Perfume:
+Water + Earth = Plant
+Fire + Plant = Smoke
+Plant + Smoke = Incense
+Incense + Incense = Perfume
+
+
+4 - Mangrove:
+Water + Earth = Plant
+Plant + Plant = Tree
+Water + Plant = Swamp
+Tree + Swamp = Mangrove
+
+
+4 - Lunar:
+Wind + Earth = Dust
+Earth + Dust = Planet
+Earth + Planet = Moon
+Moon + Dust = Lunar
+
+
+4 - Alcohol:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Fire + Wine = Alcohol
+
+
+4 - Rainbow:
+Water + Fire = Steam
+Water + Steam = Cloud
+Steam + Cloud = Rain
+Water + Rain = Rainbow
+ ...
+Fire + Wind = Smoke
+Wind + Smoke = Cloud
+Cloud + Cloud = Rain
+Water + Rain = Rainbow
+ ...
+Water + Water = Lake
+Wind + Lake = Storm
+Water + Storm = Rain
+Water + Rain = Rainbow
+ ...
+Water + Wind = Wave
+Wind + Wave = Storm
+Water + Storm = Rain
+Water + Rain = Rainbow
+ ...
+Wind + Earth = Dust
+Earth + Dust = Planet
+Fire + Planet = Sun
+Water + Sun = Rainbow
+
+
+4 - Palm Tree:
+Water + Earth = Plant
+Wind + Wind = Tornado
+Tornado + Tornado = Hurricane
+Plant + Hurricane = Palm Tree
+
+
+4 - Atlantis:
+Water + Water = Lake
+Lake + Lake = Ocean
+Earth + Ocean = Island
+Ocean + Island = Atlantis
+ ...
+Water + Wind = Wave
+Wave + Wave = Tsunami
+Earth + Tsunami = Island
+Tsunami + Island = Atlantis
+ ...
+Wind + Wind = Tornado
+Water + Tornado = Tsunami
+Earth + Tsunami = Island
+Tsunami + Island = Atlantis
+
+
+4 - Boat:
+Water + Fire = Steam
+Fire + Steam = Engine
+Earth + Engine = Tractor
+Water + Tractor = Boat
+ ...
+Water + Water = Lake
+Water + Fire = Steam
+Fire + Steam = Engine
+Lake + Engine = Boat
+
+
+4 - Steampunk:
+Water + Fire = Steam
+Wind + Earth = Dust
+Earth + Dust = Planet
+Steam + Planet = Steampunk
+
+
+4 - Disaster:
+Water + Wind = Wave
+Wave + Wave = Tsunami
+Wind + Tsunami = Hurricane
+Tsunami + Hurricane = Disaster
+ ...
+Wind + Wind = Tornado
+Tornado + Tornado = Hurricane
+Water + Hurricane = Tsunami
+Tsunami + Hurricane = Disaster
+ ...
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Earth + Avalanche = Landslide
+Avalanche + Landslide = Disaster
+
+
+4 - Tank:
+Water + Fire = Steam
+Fire + Steam = Engine
+Earth + Engine = Tractor
+Engine + Tractor = Tank
+
+
+4 - Locomotive:
+Water + Fire = Steam
+Fire + Steam = Engine
+Steam + Engine = Train
+Engine + Train = Locomotive
+
+
+4 - Vacuum:
+Water + Fire = Steam
+Wind + Earth = Dust
+Fire + Steam = Engine
+Engine + Dust = Vacuum
+
+
+4 - Geyser:
+Water + Fire = Steam
+Fire + Fire = Volcano
+Wind + Volcano = Eruption
+Steam + Eruption = Geyser
+
+
+4 - Explosion:
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Fire + Rocket = Explosion
+ ...
+Wind + Wind = Tornado
+Water + Tornado = Tsunami
+Tornado + Tsunami = Destruction
+Fire + Destruction = Explosion
+
+
+4 - Rebirth:
+Wind + Earth = Dust
+Fire + Dust = Ash
+Fire + Ash = Phoenix
+Ash + Phoenix = Rebirth
+
+
+4 - Allergy:
+Water + Earth = Plant
+Wind + Earth = Dust
+Plant + Dust = Pollen
+Wind + Pollen = Allergy
+
+
+4 - House:
+Wind + Earth = Dust
+Water + Dust = Mud
+Fire + Mud = Brick
+Wind + Brick = House
+ ...
+Water + Fire = Steam
+Earth + Steam = Mud
+Fire + Mud = Brick
+Wind + Brick = House
+
+
+4 - Fire Trap:
+Water + Earth = Plant
+Water + Plant = Swamp
+Plant + Swamp = Venus Flytrap
+Fire + Venus Flytrap = Fire Trap
+
+
+4 - Earthquake:
+Fire + Fire = Volcano
+Water + Wind = Wave
+Wave + Wave = Tsunami
+Volcano + Tsunami = Earthquake
+ ...
+Fire + Fire = Volcano
+Wind + Wind = Tornado
+Water + Tornado = Tsunami
+Volcano + Tsunami = Earthquake
+ ...
+Wind + Wind = Tornado
+Water + Tornado = Tsunami
+Tornado + Tsunami = Destruction
+Tsunami + Destruction = Earthquake
+
+
+4 - Chai:
+Water + Earth = Plant
+Water + Fire = Steam
+Steam + Plant = Tea
+Fire + Tea = Chai
+
+
+4 - Hawaii:
+Water + Water = Lake
+Fire + Fire = Volcano
+Volcano + Lake = Island
+Volcano + Island = Hawaii
+
+
+4 - Statue:
+Fire + Wind = Smoke
+Fire + Earth = Lava
+Water + Lava = Stone
+Smoke + Stone = Statue
+ ...
+Wind + Earth = Dust
+Fire + Dust = Ash
+Ash + Ash = Stone
+Stone + Ash = Statue
+
+
+4 - Delta:
+Water + Earth = Plant
+Plant + Plant = Tree
+Water + Tree = River
+Earth + River = Delta
+
+
+4 - Hourglass:
+Water + Wind = Wave
+Earth + Wave = Sand
+Fire + Sand = Glass
+Glass + Sand = Hourglass
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Sand = Glass
+Glass + Sand = Hourglass
+
+
+4 - Solar System:
+Wind + Earth = Dust
+Earth + Dust = Planet
+Planet + Planet = Star
+Planet + Star = Solar System
+ ...
+Wind + Earth = Dust
+Earth + Dust = Planet
+Fire + Planet = Sun
+Planet + Sun = Solar System
+
+
+4 - Seeds:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Dandelion + Dandelion = Dandelion Patch
+Wind + Dandelion Patch = Seeds
+
+
+4 - Prayer:
+Water + Earth = Plant
+Fire + Plant = Smoke
+Plant + Smoke = Incense
+Smoke + Incense = Prayer
+
+
+4 - Yellowstone:
+Fire + Fire = Volcano
+Earth + Earth = Mountain
+Mountain + Mountain = Mountain Range
+Volcano + Mountain Range = Yellowstone
+
+
+4 - Balloon:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Wind + Wine = Balloon
+
+
+4 - Honey:
+Water + Earth = Plant
+Wind + Earth = Dust
+Plant + Dust = Pollen
+Water + Pollen = Honey
+
+
+4 - Norway:
+Water + Water = Lake
+Earth + Earth = Mountain
+Lake + Mountain = Fjord
+Mountain + Fjord = Norway
+
+
+4 - Dirt:
+Wind + Earth = Dust
+Fire + Dust = Ash
+Earth + Ash = Soil
+Soil + Soil = Dirt
+
+
+4 - Teapot:
+Water + Earth = Plant
+Water + Fire = Steam
+Steam + Plant = Tea
+Earth + Tea = Teapot
+
+
+4 - Fishbowl:
+Water + Water = Lake
+Lake + Lake = Ocean
+Water + Ocean = Fish
+Water + Fish = Fishbowl
+
+
+4 - Pencil:
+Water + Earth = Plant
+Plant + Plant = Tree
+Fire + Tree = Ash
+Tree + Ash = Pencil
+
+
+4 - Dragon Egg:
+Water + Earth = Plant
+Water + Plant = Swamp
+Fire + Swamp = Dragon
+Dragon + Dragon = Dragon Egg
+ ...
+Water + Water = Lake
+Earth + Lake = Swamp
+Fire + Swamp = Dragon
+Dragon + Dragon = Dragon Egg
+
+
+4 - Tobacco:
+Water + Earth = Plant
+Wind + Earth = Dust
+Fire + Dust = Ash
+Plant + Ash = Tobacco
+ ...
+Water + Earth = Plant
+Plant + Plant = Tree
+Fire + Tree = Ash
+Plant + Ash = Tobacco
+ ...
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Fire + Dandelion = Ash
+Plant + Ash = Tobacco
+ ...
+Water + Earth = Plant
+Plant + Plant = Tree
+Wind + Tree = Leaf
+Fire + Leaf = Tobacco
+
+
+4 - Paper:
+Water + Earth = Plant
+Plant + Plant = Tree
+Water + Tree = River
+Tree + River = Paper
+
+
+4 - Jet:
+Water + Fire = Steam
+Water + Steam = Cloud
+Fire + Steam = Engine
+Cloud + Engine = Jet
+
+
+4 - Galaxy:
+Wind + Earth = Dust
+Earth + Dust = Planet
+Planet + Planet = Star
+Star + Star = Galaxy
+
+
+4 - Mars:
+Wind + Earth = Dust
+Wind + Dust = Sandstorm
+Earth + Dust = Planet
+Planet + Sandstorm = Mars
+
+
+4 - Ship:
+Water + Water = Lake
+Fire + Fire = Volcano
+Volcano + Lake = Island
+Water + Island = Ship
+ ...
+Water + Water = Lake
+Lake + Lake = Ocean
+Earth + Ocean = Island
+Water + Island = Ship
+ ...
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Water + Rocket = Ship
+ ...
+Water + Wind = Wave
+Wave + Wave = Tsunami
+Earth + Tsunami = Island
+Water + Island = Ship
+ ...
+Wind + Wind = Tornado
+Water + Tornado = Tsunami
+Earth + Tsunami = Island
+Water + Island = Ship
+
+
+4 - Bush:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Plant + Dandelion = Weed
+Weed + Weed = Bush
+
+
+4 - Holy Water:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Water + Wine = Holy Water
+
+
+4 - Farm:
+Water + Fire = Steam
+Fire + Steam = Engine
+Earth + Engine = Tractor
+Earth + Tractor = Farm
+
+
+4 - Mushroom:
+Water + Earth = Plant
+Fire + Plant = Smoke
+Water + Smoke = Fog
+Plant + Fog = Mushroom
+
+
+4 - Diamond:
+Fire + Earth = Lava
+Water + Lava = Stone
+Lava + Stone = Obsidian
+Earth + Obsidian = Diamond
+
+
+4 - Lotus:
+Water + Earth = Plant
+Water + Water = Lake
+Plant + Lake = Lily
+Lake + Lily = Lotus
+
+
+4 - Kite:
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Wind + Rocket = Kite
+ ...
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Plant + Dandelion = Weed
+Wind + Weed = Kite
+ ...
+Water + Earth = Plant
+Water + Fire = Steam
+Steam + Plant = Tea
+Wind + Tea = Kite
+ ...
+Water + Earth = Plant
+Water + Wind = Wave
+Plant + Wave = Seaweed
+Wind + Seaweed = Kite
+
+
+4 - Kelp:
+Water + Earth = Plant
+Water + Wind = Wave
+Plant + Wave = Seaweed
+Water + Seaweed = Kelp
+
+
+4 - Lighthouse:
+Water + Water = Lake
+Fire + Earth = Lava
+Water + Lava = Stone
+Lake + Stone = Lighthouse
+
+
+4 - Steam Engine:
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Steam + Rocket = Steam Engine
+ ...
+Water + Fire = Steam
+Fire + Steam = Engine
+Steam + Engine = Train
+Fire + Train = Steam Engine
+ ...
+Water + Fire = Steam
+Earth + Steam = Mud
+Fire + Mud = Brick
+Steam + Brick = Steam Engine
+
+
+4 - Whale:
+Water + Water = Lake
+Lake + Lake = Ocean
+Water + Ocean = Fish
+Earth + Fish = Whale
+ ...
+Water + Water = Lake
+Earth + Earth = Mountain
+Lake + Mountain = Fjord
+Water + Fjord = Whale
+
+
+4 - Giant Venus Flytrap:
+Water + Earth = Plant
+Water + Plant = Swamp
+Plant + Swamp = Venus Flytrap
+Venus Flytrap + Venus Flytrap = Giant Venus Flytrap
+
+
+4 - Train Station:
+Water + Fire = Steam
+Fire + Steam = Engine
+Steam + Engine = Train
+Train + Train = Train Station
+
+
+4 - Shark:
+Water + Water = Lake
+Lake + Lake = Ocean
+Water + Ocean = Fish
+Fish + Fish = Shark
+
+
+4 - Land:
+Water + Water = Lake
+Earth + Earth = Mountain
+Lake + Mountain = Fjord
+Earth + Fjord = Land
+
+
+4 - Pyramid:
+Wind + Earth = Dust
+Dust + Dust = Sand
+Sand + Sand = Desert
+Desert + Sand = Pyramid
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Earth + Earth = Mountain
+Mountain + Sand = Pyramid
+ ...
+Earth + Earth = Mountain
+Water + Wind = Wave
+Earth + Wave = Sand
+Mountain + Sand = Pyramid
+ ...
+Fire + Earth = Lava
+Water + Lava = Stone
+Wind + Stone = Sand
+Stone + Sand = Pyramid
+ ...
+Water + Wind = Wave
+Earth + Wave = Sand
+Sand + Sand = Desert
+Desert + Sand = Pyramid
+
+
+4 - Dust Devil:
+Wind + Earth = Dust
+Wind + Wind = Tornado
+Tornado + Dust = Dust Storm
+Tornado + Dust Storm = Dust Devil
+
+
+4 - Sunflower:
+Wind + Earth = Dust
+Earth + Dust = Planet
+Fire + Planet = Sun
+Wind + Sun = Sunflower
+
+
+4 - Glacier:
+Water + Water = Lake
+Earth + Earth = Mountain
+Lake + Mountain = Fjord
+Fjord + Fjord = Glacier
+
+
+4 - Fishing:
+Water + Water = Lake
+Lake + Lake = Ocean
+Water + Ocean = Fish
+Lake + Fish = Fishing
+
+
+4 - Garden:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Earth + Dandelion = Flower
+Flower + Flower = Garden
+
+
+4 - Marijuana:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Plant + Dandelion = Weed
+Dandelion + Weed = Marijuana
+
+
+4 - Bottle:
+Water + Wind = Wave
+Earth + Wave = Sand
+Fire + Sand = Glass
+Earth + Glass = Bottle
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Sand = Glass
+Earth + Glass = Bottle
+ ...
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Wine + Wine = Bottle
+
+
+4 - Pottery:
+Wind + Earth = Dust
+Water + Dust = Mud
+Dust + Mud = Clay
+Water + Clay = Pottery
+ ...
+Water + Fire = Steam
+Earth + Steam = Mud
+Earth + Mud = Clay
+Water + Clay = Pottery
+ ...
+Wind + Earth = Dust
+Fire + Dust = Ash
+Earth + Ash = Soil
+Ash + Soil = Pottery
+
+
+4 - Pot:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Plant + Dandelion = Weed
+Plant + Weed = Pot
+
+
+4 - Fossil:
+Water + Earth = Plant
+Fire + Earth = Lava
+Water + Lava = Stone
+Plant + Stone = Fossil
+
+
+4 - Continent:
+Water + Water = Lake
+Fire + Fire = Volcano
+Volcano + Lake = Island
+Island + Island = Continent
+ ...
+Water + Water = Lake
+Lake + Lake = Ocean
+Earth + Ocean = Island
+Island + Island = Continent
+ ...
+Water + Wind = Wave
+Wave + Wave = Tsunami
+Earth + Tsunami = Island
+Island + Island = Continent
+ ...
+Wind + Wind = Tornado
+Water + Tornado = Tsunami
+Earth + Tsunami = Island
+Island + Island = Continent
+
+
+4 - Mirage:
+Water + Wind = Wave
+Earth + Wave = Sand
+Sand + Sand = Desert
+Desert + Wave = Mirage
+ ...
+Wind + Earth = Dust
+Wind + Dust = Sandstorm
+Water + Sandstorm = Oasis
+Water + Oasis = Mirage
+
+
+4 - Flying Fish:
+Water + Water = Lake
+Lake + Lake = Ocean
+Water + Ocean = Fish
+Wind + Fish = Flying Fish
+
+
+4 - Surfer:
+Water + Fire = Steam
+Water + Wind = Wave
+Steam + Wave = Surf
+Wave + Surf = Surfer
+ ...
+Fire + Wind = Smoke
+Water + Wind = Wave
+Smoke + Wave = Surf
+Wave + Surf = Surfer
+
+
+4 - Satellite:
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Rocket + Rocket = Satellite
+
+
+4 - Iceberg:
+Fire + Wind = Smoke
+Water + Smoke = Fog
+Water + Fog = Ice
+Water + Ice = Iceberg
+ ...
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Water + Avalanche = Ice
+Water + Ice = Iceberg
+ ...
+Water + Water = Lake
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Lake + Avalanche = Iceberg
+
+
+4 - Eclipse:
+Wind + Earth = Dust
+Earth + Dust = Planet
+Earth + Planet = Moon
+Fire + Moon = Eclipse
+
+
+4 - Coral:
+Water + Earth = Plant
+Water + Water = Lake
+Lake + Lake = Ocean
+Plant + Ocean = Coral
+ ...
+Water + Earth = Plant
+Water + Wind = Wave
+Plant + Wave = Seaweed
+Seaweed + Seaweed = Coral
+
+
+4 - Solar:
+Wind + Earth = Dust
+Earth + Dust = Planet
+Fire + Planet = Sun
+Fire + Sun = Solar
+
+
+4 - Wish:
+Water + Earth = Plant
+Plant + Plant = Tree
+Wind + Plant = Dandelion
+Tree + Dandelion = Wish
+ ...
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Fire + Dandelion = Ash
+Dandelion + Ash = Wish
+ ...
+Water + Earth = Plant
+Water + Water = Lake
+Wind + Plant = Dandelion
+Dandelion + Lake = Wish
+ ...
+Water + Earth = Plant
+Wind + Earth = Dust
+Wind + Plant = Dandelion
+Dandelion + Dust = Wish
+ ...
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Wind + Dandelion = Seed
+Dandelion + Seed = Wish
+
+
+4 - Sushi:
+Water + Water = Lake
+Lake + Lake = Ocean
+Water + Ocean = Fish
+Fire + Fish = Sushi
+ ...
+Water + Earth = Plant
+Water + Wind = Wave
+Plant + Wave = Seaweed
+Fire + Seaweed = Sushi
+
+
+4 - Surfboard:
+Water + Earth = Plant
+Plant + Plant = Tree
+Water + Wind = Wave
+Tree + Wave = Surfboard
+
+
+4 - Comet:
+Wind + Earth = Dust
+Earth + Dust = Planet
+Planet + Planet = Star
+Star + Dust = Comet
+
+
+4 - Cactus:
+Water + Earth = Plant
+Wind + Earth = Dust
+Dust + Dust = Sand
+Plant + Sand = Cactus
+ ...
+Water + Earth = Plant
+Wind + Earth = Dust
+Wind + Dust = Sandstorm
+Plant + Sandstorm = Cactus
+ ...
+Water + Earth = Plant
+Water + Wind = Wave
+Earth + Wave = Sand
+Plant + Sand = Cactus
+
+
+4 - Telescope:
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Sand = Glass
+Glass + Dust = Telescope
+
+
+4 - Vine:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Plant + Wine = Vine
+
+
+4 - Window:
+Water + Wind = Wave
+Earth + Wave = Sand
+Fire + Sand = Glass
+Wind + Glass = Window
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Sand = Glass
+Wind + Glass = Window
+
+
+4 - Zephyr:
+Water + Fire = Steam
+Fire + Steam = Engine
+Steam + Engine = Train
+Wind + Train = Zephyr
+
+
+4 - Fireworks:
+Water + Earth = Plant
+Fire + Fire = Volcano
+Wind + Plant = Dandelion
+Volcano + Dandelion = Fireworks
+
+
+4 - Thunder:
+Fire + Wind = Smoke
+Water + Wind = Wave
+Wind + Wave = Storm
+Storm + Smoke = Thunder
+ ...
+Fire + Wind = Smoke
+Wind + Smoke = Cloud
+Wind + Cloud = Storm
+Storm + Smoke = Thunder
+ ...
+Water + Water = Lake
+Fire + Wind = Smoke
+Wind + Lake = Storm
+Storm + Smoke = Thunder
+ ...
+Fire + Wind = Smoke
+Wind + Smoke = Cloud
+Fire + Cloud = Lightning
+Lightning + Lightning = Thunder
+ ...
+Water + Fire = Steam
+Water + Steam = Cloud
+Fire + Cloud = Lightning
+Lightning + Lightning = Thunder
+
+
+4 - Adobe:
+Wind + Earth = Dust
+Water + Dust = Mud
+Fire + Mud = Brick
+Mud + Brick = Adobe
+ ...
+Water + Fire = Steam
+Earth + Steam = Mud
+Fire + Mud = Brick
+Mud + Brick = Adobe
+
+
+4 - Cyclone:
+Wind + Earth = Dust
+Wind + Wind = Tornado
+Earth + Dust = Planet
+Tornado + Planet = Cyclone
+ ...
+Water + Earth = Plant
+Water + Plant = Swamp
+Wind + Wind = Tornado
+Tornado + Swamp = Cyclone
+ ...
+Water + Water = Lake
+Earth + Lake = Swamp
+Wind + Wind = Tornado
+Tornado + Swamp = Cyclone
+
+
+4 - Lizard:
+Water + Earth = Plant
+Water + Plant = Swamp
+Fire + Swamp = Dragon
+Dragon + Swamp = Lizard
+ ...
+Water + Water = Lake
+Earth + Lake = Swamp
+Fire + Swamp = Dragon
+Dragon + Swamp = Lizard
+
+
+4 - Werewolf:
+Wind + Earth = Dust
+Earth + Dust = Planet
+Earth + Planet = Moon
+Wind + Moon = Werewolf
+
+
+4 - Carnivorous Plant:
+Water + Earth = Plant
+Water + Plant = Swamp
+Plant + Swamp = Venus Flytrap
+Plant + Venus Flytrap = Carnivorous Plant
+
+
+5 - Tumbleweed:
+Water + Earth = Plant
+Plant + Plant = Tree
+Wind + Tree = Leaf
+Wind + Wind = Tornado
+Tornado + Leaf = Tumbleweed
+ ...
+Water + Earth = Plant
+Wind + Earth = Dust
+Dust + Dust = Sand
+Plant + Sand = Cactus
+Wind + Cactus = Tumbleweed
+ ...
+Water + Earth = Plant
+Wind + Earth = Dust
+Wind + Dust = Sandstorm
+Plant + Sandstorm = Cactus
+Wind + Cactus = Tumbleweed
+ ...
+Water + Earth = Plant
+Water + Wind = Wave
+Earth + Wave = Sand
+Plant + Sand = Cactus
+Wind + Cactus = Tumbleweed
+
+
+5 - Dust Trap:
+Water + Earth = Plant
+Wind + Earth = Dust
+Water + Plant = Swamp
+Plant + Swamp = Venus Flytrap
+Venus Flytrap + Dust = Dust Trap
+
+
+5 - Alligator:
+Water + Water = Lake
+Earth + Lake = Swamp
+Wind + Wind = Tornado
+Tornado + Tornado = Hurricane
+Swamp + Hurricane = Alligator
+ ...
+Water + Earth = Plant
+Water + Plant = Swamp
+Wind + Wind = Tornado
+Tornado + Tornado = Hurricane
+Swamp + Hurricane = Alligator
+
+
+5 - Burn:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Fire + Wine = Alcohol
+Fire + Alcohol = Burn
+
+
+5 - Lily Pad:
+Water + Earth = Plant
+Water + Water = Lake
+Wind + Plant = Dandelion
+Plant + Dandelion = Weed
+Lake + Weed = Lily Pad
+ ...
+Water + Earth = Plant
+Plant + Plant = Tree
+Wind + Tree = Leaf
+Water + Plant = Swamp
+Swamp + Leaf = Lily Pad
+
+
+5 - Ghost:
+Water + Water = Lake
+Earth + Lake = Swamp
+Swamp + Swamp = Bog
+Wind + Bog = Fog
+Fog + Swamp = Ghost
+ ...
+Water + Earth = Plant
+Water + Plant = Swamp
+Swamp + Swamp = Bog
+Wind + Bog = Fog
+Fog + Swamp = Ghost
+ ...
+Water + Earth = Plant
+Water + Plant = Swamp
+Fire + Plant = Smoke
+Water + Smoke = Fog
+Fog + Swamp = Ghost
+ ...
+Water + Water = Lake
+Earth + Lake = Swamp
+Fire + Wind = Smoke
+Water + Smoke = Fog
+Fog + Swamp = Ghost
+ ...
+Water + Earth = Plant
+Water + Plant = Swamp
+Wind + Swamp = Mist
+Plant + Mist = Fog
+Fog + Swamp = Ghost
+ ...
+Water + Water = Lake
+Earth + Lake = Swamp
+Wind + Swamp = Mist
+Water + Mist = Fog
+Fog + Swamp = Ghost
+ ...
+Water + Earth = Plant
+Plant + Plant = Tree
+Fire + Plant = Smoke
+Water + Smoke = Fog
+Fog + Tree = Ghost
+
+
+5 - Chaos:
+Wind + Wind = Tornado
+Water + Tornado = Tsunami
+Tornado + Tsunami = Destruction
+Fire + Destruction = Explosion
+Explosion + Destruction = Chaos
+
+
+5 - Joint:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Fire + Dandelion = Ash
+Plant + Dandelion = Weed
+Ash + Weed = Joint
+
+
+5 - Bee:
+Water + Earth = Plant
+Wind + Earth = Dust
+Plant + Dust = Pollen
+Water + Pollen = Honey
+Honey + Pollen = Bee
+ ...
+Water + Earth = Plant
+Wind + Earth = Dust
+Plant + Dust = Pollen
+Earth + Dust = Planet
+Planet + Pollen = Bee
+ ...
+Water + Earth = Plant
+Plant + Plant = Tree
+Wind + Earth = Dust
+Plant + Dust = Pollen
+Tree + Pollen = Bee
+ ...
+Water + Earth = Plant
+Wind + Earth = Dust
+Plant + Dust = Pollen
+Fire + Pollen = Smoke
+Smoke + Pollen = Bee
+ ...
+Water + Earth = Plant
+Wind + Earth = Dust
+Plant + Dust = Pollen
+Plant + Pollen = Flower
+Flower + Pollen = Bee
+
+
+5 - High:
+Water + Earth = Plant
+Fire + Plant = Smoke
+Wind + Plant = Dandelion
+Plant + Dandelion = Weed
+Smoke + Weed = High
+
+
+5 - Solar Wind:
+Wind + Earth = Dust
+Earth + Dust = Planet
+Fire + Planet = Sun
+Planet + Sun = Solar System
+Wind + Solar System = Solar Wind
+ ...
+Wind + Earth = Dust
+Earth + Dust = Planet
+Planet + Planet = Star
+Planet + Star = Solar System
+Wind + Solar System = Solar Wind
+
+
+5 - Tadpole:
+Water + Earth = Plant
+Water + Plant = Swamp
+Wind + Plant = Dandelion
+Dandelion + Swamp = Frog
+Frog + Frog = Tadpole
+
+
+5 - Furnace:
+Wind + Earth = Dust
+Water + Dust = Mud
+Fire + Mud = Brick
+Fire + Brick = Kiln
+Kiln + Kiln = Furnace
+ ...
+Water + Fire = Steam
+Earth + Steam = Mud
+Fire + Mud = Brick
+Fire + Brick = Kiln
+Kiln + Kiln = Furnace
+
+
+5 - Shard:
+Water + Wind = Wave
+Wave + Wave = Tsunami
+Earth + Wave = Sand
+Fire + Sand = Glass
+Tsunami + Glass = Shard
+
+
+5 - Pollution:
+Wind + Earth = Dust
+Fire + Wind = Smoke
+Water + Smoke = Fog
+Fog + Dust = Smog
+Fire + Smog = Pollution
+
+
+5 - Sashimi:
+Water + Earth = Plant
+Water + Wind = Wave
+Plant + Wave = Seaweed
+Fire + Seaweed = Sushi
+Sushi + Sushi = Sashimi
+ ...
+Water + Water = Lake
+Lake + Lake = Ocean
+Water + Ocean = Fish
+Fire + Fish = Sushi
+Sushi + Sushi = Sashimi
+
+
+5 - Shipwreck:
+Water + Water = Lake
+Fire + Fire = Volcano
+Volcano + Lake = Island
+Wind + Lake = Storm
+Storm + Island = Shipwreck
+ ...
+Water + Water = Lake
+Lake + Lake = Ocean
+Earth + Ocean = Island
+Wind + Lake = Storm
+Storm + Island = Shipwreck
+ ...
+Water + Water = Lake
+Wind + Lake = Storm
+Storm + Lake = Tsunami
+Earth + Tsunami = Island
+Storm + Island = Shipwreck
+ ...
+Water + Wind = Wave
+Wave + Wave = Tsunami
+Earth + Tsunami = Island
+Wind + Wave = Storm
+Storm + Island = Shipwreck
+
+
+5 - Barbecue:
+Water + Fire = Steam
+Fire + Steam = Engine
+Earth + Engine = Tractor
+Earth + Tractor = Farm
+Fire + Farm = Barbecue
+ ...
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Earth + Dandelion = Flower
+Flower + Flower = Garden
+Fire + Garden = Barbecue
+
+
+5 - Prickly Pear:
+Water + Earth = Plant
+Wind + Earth = Dust
+Dust + Dust = Sand
+Plant + Sand = Cactus
+Water + Cactus = Prickly Pear
+ ...
+Water + Earth = Plant
+Wind + Earth = Dust
+Wind + Dust = Sandstorm
+Plant + Sandstorm = Cactus
+Water + Cactus = Prickly Pear
+ ...
+Water + Earth = Plant
+Water + Wind = Wave
+Earth + Wave = Sand
+Plant + Sand = Cactus
+Water + Cactus = Prickly Pear
+
+
+5 - Dam:
+Water + Fire = Steam
+Earth + Steam = Mud
+Fire + Mud = Brick
+Brick + Brick = Wall
+Water + Wall = Dam
+ ...
+Wind + Earth = Dust
+Water + Dust = Mud
+Fire + Mud = Brick
+Brick + Brick = Wall
+Water + Wall = Dam
+
+
+5 - Cough:
+Water + Earth = Plant
+Wind + Earth = Dust
+Plant + Dust = Pollen
+Fire + Dust = Ash
+Ash + Pollen = Cough
+
+
+5 - Vinegar:
+Water + Earth = Plant
+Wind + Earth = Dust
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Wine + Dust = Vinegar
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Sand = Glass
+Water + Glass = Wine
+Wine + Dust = Vinegar
+
+
+5 - Sneeze:
+Water + Earth = Plant
+Wind + Earth = Dust
+Plant + Dust = Pollen
+Wind + Pollen = Allergy
+Dust + Allergy = Sneeze
+
+
+5 - Milky Way:
+Wind + Earth = Dust
+Earth + Dust = Planet
+Planet + Planet = Star
+Star + Star = Galaxy
+Water + Galaxy = Milky Way
+
+
+5 - Field:
+Water + Fire = Steam
+Fire + Steam = Engine
+Earth + Engine = Tractor
+Earth + Tractor = Farm
+Earth + Farm = Field
+
+
+5 - Jetpack:
+Water + Fire = Steam
+Water + Steam = Cloud
+Fire + Steam = Engine
+Cloud + Engine = Jet
+Jet + Jet = Jetpack
+
+
+5 - Vase:
+Wind + Earth = Dust
+Water + Dust = Mud
+Dust + Mud = Clay
+Water + Clay = Pottery
+Water + Pottery = Vase
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Sand = Glass
+Fire + Dust = Ash
+Glass + Ash = Vase
+ ...
+Water + Fire = Steam
+Earth + Steam = Mud
+Earth + Mud = Clay
+Water + Clay = Pottery
+Water + Pottery = Vase
+ ...
+Wind + Earth = Dust
+Fire + Dust = Ash
+Earth + Ash = Soil
+Ash + Soil = Pottery
+Water + Pottery = Vase
+ ...
+Wind + Earth = Dust
+Fire + Dust = Ash
+Ash + Dust = Cinder
+Water + Cinder = Glass
+Glass + Ash = Vase
+
+
+5 - Fairy:
+Water + Earth = Plant
+Plant + Plant = Tree
+Wind + Earth = Dust
+Plant + Tree = Forest
+Forest + Dust = Fairy
+ ...
+Water + Earth = Plant
+Plant + Plant = Tree
+Wind + Plant = Dandelion
+Plant + Tree = Forest
+Dandelion + Forest = Fairy
+ ...
+Water + Earth = Plant
+Fire + Plant = Smoke
+Wind + Plant = Dandelion
+Water + Smoke = Fog
+Fog + Dandelion = Fairy
+ ...
+Water + Earth = Plant
+Water + Plant = Swamp
+Wind + Swamp = Mist
+Wind + Plant = Dandelion
+Dandelion + Mist = Fairy
+
+
+5 - Supernova:
+Wind + Earth = Dust
+Wind + Dust = Sandstorm
+Earth + Dust = Planet
+Planet + Planet = Star
+Star + Sandstorm = Supernova
+ ...
+Wind + Earth = Dust
+Earth + Dust = Planet
+Wind + Planet = Storm
+Planet + Planet = Star
+Storm + Star = Supernova
+ ...
+Wind + Earth = Dust
+Earth + Dust = Planet
+Fire + Planet = Sun
+Planet + Planet = Star
+Star + Sun = Supernova
+ ...
+Fire + Fire = Volcano
+Wind + Earth = Dust
+Earth + Dust = Planet
+Planet + Planet = Star
+Volcano + Star = Supernova
+
+
+5 - Graffiti:
+Water + Fire = Steam
+Earth + Steam = Mud
+Fire + Mud = Brick
+Brick + Brick = Wall
+Steam + Wall = Graffiti
+
+
+5 - Date:
+Water + Earth = Plant
+Wind + Earth = Dust
+Wind + Dust = Sandstorm
+Water + Sandstorm = Oasis
+Plant + Oasis = Date
+
+
+5 - Holy Lake:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Water + Wine = Holy Water
+Holy Water + Holy Water = Holy Lake
+
+
+5 - Komodo Dragon:
+Water + Water = Lake
+Earth + Lake = Swamp
+Fire + Swamp = Dragon
+Dragon + Swamp = Lizard
+Dragon + Lizard = Komodo Dragon
+ ...
+Water + Earth = Plant
+Water + Plant = Swamp
+Fire + Swamp = Dragon
+Dragon + Swamp = Lizard
+Dragon + Lizard = Komodo Dragon
+
+
+5 - Moonshine:
+Water + Earth = Plant
+Water + Plant = Swamp
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Swamp + Wine = Moonshine
+
+
+5 - Ceramic:
+Wind + Earth = Dust
+Water + Dust = Mud
+Dust + Mud = Clay
+Water + Clay = Pottery
+Fire + Pottery = Ceramic
+ ...
+Water + Fire = Steam
+Earth + Steam = Mud
+Earth + Mud = Clay
+Water + Clay = Pottery
+Fire + Pottery = Ceramic
+ ...
+Fire + Fire = Volcano
+Wind + Earth = Dust
+Water + Dust = Mud
+Dust + Mud = Clay
+Volcano + Clay = Ceramic
+ ...
+Water + Fire = Steam
+Fire + Fire = Volcano
+Earth + Steam = Mud
+Earth + Mud = Clay
+Volcano + Clay = Ceramic
+ ...
+Wind + Earth = Dust
+Fire + Dust = Ash
+Earth + Ash = Soil
+Ash + Soil = Pottery
+Fire + Pottery = Ceramic
+
+
+5 - Tunnel:
+Water + Fire = Steam
+Earth + Earth = Mountain
+Fire + Steam = Engine
+Steam + Engine = Train
+Mountain + Train = Tunnel
+ ...
+Water + Fire = Steam
+Earth + Earth = Mountain
+Mountain + Mountain = Mountain Range
+Steam + Mountain Range = Train
+Mountain + Train = Tunnel
+
+
+5 - Aquarium:
+Water + Wind = Wave
+Earth + Wave = Sand
+Fire + Sand = Glass
+Wind + Glass = Window
+Water + Window = Aquarium
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Sand = Glass
+Wind + Glass = Window
+Water + Window = Aquarium
+ ...
+Water + Water = Lake
+Lake + Lake = Ocean
+Water + Ocean = Fish
+Water + Fish = Fishbowl
+Ocean + Fishbowl = Aquarium
+
+
+5 - Saturn:
+Water + Fire = Steam
+Wind + Earth = Dust
+Fire + Steam = Engine
+Earth + Dust = Planet
+Engine + Planet = Saturn
+
+
+5 - Cannabis:
+Water + Earth = Plant
+Water + Plant = Swamp
+Wind + Plant = Dandelion
+Plant + Dandelion = Weed
+Swamp + Weed = Cannabis
+
+
+5 - Acid Rain:
+Wind + Earth = Dust
+Fire + Wind = Smoke
+Water + Smoke = Fog
+Fog + Dust = Smog
+Water + Smog = Acid Rain
+
+
+5 - Fire Plant:
+Water + Earth = Plant
+Water + Plant = Swamp
+Plant + Swamp = Venus Flytrap
+Venus Flytrap + Venus Flytrap = Giant Venus Flytrap
+Fire + Giant Venus Flytrap = Fire Plant
+
+
+5 - Teacup:
+Water + Earth = Plant
+Water + Fire = Steam
+Wind + Wind = Tornado
+Steam + Plant = Tea
+Tornado + Tea = Teacup
+
+
+5 - Mosquito:
+Water + Earth = Plant
+Water + Plant = Swamp
+Fire + Plant = Smoke
+Plant + Smoke = Incense
+Incense + Swamp = Mosquito
+
+
+5 - Mudslide:
+Water + Fire = Steam
+Earth + Steam = Mud
+Water + Wind = Wave
+Wind + Wave = Storm
+Storm + Mud = Mudslide
+ ...
+Water + Earth = Plant
+Water + Plant = Swamp
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Swamp + Avalanche = Mudslide
+ ...
+Water + Water = Lake
+Wind + Earth = Dust
+Wind + Lake = Storm
+Lake + Dust = Mud
+Storm + Mud = Mudslide
+ ...
+Water + Water = Lake
+Earth + Lake = Swamp
+Wind + Lake = Storm
+Earth + Swamp = Mud
+Storm + Mud = Mudslide
+ ...
+Water + Water = Lake
+Earth + Lake = Swamp
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Swamp + Avalanche = Mudslide
+ ...
+Wind + Earth = Dust
+Water + Dust = Mud
+Earth + Dust = Planet
+Wind + Planet = Storm
+Storm + Mud = Mudslide
+ ...
+Wind + Earth = Dust
+Water + Dust = Mud
+Water + Wind = Wave
+Wind + Wave = Storm
+Storm + Mud = Mudslide
+ ...
+Water + Fire = Steam
+Water + Steam = Cloud
+Wind + Cloud = Storm
+Earth + Steam = Mud
+Storm + Mud = Mudslide
+ ...
+Water + Water = Lake
+Water + Fire = Steam
+Wind + Lake = Storm
+Earth + Steam = Mud
+Storm + Mud = Mudslide
+ ...
+Water + Fire = Steam
+Earth + Steam = Mud
+Wind + Wind = Tornado
+Water + Tornado = Tsunami
+Tsunami + Mud = Mudslide
+ ...
+Wind + Earth = Dust
+Water + Dust = Mud
+Wind + Wind = Tornado
+Tornado + Tornado = Hurricane
+Mud + Hurricane = Mudslide
+ ...
+Wind + Earth = Dust
+Water + Dust = Mud
+Water + Wind = Wave
+Wave + Wave = Tsunami
+Tsunami + Mud = Mudslide
+ ...
+Water + Fire = Steam
+Earth + Steam = Mud
+Water + Wind = Wave
+Wave + Wave = Tsunami
+Tsunami + Mud = Mudslide
+ ...
+Wind + Earth = Dust
+Water + Dust = Mud
+Wind + Wind = Tornado
+Water + Tornado = Tsunami
+Tsunami + Mud = Mudslide
+ ...
+Water + Fire = Steam
+Earth + Steam = Mud
+Wind + Wind = Tornado
+Tornado + Tornado = Hurricane
+Mud + Hurricane = Mudslide
+ ...
+Water + Fire = Steam
+Earth + Steam = Mud
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Mud + Avalanche = Mudslide
+ ...
+Wind + Earth = Dust
+Water + Dust = Mud
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Mud + Avalanche = Mudslide
+
+
+5 - Sea Star:
+Wind + Earth = Dust
+Earth + Dust = Planet
+Water + Planet = Ocean
+Planet + Planet = Star
+Ocean + Star = Sea Star
+
+
+5 - Penguin:
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Water + Avalanche = Ice
+Water + Ice = Iceberg
+Ice + Iceberg = Penguin
+ ...
+Fire + Wind = Smoke
+Water + Smoke = Fog
+Water + Fog = Ice
+Water + Ice = Iceberg
+Ice + Iceberg = Penguin
+
+
+5 - Universe:
+Wind + Earth = Dust
+Earth + Dust = Planet
+Planet + Planet = Star
+Star + Star = Galaxy
+Star + Galaxy = Universe
+ ...
+Wind + Earth = Dust
+Earth + Dust = Planet
+Fire + Planet = Sun
+Planet + Sun = Solar System
+Dust + Solar System = Universe
+ ...
+Wind + Earth = Dust
+Earth + Dust = Planet
+Planet + Planet = Star
+Planet + Star = Solar System
+Dust + Solar System = Universe
+
+
+5 - System:
+Wind + Earth = Dust
+Earth + Dust = Planet
+Fire + Planet = Sun
+Fire + Sun = Solar
+Planet + Solar = System
+
+
+5 - Sarcophagus:
+Wind + Earth = Dust
+Wind + Dust = Sandstorm
+Water + Sandstorm = Oasis
+Oasis + Dust = Mummy
+Mummy + Dust = Sarcophagus
+
+
+5 - Fire Swamp:
+Water + Earth = Plant
+Water + Plant = Swamp
+Plant + Swamp = Venus Flytrap
+Fire + Venus Flytrap = Fire Trap
+Swamp + Fire Trap = Fire Swamp
+
+
+5 - Bouquet:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Earth + Dandelion = Flower
+Flower + Flower = Garden
+Flower + Garden = Bouquet
+
+
+5 - Bird:
+Wind + Earth = Dust
+Water + Dust = Mud
+Fire + Dust = Ash
+Fire + Ash = Phoenix
+Mud + Phoenix = Bird
+ ...
+Water + Water = Lake
+Lake + Lake = Ocean
+Water + Ocean = Fish
+Wind + Fish = Flying Fish
+Earth + Flying Fish = Bird
+
+
+5 - Beacon:
+Water + Water = Lake
+Fire + Earth = Lava
+Water + Lava = Stone
+Lake + Stone = Lighthouse
+Fire + Lighthouse = Beacon
+
+
+5 - Hay Fever:
+Water + Earth = Plant
+Wind + Earth = Dust
+Plant + Dust = Pollen
+Wind + Pollen = Allergy
+Plant + Allergy = Hay Fever
+
+
+5 - Coconut:
+Water + Earth = Plant
+Wind + Wind = Tornado
+Tornado + Tornado = Hurricane
+Plant + Hurricane = Palm Tree
+Plant + Palm Tree = Coconut
+
+
+5 - America:
+Water + Water = Lake
+Lake + Lake = Ocean
+Earth + Ocean = Island
+Island + Island = Continent
+Lake + Continent = America
+ ...
+Water + Water = Lake
+Fire + Fire = Volcano
+Volcano + Lake = Island
+Island + Island = Continent
+Lake + Continent = America
+
+
+5 - Bulldozer:
+Water + Fire = Steam
+Earth + Earth = Mountain
+Fire + Steam = Engine
+Earth + Engine = Tractor
+Mountain + Tractor = Bulldozer
+
+
+5 - Funnel Cake:
+Water + Earth = Plant
+Water + Plant = Swamp
+Plant + Swamp = Venus Flytrap
+Wind + Wind = Tornado
+Tornado + Venus Flytrap = Funnel Cake
+
+
+5 - Algae:
+Water + Earth = Plant
+Water + Wind = Wave
+Plant + Wave = Seaweed
+Water + Seaweed = Kelp
+Seaweed + Kelp = Algae
+
+
+5 - Vacation:
+Wind + Earth = Dust
+Dust + Dust = Sand
+Water + Sand = Beach
+Fire + Beach = Sun
+Beach + Sun = Vacation
+ ...
+Water + Wind = Wave
+Earth + Wave = Sand
+Wave + Sand = Beach
+Fire + Beach = Sun
+Beach + Sun = Vacation
+
+
+5 - Knife:
+Fire + Earth = Lava
+Water + Lava = Stone
+Lava + Stone = Obsidian
+Stone + Obsidian = Blade
+Obsidian + Blade = Knife
+
+
+5 - Yeti:
+Water + Earth = Plant
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Plant + Avalanche = Snowman
+Mountain + Snowman = Yeti
+ ...
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Wind + Avalanche = Snow
+Earth + Snow = Snowman
+Mountain + Snowman = Yeti
+
+
+5 - Jupiter:
+Wind + Earth = Dust
+Wind + Wind = Tornado
+Earth + Dust = Planet
+Tornado + Planet = Cyclone
+Planet + Cyclone = Jupiter
+
+
+5 - Oil:
+Water + Earth = Plant
+Fire + Earth = Lava
+Water + Lava = Stone
+Plant + Stone = Fossil
+Water + Fossil = Oil
+
+
+5 - Supervolcano:
+Fire + Fire = Volcano
+Earth + Earth = Mountain
+Mountain + Mountain = Mountain Range
+Volcano + Mountain Range = Yellowstone
+Volcano + Yellowstone = Supervolcano
+
+
+5 - Chimney:
+Wind + Earth = Dust
+Fire + Wind = Smoke
+Water + Dust = Mud
+Fire + Mud = Brick
+Smoke + Brick = Chimney
+ ...
+Water + Fire = Steam
+Fire + Wind = Smoke
+Earth + Steam = Mud
+Fire + Mud = Brick
+Smoke + Brick = Chimney
+
+
+5 - Piranha:
+Water + Water = Lake
+Lake + Lake = Ocean
+Water + Ocean = Fish
+Fish + Fish = Shark
+Lake + Shark = Piranha
+
+
+5 - Time Machine:
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Engine + Rocket = Space Ship
+Steam + Space Ship = Time Machine
+
+
+5 - Fire Flower:
+Water + Earth = Plant
+Fire + Fire = Volcano
+Wind + Plant = Dandelion
+Volcano + Dandelion = Fireworks
+Plant + Fireworks = Fire Flower
+ ...
+Water + Earth = Plant
+Water + Plant = Swamp
+Plant + Swamp = Venus Flytrap
+Fire + Venus Flytrap = Fire Trap
+Plant + Fire Trap = Fire Flower
+
+
+5 - Coal:
+Fire + Earth = Lava
+Water + Lava = Stone
+Lava + Stone = Obsidian
+Earth + Obsidian = Diamond
+Fire + Diamond = Coal
+
+
+5 - Book:
+Water + Earth = Plant
+Plant + Plant = Tree
+Water + Tree = River
+Tree + River = Paper
+Plant + Paper = Book
+
+
+5 - Stoner:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Plant + Dandelion = Weed
+Water + Weed = Bong
+Weed + Bong = Stoner
+
+
+5 - Soup:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Plant + Dandelion = Weed
+Plant + Weed = Pot
+Water + Pot = Soup
+ ...
+Water + Earth = Plant
+Water + Water = Lake
+Plant + Lake = Lily
+Water + Lily = Pond
+Fire + Pond = Soup
+ ...
+Water + Earth = Plant
+Fire + Plant = Smoke
+Water + Smoke = Fog
+Plant + Fog = Mushroom
+Water + Mushroom = Soup
+ ...
+Wind + Earth = Dust
+Fire + Dust = Ash
+Water + Ash = Puddle
+Puddle + Puddle = Pond
+Fire + Pond = Soup
+
+
+5 - Jewel:
+Fire + Earth = Lava
+Water + Lava = Stone
+Lava + Stone = Obsidian
+Earth + Obsidian = Diamond
+Stone + Diamond = Jewel
+
+
+5 - Fire Station:
+Water + Fire = Steam
+Fire + Steam = Engine
+Steam + Engine = Train
+Train + Train = Train Station
+Fire + Train Station = Fire Station
+
+
+5 - Winery:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Earth + Wine = Vineyard
+Vineyard + Vineyard = Winery
+
+
+5 - Drunk:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Plant + Wine = Vine
+Wine + Vine = Drunk
+ ...
+Water + Wind = Wave
+Earth + Wave = Sand
+Fire + Sand = Glass
+Water + Glass = Wine
+Glass + Wine = Drunk
+ ...
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Wine + Wine = Bottle
+Wine + Bottle = Drunk
+ ...
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Fire + Wine = Alcohol
+Wine + Alcohol = Drunk
+ ...
+Water + Earth = Plant
+Plant + Plant = Tree
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Tree + Wine = Drunk
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Sand = Glass
+Water + Glass = Wine
+Glass + Wine = Drunk
+ ...
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Earth + Wine = Vineyard
+Wine + Vineyard = Drunk
+
+
+5 - Tea Bag:
+Water + Earth = Plant
+Water + Fire = Steam
+Wind + Earth = Dust
+Steam + Plant = Tea
+Dust + Tea = Tea Bag
+
+
+5 - Mirror:
+Water + Water = Lake
+Water + Wind = Wave
+Earth + Wave = Sand
+Fire + Sand = Glass
+Lake + Glass = Mirror
+ ...
+Water + Fire = Steam
+Water + Wind = Wave
+Earth + Wave = Sand
+Steam + Sand = Glass
+Steam + Glass = Mirror
+ ...
+Water + Water = Lake
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Sand = Glass
+Lake + Glass = Mirror
+ ...
+Water + Water = Lake
+Fire + Earth = Lava
+Water + Lava = Stone
+Lava + Stone = Obsidian
+Lake + Obsidian = Mirror
+ ...
+Water + Fire = Steam
+Earth + Steam = Mud
+Fire + Mud = Brick
+Water + Brick = Glass
+Steam + Glass = Mirror
+ ...
+Fire + Earth = Lava
+Water + Lava = Stone
+Lava + Stone = Obsidian
+Water + Obsidian = Glass
+Obsidian + Glass = Mirror
+ ...
+Water + Fire = Steam
+Wind + Earth = Dust
+Dust + Dust = Sand
+Steam + Sand = Glass
+Steam + Glass = Mirror
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Wind = Smoke
+Fire + Sand = Glass
+Smoke + Glass = Mirror
+ ...
+Wind + Earth = Dust
+Fire + Wind = Smoke
+Fire + Dust = Ash
+Water + Ash = Puddle
+Smoke + Puddle = Mirror
+ ...
+Fire + Wind = Smoke
+Water + Wind = Wave
+Earth + Wave = Sand
+Fire + Sand = Glass
+Smoke + Glass = Mirror
+
+
+5 - Tomb:
+Water + Wind = Wave
+Earth + Wave = Sand
+Sand + Sand = Desert
+Desert + Sand = Pyramid
+Water + Pyramid = Tomb
+ ...
+Earth + Earth = Mountain
+Water + Wind = Wave
+Earth + Wave = Sand
+Mountain + Sand = Pyramid
+Water + Pyramid = Tomb
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Sand + Sand = Desert
+Desert + Sand = Pyramid
+Water + Pyramid = Tomb
+ ...
+Fire + Earth = Lava
+Water + Lava = Stone
+Wind + Stone = Sand
+Stone + Sand = Pyramid
+Water + Pyramid = Tomb
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Earth + Earth = Mountain
+Mountain + Sand = Pyramid
+Water + Pyramid = Tomb
+ ...
+Wind + Earth = Dust
+Wind + Dust = Sandstorm
+Water + Sandstorm = Oasis
+Oasis + Dust = Mummy
+Earth + Mummy = Tomb
+
+
+5 - Ice Cream:
+Fire + Fire = Volcano
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Water + Avalanche = Ice
+Volcano + Ice = Ice Cream
+ ...
+Fire + Fire = Volcano
+Fire + Wind = Smoke
+Water + Smoke = Fog
+Water + Fog = Ice
+Volcano + Ice = Ice Cream
+
+
+5 - Paper Boat:
+Water + Earth = Plant
+Plant + Plant = Tree
+Water + Tree = River
+Tree + River = Paper
+River + Paper = Paper Boat
+
+
+5 - Sandstone:
+Fire + Earth = Lava
+Water + Lava = Stone
+Wind + Stone = Sand
+Stone + Stone = Boulder
+Boulder + Sand = Sandstone
+
+
+5 - Airship:
+Water + Fire = Steam
+Wind + Earth = Dust
+Earth + Dust = Planet
+Steam + Planet = Steampunk
+Wind + Steampunk = Airship
+ ...
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Wind + Wine = Balloon
+Balloon + Balloon = Airship
+
+
+5 - Rice:
+Water + Fire = Steam
+Fire + Steam = Engine
+Earth + Engine = Tractor
+Earth + Tractor = Farm
+Water + Farm = Rice
+ ...
+Water + Earth = Plant
+Water + Wind = Wave
+Plant + Wave = Seaweed
+Fire + Seaweed = Sushi
+Earth + Sushi = Rice
+ ...
+Water + Water = Lake
+Lake + Lake = Ocean
+Water + Ocean = Fish
+Fire + Fish = Sushi
+Earth + Sushi = Rice
+
+
+5 - Candle:
+Water + Earth = Plant
+Fire + Plant = Smoke
+Plant + Smoke = Incense
+Smoke + Incense = Prayer
+Fire + Prayer = Candle
+
+
+5 - Sandwich:
+Water + Wind = Wave
+Earth + Wave = Sand
+Fire + Sand = Glass
+Water + Glass = Wine
+Wine + Sand = Sandwich
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Sand = Glass
+Water + Glass = Wine
+Wine + Sand = Sandwich
+
+
+5 - Crocodile:
+Water + Earth = Plant
+Plant + Plant = Tree
+Water + Plant = Swamp
+Tree + Swamp = Mangrove
+Swamp + Mangrove = Crocodile
+ ...
+Water + Water = Lake
+Earth + Lake = Swamp
+Fire + Swamp = Dragon
+Dragon + Swamp = Lizard
+Water + Lizard = Crocodile
+ ...
+Water + Earth = Plant
+Water + Plant = Swamp
+Fire + Swamp = Dragon
+Dragon + Swamp = Lizard
+Water + Lizard = Crocodile
+
+
+5 - Smell:
+Water + Earth = Plant
+Fire + Plant = Smoke
+Plant + Smoke = Incense
+Incense + Incense = Perfume
+Incense + Perfume = Smell
+
+
+5 - Dustbin:
+Water + Fire = Steam
+Wind + Earth = Dust
+Fire + Steam = Engine
+Steam + Engine = Train
+Dust + Train = Dustbin
+ ...
+Wind + Earth = Dust
+Water + Dust = Mud
+Fire + Mud = Brick
+Wind + Brick = House
+Dust + House = Dustbin
+
+
+5 - Coral Reef:
+Water + Earth = Plant
+Water + Water = Lake
+Lake + Lake = Ocean
+Plant + Ocean = Coral
+Wind + Coral = Coral Reef
+ ...
+Water + Earth = Plant
+Water + Wind = Wave
+Plant + Wave = Seaweed
+Seaweed + Seaweed = Coral
+Wind + Coral = Coral Reef
+
+
+5 - Tesla:
+Water + Fire = Steam
+Water + Steam = Cloud
+Fire + Cloud = Lightning
+Fire + Steam = Engine
+Lightning + Engine = Tesla
+
+
+5 - Steamroller:
+Water + Fire = Steam
+Fire + Earth = Lava
+Fire + Steam = Engine
+Water + Lava = Stone
+Engine + Stone = Steamroller
+ ...
+Water + Fire = Steam
+Fire + Steam = Engine
+Earth + Engine = Tractor
+Engine + Tractor = Tank
+Steam + Tank = Steamroller
+ ...
+Water + Fire = Steam
+Water + Wind = Wave
+Steam + Wave = Surf
+Wave + Surf = Surfer
+Steam + Surfer = Steamroller
+
+
+5 - Crayon:
+Water + Earth = Plant
+Plant + Plant = Tree
+Fire + Tree = Ash
+Tree + Ash = Pencil
+Pencil + Ash = Crayon
+
+
+5 - Kettle:
+Water + Earth = Plant
+Water + Fire = Steam
+Steam + Plant = Tea
+Earth + Tea = Teapot
+Wind + Teapot = Kettle
+
+
+5 - Snowmobile:
+Water + Fire = Steam
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Fire + Steam = Engine
+Engine + Avalanche = Snowmobile
+
+
+5 - Tatooine:
+Wind + Earth = Dust
+Dust + Dust = Sand
+Wind + Sand = Dune
+Earth + Dust = Planet
+Planet + Dune = Tatooine
+ ...
+Wind + Earth = Dust
+Wind + Dust = Sandstorm
+Earth + Dust = Planet
+Earth + Sandstorm = Dune
+Planet + Dune = Tatooine
+
+
+5 - Nymph:
+Water + Earth = Plant
+Water + Water = Lake
+Plant + Lake = Lily
+Lake + Lily = Lotus
+Lily + Lotus = Nymph
+
+
+5 - Honeycomb:
+Water + Earth = Plant
+Wind + Earth = Dust
+Plant + Dust = Pollen
+Water + Pollen = Honey
+Honey + Honey = Honeycomb
+
+
+5 - Dandelion Wine:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Dandelion + Dandelion = Dandelion Patch
+Water + Dandelion = Wine
+Wine + Dandelion Patch = Dandelion Wine
+
+
+5 - Salamander:
+Water + Water = Lake
+Lake + Lake = Ocean
+Fire + Earth = Lava
+Water + Ocean = Fish
+Lava + Fish = Salamander
+
+
+5 - Space:
+Water + Water = Lake
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Lake + Rocket = Space
+ ...
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Wind + Rocket = Kite
+Kite + Rocket = Space
+
+
+5 - Lunar Eclipse:
+Wind + Earth = Dust
+Wind + Wind = Tornado
+Earth + Dust = Planet
+Earth + Planet = Moon
+Tornado + Moon = Lunar Eclipse
+
+
+5 - Snowball:
+Wind + Earth = Dust
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Earth + Dust = Planet
+Planet + Avalanche = Snowball
+ ...
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Wind + Avalanche = Snow
+Earth + Snow = Snowman
+Snow + Snowman = Snowball
+
+
+5 - Bubbles:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Plant + Dandelion = Weed
+Water + Weed = Bong
+Water + Bong = Bubbles
+
+
+5 - Scent:
+Water + Earth = Plant
+Fire + Plant = Smoke
+Plant + Smoke = Incense
+Incense + Incense = Perfume
+Water + Perfume = Scent
+
+
+5 - Meteor:
+Wind + Earth = Dust
+Fire + Earth = Lava
+Water + Lava = Stone
+Earth + Dust = Planet
+Planet + Stone = Meteor
+ ...
+Fire + Earth = Lava
+Water + Wind = Wave
+Lava + Wave = Stone
+Wind + Wave = Storm
+Storm + Stone = Meteor
+ ...
+Water + Water = Lake
+Wind + Lake = Storm
+Fire + Earth = Lava
+Water + Lava = Stone
+Storm + Stone = Meteor
+ ...
+Wind + Earth = Dust
+Fire + Dust = Ash
+Ash + Ash = Stone
+Earth + Dust = Planet
+Planet + Stone = Meteor
+ ...
+Fire + Fire = Volcano
+Fire + Earth = Lava
+Water + Lava = Stone
+Stone + Stone = Boulder
+Volcano + Boulder = Meteor
+ ...
+Fire + Earth = Lava
+Wind + Wind = Tornado
+Water + Lava = Stone
+Water + Stone = Rock
+Tornado + Rock = Meteor
+ ...
+Wind + Earth = Dust
+Earth + Dust = Planet
+Planet + Planet = Star
+Star + Dust = Comet
+Star + Comet = Meteor
+
+
+5 - Unicorn:
+Water + Water = Lake
+Wind + Lake = Storm
+Water + Storm = Rain
+Water + Rain = Rainbow
+Lake + Rainbow = Unicorn
+
+
+5 - Time:
+Water + Wind = Wave
+Earth + Wave = Sand
+Fire + Sand = Glass
+Glass + Sand = Hourglass
+Sand + Hourglass = Time
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Sand = Glass
+Glass + Sand = Hourglass
+Sand + Hourglass = Time
+
+
+5 - Beer:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Fire + Wine = Alcohol
+Alcohol + Alcohol = Beer
+
+
+5 - Fisherman:
+Water + Water = Lake
+Lake + Lake = Ocean
+Water + Ocean = Fish
+Lake + Fish = Fishing
+Fish + Fishing = Fisherman
+
+
+5 - Swamp Fire:
+Water + Earth = Plant
+Water + Plant = Swamp
+Plant + Swamp = Venus Flytrap
+Venus Flytrap + Swamp = Swamp Thing
+Fire + Swamp Thing = Swamp Fire
+
+
+5 - Duck:
+Water + Earth = Plant
+Water + Water = Lake
+Wind + Plant = Dandelion
+Dandelion + Dandelion = Dandelion Patch
+Lake + Dandelion Patch = Duck
+
+
+5 - Vampire:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Water + Wine = Holy Water
+Fire + Holy Water = Vampire
+
+
+5 - Wolf:
+Wind + Earth = Dust
+Earth + Dust = Planet
+Earth + Planet = Moon
+Wind + Moon = Werewolf
+Earth + Werewolf = Wolf
+
+
+5 - Carnivore:
+Water + Earth = Plant
+Plant + Plant = Tree
+Water + Plant = Swamp
+Plant + Swamp = Venus Flytrap
+Tree + Venus Flytrap = Carnivore
+
+
+5 - Narwhal:
+Water + Water = Lake
+Earth + Earth = Mountain
+Lake + Mountain = Fjord
+Water + Fjord = Whale
+Whale + Fjord = Narwhal
+
+
+5 - Mangrove Forest:
+Water + Earth = Plant
+Plant + Plant = Tree
+Water + Plant = Swamp
+Tree + Swamp = Mangrove
+Mangrove + Mangrove = Mangrove Forest
+
+
+5 - Grape:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Wind + Dandelion = Seed
+Water + Dandelion = Wine
+Wine + Seed = Grape
+ ...
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Plant + Wine = Vine
+Earth + Vine = Grape
+
+
+5 - Snowstorm:
+Wind + Earth = Dust
+Earth + Earth = Mountain
+Wind + Dust = Sandstorm
+Wind + Mountain = Avalanche
+Sandstorm + Avalanche = Snowstorm
+ ...
+Wind + Wind = Tornado
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Tornado + Avalanche = Blizzard
+Blizzard + Blizzard = Snowstorm
+ ...
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Wind + Avalanche = Snow
+Wind + Snow = Blizzard
+Blizzard + Blizzard = Snowstorm
+
+
+5 - Pop:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Wind + Wine = Balloon
+Fire + Balloon = Pop
+
+
+5 - Viking:
+Water + Water = Lake
+Earth + Earth = Mountain
+Lake + Mountain = Fjord
+Mountain + Fjord = Norway
+Fjord + Norway = Viking
+
+
+5 - Pig:
+Water + Fire = Steam
+Earth + Steam = Mud
+Fire + Steam = Engine
+Steam + Engine = Train
+Mud + Train = Pig
+ ...
+Wind + Earth = Dust
+Water + Dust = Mud
+Fire + Dust = Ash
+Water + Ash = Puddle
+Mud + Puddle = Pig
+ ...
+Water + Fire = Steam
+Earth + Steam = Mud
+Fire + Steam = Engine
+Wind + Engine = Windmill
+Mud + Windmill = Pig
+
+
+5 - Pangaea:
+Water + Wind = Wave
+Wave + Wave = Tsunami
+Earth + Tsunami = Island
+Island + Island = Continent
+Continent + Continent = Pangaea
+ ...
+Water + Water = Lake
+Lake + Lake = Ocean
+Earth + Ocean = Island
+Island + Island = Continent
+Continent + Continent = Pangaea
+ ...
+Water + Water = Lake
+Fire + Fire = Volcano
+Volcano + Lake = Island
+Island + Island = Continent
+Continent + Continent = Pangaea
+ ...
+Wind + Wind = Tornado
+Water + Tornado = Tsunami
+Earth + Tsunami = Island
+Island + Island = Continent
+Continent + Continent = Pangaea
+
+
+5 - Popcorn:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Dandelion + Dandelion = Dandelion Patch
+Wind + Dandelion Patch = Seeds
+Fire + Seeds = Popcorn
+
+
+5 - Plow:
+Water + Water = Lake
+Water + Fire = Steam
+Fire + Steam = Engine
+Earth + Engine = Tractor
+Lake + Tractor = Plow
+
+
+5 - Clean:
+Water + Earth = Plant
+Wind + Earth = Dust
+Wind + Plant = Dandelion
+Plant + Dandelion = Weed
+Dust + Weed = Clean
+ ...
+Water + Fire = Steam
+Wind + Earth = Dust
+Fire + Steam = Engine
+Engine + Dust = Vacuum
+Dust + Vacuum = Clean
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Sand = Glass
+Wind + Glass = Window
+Dust + Window = Clean
+
+
+5 - Roll:
+Water + Earth = Plant
+Water + Wind = Wave
+Plant + Wave = Seaweed
+Fire + Seaweed = Sushi
+Sushi + Seaweed = Roll
+
+
+5 - Golem:
+Wind + Earth = Dust
+Water + Dust = Mud
+Earth + Earth = Mountain
+Dust + Mud = Clay
+Mountain + Clay = Golem
+ ...
+Water + Fire = Steam
+Earth + Steam = Mud
+Earth + Earth = Mountain
+Earth + Mud = Clay
+Mountain + Clay = Golem
+ ...
+Wind + Earth = Dust
+Fire + Dust = Ash
+Ash + Ash = Stone
+Stone + Ash = Statue
+Statue + Ash = Golem
+ ...
+Water + Water = Lake
+Earth + Lake = Swamp
+Earth + Swamp = Mud
+Earth + Mud = Clay
+Swamp + Clay = Golem
+ ...
+Wind + Earth = Dust
+Water + Dust = Mud
+Wind + Dust = Sandstorm
+Dust + Mud = Clay
+Sandstorm + Clay = Golem
+ ...
+Water + Fire = Steam
+Earth + Steam = Mud
+Earth + Mud = Clay
+Steam + Mud = Swamp
+Swamp + Clay = Golem
+ ...
+Water + Earth = Plant
+Water + Plant = Swamp
+Earth + Swamp = Mud
+Earth + Mud = Clay
+Swamp + Clay = Golem
+ ...
+Wind + Earth = Dust
+Water + Dust = Mud
+Dust + Mud = Clay
+Water + Mud = Swamp
+Swamp + Clay = Golem
+ ...
+Fire + Wind = Smoke
+Fire + Earth = Lava
+Water + Lava = Stone
+Smoke + Stone = Statue
+Earth + Statue = Golem
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Water + Dust = Mud
+Dust + Mud = Clay
+Clay + Sand = Golem
+
+
+5 - Rover:
+Wind + Earth = Dust
+Wind + Dust = Sandstorm
+Earth + Dust = Planet
+Planet + Sandstorm = Mars
+Dust + Mars = Rover
+
+
+5 - Onyx:
+Fire + Earth = Lava
+Water + Lava = Stone
+Lava + Stone = Obsidian
+Earth + Obsidian = Diamond
+Obsidian + Diamond = Onyx
+
+
+5 - Rainforest:
+Water + Earth = Plant
+Plant + Plant = Tree
+Plant + Tree = Forest
+Forest + Forest = Jungle
+Forest + Jungle = Rainforest
+
+
+5 - Fireplace:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Plant + Dandelion = Weed
+Weed + Weed = Bush
+Fire + Bush = Fireplace
+ ...
+Water + Fire = Steam
+Earth + Steam = Mud
+Fire + Mud = Brick
+Wind + Brick = House
+Fire + House = Fireplace
+ ...
+Wind + Earth = Dust
+Water + Dust = Mud
+Fire + Mud = Brick
+Wind + Brick = House
+Fire + House = Fireplace
+ ...
+Water + Wind = Wave
+Earth + Wave = Sand
+Fire + Sand = Glass
+Wind + Glass = Window
+Fire + Window = Fireplace
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Sand = Glass
+Wind + Glass = Window
+Fire + Window = Fireplace
+
+
+5 - Ozymandias:
+Fire + Wind = Smoke
+Fire + Earth = Lava
+Water + Lava = Stone
+Smoke + Stone = Statue
+Smoke + Statue = Ozymandias
+
+
+5 - Flour:
+Water + Fire = Steam
+Wind + Earth = Dust
+Fire + Steam = Engine
+Wind + Engine = Windmill
+Dust + Windmill = Flour
+
+
+5 - Sailboat:
+Water + Water = Lake
+Lake + Lake = Ocean
+Ocean + Ocean = Sea
+Wind + Sea = Sail
+Wind + Sail = Sailboat
+ ...
+Water + Fire = Steam
+Wind + Wind = Tornado
+Tornado + Tornado = Hurricane
+Steam + Hurricane = Steamboat
+Wind + Steamboat = Sailboat
+ ...
+Water + Fire = Steam
+Fire + Steam = Engine
+Steam + Engine = Train
+Water + Train = Submarine
+Wind + Submarine = Sailboat
+
+
+5 - Water Lily:
+Water + Earth = Plant
+Water + Water = Lake
+Plant + Lake = Lily
+Lake + Lily = Lotus
+Lake + Lotus = Water Lily
+
+
+5 - Alien:
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Engine + Rocket = Space Ship
+Earth + Space Ship = Alien
+
+
+5 - Observatory:
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Sand = Glass
+Glass + Dust = Telescope
+Telescope + Telescope = Observatory
+
+
+5 - Crystal:
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Sand = Glass
+Earth + Earth = Mountain
+Mountain + Glass = Crystal
+ ...
+Earth + Earth = Mountain
+Water + Wind = Wave
+Earth + Wave = Sand
+Fire + Sand = Glass
+Mountain + Glass = Crystal
+
+
+5 - Pompeii:
+Water + Earth = Plant
+Fire + Fire = Volcano
+Wind + Plant = Dandelion
+Wind + Dandelion = Seed
+Volcano + Seed = Pompeii
+
+
+5 - Flying:
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Wind + Rocket = Kite
+Wind + Kite = Flying
+ ...
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Plant + Dandelion = Weed
+Wind + Weed = Kite
+Wind + Kite = Flying
+ ...
+Water + Earth = Plant
+Water + Wind = Wave
+Plant + Wave = Seaweed
+Wind + Seaweed = Kite
+Wind + Kite = Flying
+ ...
+Water + Earth = Plant
+Water + Fire = Steam
+Steam + Plant = Tea
+Wind + Tea = Kite
+Wind + Kite = Flying
+
+
+5 - Wreck:
+Water + Fire = Steam
+Wind + Wind = Tornado
+Fire + Steam = Engine
+Steam + Engine = Train
+Tornado + Train = Wreck
+
+
+5 - Salt:
+Water + Water = Lake
+Wind + Earth = Dust
+Lake + Lake = Ocean
+Fire + Dust = Ash
+Ocean + Ash = Salt
+ ...
+Wind + Earth = Dust
+Fire + Dust = Ash
+Earth + Dust = Planet
+Water + Planet = Ocean
+Ocean + Ash = Salt
+
+
+5 - Fence:
+Water + Fire = Steam
+Earth + Steam = Mud
+Fire + Mud = Brick
+Brick + Brick = Wall
+Earth + Wall = Fence
+ ...
+Wind + Earth = Dust
+Water + Dust = Mud
+Fire + Mud = Brick
+Brick + Brick = Wall
+Earth + Wall = Fence
+
+
+5 - Bullet Train:
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Steam + Engine = Train
+Rocket + Train = Bullet Train
+
+
+5 - Hot Spring:
+Water + Fire = Steam
+Fire + Earth = Lava
+Water + Lava = Stone
+Steam + Stone = Geysir
+Steam + Geysir = Hot Spring
+
+
+5 - Campfire:
+Water + Earth = Plant
+Plant + Plant = Tree
+Wind + Earth = Dust
+Tree + Dust = Wood
+Fire + Wood = Campfire
+ ...
+Water + Earth = Plant
+Plant + Plant = Tree
+Plant + Tree = Forest
+Tree + Forest = Wood
+Fire + Wood = Campfire
+ ...
+Water + Earth = Plant
+Plant + Plant = Tree
+Wind + Wind = Tornado
+Tree + Tornado = Wood
+Fire + Wood = Campfire
+
+
+5 - Troll:
+Water + Water = Lake
+Wind + Earth = Dust
+Earth + Earth = Mountain
+Lake + Mountain = Fjord
+Dust + Fjord = Troll
+
+
+5 - Temple:
+Water + Earth = Plant
+Fire + Plant = Smoke
+Plant + Smoke = Incense
+Smoke + Incense = Prayer
+Prayer + Prayer = Temple
+
+
+5 - Sword:
+Fire + Earth = Lava
+Water + Lava = Stone
+Lava + Stone = Obsidian
+Stone + Obsidian = Blade
+Lava + Blade = Sword
+
+
+5 - Swamp Venus:
+Water + Earth = Plant
+Water + Plant = Swamp
+Plant + Swamp = Venus Flytrap
+Venus Flytrap + Swamp = Swamp Thing
+Venus Flytrap + Swamp Thing = Swamp Venus
+
+
+5 - Bomb:
+Water + Wind = Wave
+Earth + Wave = Sand
+Fire + Sand = Glass
+Earth + Glass = Bottle
+Fire + Bottle = Bomb
+ ...
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Wine + Wine = Bottle
+Fire + Bottle = Bomb
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Sand = Glass
+Earth + Glass = Bottle
+Fire + Bottle = Bomb
+
+
+5 - Cheese:
+Wind + Earth = Dust
+Water + Dust = Mud
+Earth + Dust = Planet
+Earth + Planet = Moon
+Moon + Mud = Cheese
+
+
+5 - Goldfish:
+Water + Water = Lake
+Lake + Lake = Ocean
+Water + Ocean = Fish
+Water + Fish = Fishbowl
+Fire + Fishbowl = Goldfish
+
+
+5 - Pirate:
+Water + Water = Lake
+Lake + Lake = Ocean
+Ocean + Ocean = Sea
+Wind + Sea = Sail
+Fire + Sail = Pirate
+ ...
+Water + Wind = Wave
+Wave + Wave = Tsunami
+Earth + Tsunami = Island
+Water + Island = Ship
+Ship + Wave = Pirate
+ ...
+Water + Water = Lake
+Lake + Lake = Ocean
+Earth + Ocean = Island
+Water + Island = Ship
+Lake + Ship = Pirate
+ ...
+Water + Water = Lake
+Fire + Fire = Volcano
+Volcano + Lake = Island
+Water + Island = Ship
+Lake + Ship = Pirate
+ ...
+Wind + Wind = Tornado
+Water + Tornado = Tsunami
+Earth + Tsunami = Island
+Water + Island = Ship
+Tornado + Ship = Pirate
+
+
+5 - Toad:
+Water + Earth = Plant
+Water + Plant = Swamp
+Wind + Plant = Dandelion
+Dandelion + Swamp = Frog
+Earth + Frog = Toad
+
+
+5 - Fire Tornado:
+Water + Water = Lake
+Earth + Lake = Swamp
+Wind + Wind = Tornado
+Tornado + Swamp = Cyclone
+Fire + Cyclone = Fire Tornado
+ ...
+Wind + Earth = Dust
+Wind + Wind = Tornado
+Earth + Dust = Planet
+Tornado + Planet = Cyclone
+Fire + Cyclone = Fire Tornado
+ ...
+Wind + Earth = Dust
+Wind + Wind = Tornado
+Tornado + Dust = Dust Storm
+Tornado + Dust Storm = Dust Devil
+Fire + Dust Devil = Fire Tornado
+ ...
+Water + Earth = Plant
+Water + Plant = Swamp
+Wind + Wind = Tornado
+Tornado + Swamp = Cyclone
+Fire + Cyclone = Fire Tornado
+
+
+5 - Archipelago:
+Water + Wind = Wave
+Wave + Wave = Tsunami
+Earth + Tsunami = Island
+Island + Island = Continent
+Island + Continent = Archipelago
+ ...
+Water + Water = Lake
+Lake + Lake = Ocean
+Earth + Ocean = Island
+Island + Island = Continent
+Island + Continent = Archipelago
+ ...
+Water + Water = Lake
+Fire + Fire = Volcano
+Volcano + Lake = Island
+Island + Island = Continent
+Island + Continent = Archipelago
+ ...
+Wind + Wind = Tornado
+Water + Tornado = Tsunami
+Earth + Tsunami = Island
+Island + Island = Continent
+Island + Continent = Archipelago
+
+
+5 - Apple:
+Water + Earth = Plant
+Plant + Plant = Tree
+Wind + Plant = Dandelion
+Wind + Dandelion = Seed
+Tree + Seed = Apple
+
+
+5 - Sauna:
+Water + Fire = Steam
+Wind + Earth = Dust
+Dust + Dust = Sand
+Water + Sand = Beach
+Steam + Beach = Sauna
+ ...
+Water + Fire = Steam
+Earth + Steam = Mud
+Fire + Mud = Brick
+Wind + Brick = House
+Steam + House = Sauna
+ ...
+Water + Fire = Steam
+Water + Wind = Wave
+Earth + Wave = Sand
+Wave + Sand = Beach
+Steam + Beach = Sauna
+ ...
+Water + Fire = Steam
+Wind + Earth = Dust
+Wind + Dust = Sandstorm
+Water + Sandstorm = Oasis
+Steam + Oasis = Sauna
+ ...
+Water + Fire = Steam
+Earth + Steam = Mud
+Water + Wind = Wave
+Mud + Wave = Beach
+Steam + Beach = Sauna
+ ...
+Water + Fire = Steam
+Water + Wind = Wave
+Steam + Wave = Surf
+Earth + Surf = Beach
+Steam + Beach = Sauna
+
+
+5 - Airplane:
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Wind + Rocket = Kite
+Kite + Engine = Airplane
+ ...
+Water + Fire = Steam
+Fire + Steam = Engine
+Steam + Engine = Train
+Fire + Train = Steam Engine
+Wind + Steam Engine = Airplane
+ ...
+Water + Fire = Steam
+Earth + Steam = Mud
+Fire + Mud = Brick
+Steam + Brick = Steam Engine
+Wind + Steam Engine = Airplane
+ ...
+Water + Water = Lake
+Lake + Lake = Ocean
+Water + Ocean = Fish
+Wind + Fish = Flying Fish
+Wind + Flying Fish = Airplane
+ ...
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Steam + Rocket = Steam Engine
+Wind + Steam Engine = Airplane
+
+
+5 - Mermaid:
+Water + Water = Lake
+Lake + Lake = Ocean
+Earth + Ocean = Island
+Water + Ocean = Fish
+Fish + Island = Mermaid
+ ...
+Water + Water = Lake
+Lake + Lake = Ocean
+Water + Ocean = Fish
+Ocean + Ocean = Sea
+Fish + Sea = Mermaid
+ ...
+Water + Earth = Plant
+Water + Water = Lake
+Plant + Lake = Lily
+Lake + Lake = Ocean
+Ocean + Lily = Mermaid
+ ...
+Water + Earth = Plant
+Water + Water = Lake
+Plant + Lake = Lily
+Water + Wind = Wave
+Wave + Lily = Mermaid
+
+
+5 - Wasabi:
+Water + Earth = Plant
+Water + Wind = Wave
+Plant + Wave = Seaweed
+Fire + Seaweed = Sushi
+Fire + Sushi = Wasabi
+ ...
+Water + Water = Lake
+Lake + Lake = Ocean
+Water + Ocean = Fish
+Fire + Fish = Sushi
+Fire + Sushi = Wasabi
+
+
+5 - Smoke Detector:
+Water + Earth = Plant
+Water + Plant = Swamp
+Fire + Plant = Smoke
+Plant + Swamp = Venus Flytrap
+Smoke + Venus Flytrap = Smoke Detector
+
+
+5 - Tea Party:
+Water + Earth = Plant
+Water + Fire = Steam
+Steam + Plant = Tea
+Earth + Tea = Teapot
+Tea + Teapot = Tea Party
+
+
+5 - Castle:
+Water + Fire = Steam
+Water + Steam = Cloud
+Earth + Steam = Mud
+Fire + Mud = Brick
+Cloud + Brick = Castle
+
+
+5 - Space Plant:
+Water + Earth = Plant
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Plant + Rocket = Space Plant
+
+
+5 - Dinosaur:
+Water + Earth = Plant
+Fire + Earth = Lava
+Water + Lava = Stone
+Plant + Stone = Fossil
+Fire + Fossil = Dinosaur
+ ...
+Water + Water = Lake
+Earth + Lake = Swamp
+Fire + Swamp = Dragon
+Dragon + Swamp = Lizard
+Earth + Lizard = Dinosaur
+ ...
+Water + Earth = Plant
+Water + Plant = Swamp
+Fire + Swamp = Dragon
+Dragon + Swamp = Lizard
+Earth + Lizard = Dinosaur
+
+
+5 - Geysers:
+Fire + Fire = Volcano
+Earth + Earth = Mountain
+Mountain + Mountain = Mountain Range
+Volcano + Mountain Range = Yellowstone
+Water + Yellowstone = Geysers
+
+
+5 - Town:
+Water + Fire = Steam
+Earth + Steam = Mud
+Fire + Mud = Brick
+Wind + Brick = House
+House + House = Town
+ ...
+Wind + Earth = Dust
+Water + Dust = Mud
+Fire + Mud = Brick
+Wind + Brick = House
+House + House = Town
+
+
+5 - Vaporizer:
+Water + Earth = Plant
+Water + Fire = Steam
+Wind + Plant = Dandelion
+Plant + Dandelion = Weed
+Steam + Weed = Vaporizer
+
+
+5 - Nile:
+Water + Earth = Plant
+Plant + Plant = Tree
+Water + Tree = River
+Earth + River = Delta
+River + Delta = Nile
+
+
+5 - Wind Turbine:
+Water + Fire = Steam
+Fire + Steam = Engine
+Wind + Engine = Windmill
+Windmill + Windmill = Wind Farm
+Wind Farm + Wind Farm = Wind Turbine
+
+
+5 - Sea Monster:
+Water + Water = Lake
+Earth + Lake = Swamp
+Fire + Swamp = Dragon
+Lake + Dragon = Loch Ness Monster
+Dragon + Loch Ness Monster = Sea Monster
+
+
+5 - Nebula:
+Water + Fire = Steam
+Wind + Earth = Dust
+Earth + Dust = Planet
+Planet + Planet = Star
+Steam + Star = Nebula
+
+
+5 - Drawing:
+Water + Earth = Plant
+Plant + Plant = Tree
+Fire + Tree = Ash
+Tree + Ash = Pencil
+Earth + Pencil = Drawing
+
+
+5 - Curtain:
+Water + Wind = Wave
+Earth + Wave = Sand
+Fire + Sand = Glass
+Wind + Glass = Window
+Wind + Window = Curtain
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Sand = Glass
+Wind + Glass = Window
+Wind + Window = Curtain
+
+
+5 - Spaceship:
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Water + Rocket = Ship
+Rocket + Ship = Spaceship
+
+
+5 - Super Volcano:
+Fire + Fire = Volcano
+Earth + Earth = Mountain
+Mountain + Mountain = Mountain Range
+Volcano + Mountain Range = Yellowstone
+Mountain Range + Yellowstone = Super Volcano
+
+
+5 - Money:
+Water + Earth = Plant
+Plant + Plant = Tree
+Wind + Plant = Dandelion
+Tree + Dandelion = Wish
+Tree + Wish = Money
+
+
+5 - Tanker:
+Water + Fire = Steam
+Fire + Steam = Engine
+Earth + Engine = Tractor
+Engine + Tractor = Tank
+Tank + Tractor = Tanker
+
+
+5 - Spirit:
+Water + Earth = Plant
+Fire + Plant = Smoke
+Plant + Smoke = Incense
+Smoke + Incense = Prayer
+Wind + Prayer = Spirit
+
+
+5 - Angel:
+Water + Earth = Plant
+Water + Water = Lake
+Wind + Earth = Dust
+Plant + Lake = Lily
+Dust + Lily = Angel
+ ...
+Water + Earth = Plant
+Fire + Plant = Smoke
+Plant + Smoke = Incense
+Smoke + Incense = Prayer
+Incense + Prayer = Angel
+ ...
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Water + Wine = Holy Water
+Wind + Holy Water = Angel
+
+
+5 - Sharknado:
+Wind + Wind = Tornado
+Water + Tornado = Tsunami
+Water + Tsunami = Ocean
+Water + Ocean = Fish
+Fish + Tornado = Sharknado
+ ...
+Water + Water = Lake
+Lake + Lake = Ocean
+Water + Ocean = Fish
+Fish + Fish = Shark
+Ocean + Shark = Sharknado
+ ...
+Water + Water = Lake
+Lake + Lake = Ocean
+Wind + Wind = Tornado
+Water + Ocean = Fish
+Fish + Tornado = Sharknado
+
+
+5 - Saguaro:
+Water + Earth = Plant
+Wind + Earth = Dust
+Dust + Dust = Sand
+Plant + Sand = Cactus
+Fire + Cactus = Saguaro
+ ...
+Water + Earth = Plant
+Water + Wind = Wave
+Earth + Wave = Sand
+Plant + Sand = Cactus
+Fire + Cactus = Saguaro
+ ...
+Water + Earth = Plant
+Wind + Earth = Dust
+Wind + Dust = Sandstorm
+Plant + Sandstorm = Cactus
+Fire + Cactus = Saguaro
+
+
+5 - Racecar:
+Water + Earth = Plant
+Water + Fire = Steam
+Fire + Steam = Engine
+Plant + Engine = Car
+Engine + Car = Racecar
+
+
+5 - Smoker:
+Water + Earth = Plant
+Fire + Plant = Smoke
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Smoke + Wine = Smoker
+
+
+5 - Fire Venus:
+Water + Earth = Plant
+Water + Plant = Swamp
+Plant + Swamp = Venus Flytrap
+Fire + Venus Flytrap = Fire Trap
+Venus Flytrap + Fire Trap = Fire Venus
+
+
+5 - Reef:
+Water + Earth = Plant
+Water + Water = Lake
+Lake + Lake = Ocean
+Plant + Ocean = Coral
+Lake + Coral = Reef
+ ...
+Water + Earth = Plant
+Water + Wind = Wave
+Plant + Wave = Seaweed
+Seaweed + Seaweed = Coral
+Wave + Coral = Reef
+
+
+5 - Nessie:
+Water + Water = Lake
+Earth + Lake = Swamp
+Fire + Swamp = Dragon
+Lake + Dragon = Loch Ness Monster
+Lake + Loch Ness Monster = Nessie
+
+
+5 - Splash:
+Water + Earth = Plant
+Fire + Fire = Volcano
+Wind + Plant = Dandelion
+Volcano + Dandelion = Fireworks
+Water + Fireworks = Splash
+
+
+5 - Amber:
+Water + Earth = Plant
+Fire + Earth = Lava
+Water + Lava = Stone
+Plant + Stone = Fossil
+Fossil + Fossil = Amber
+
+
+5 - Subway:
+Water + Fire = Steam
+Fire + Steam = Engine
+Steam + Engine = Train
+Train + Train = Train Station
+Earth + Train Station = Subway
+ ...
+Water + Fire = Steam
+Fire + Steam = Engine
+Steam + Engine = Train
+Water + Train = Submarine
+Submarine + Train = Subway
+
+
+5 - Diamond Block:
+Fire + Earth = Lava
+Water + Lava = Stone
+Lava + Stone = Obsidian
+Earth + Obsidian = Diamond
+Diamond + Diamond = Diamond Block
+
+
+5 - Cigar:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Fire + Dandelion = Ash
+Water + Dandelion = Wine
+Wine + Ash = Cigar
+ ...
+Water + Earth = Plant
+Plant + Plant = Tree
+Wind + Tree = Leaf
+Fire + Leaf = Tobacco
+Tree + Tobacco = Cigar
+ ...
+Water + Earth = Plant
+Plant + Plant = Tree
+Fire + Tree = Ash
+Plant + Ash = Tobacco
+Tree + Tobacco = Cigar
+
+
+5 - Stew:
+Water + Earth = Plant
+Water + Fire = Steam
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Wine + Steam = Stew
+
+
+5 - Hot Air Balloon:
+Water + Earth = Plant
+Water + Fire = Steam
+Wind + Plant = Dandelion
+Dandelion + Dandelion = Dandelion Patch
+Steam + Dandelion Patch = Hot Air Balloon
+
+
+5 - Park:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Earth + Dandelion = Flower
+Flower + Flower = Garden
+Garden + Garden = Park
+
+
+5 - Steamship:
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Water + Rocket = Ship
+Engine + Ship = Steamship
+
+
+5 - Catholic Church:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Water + Wine = Holy Water
+Wine + Holy Water = Catholic Church
+
+
+5 - Space Station:
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Engine + Rocket = Space Ship
+Space Ship + Space Ship = Space Station
+
+
+5 - Microscope:
+Water + Wind = Wave
+Earth + Wave = Sand
+Fire + Sand = Glass
+Fire + Glass = Lens
+Water + Lens = Microscope
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Sand = Glass
+Fire + Glass = Lens
+Water + Lens = Microscope
+
+
+5 - Tractor Beam:
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Earth + Engine = Tractor
+Rocket + Tractor = Tractor Beam
+
+
+5 - Hangover:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Fire + Wine = Alcohol
+Wind + Alcohol = Hangover
+ ...
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Plant + Dandelion = Weed
+Wine + Weed = Hangover
+
+
+5 - Truck:
+Water + Earth = Plant
+Water + Fire = Steam
+Fire + Steam = Engine
+Plant + Engine = Car
+Car + Car = Truck
+
+
+5 - Audrey II:
+Water + Earth = Plant
+Water + Plant = Swamp
+Plant + Swamp = Venus Flytrap
+Plant + Venus Flytrap = Carnivorous Plant
+Venus Flytrap + Carnivorous Plant = Audrey Ii
+
+
+5 - Rose:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Earth + Earth = Mountain
+Earth + Dandelion = Flower
+Flower + Mountain = Rose
+
+
+5 - Fan:
+Fire + Earth = Lava
+Water + Lava = Stone
+Lava + Stone = Obsidian
+Stone + Obsidian = Blade
+Wind + Blade = Fan
+
+
+5 - Cigarette:
+Water + Earth = Plant
+Plant + Plant = Tree
+Wind + Tree = Leaf
+Fire + Leaf = Tobacco
+Tobacco + Tobacco = Cigarette
+ ...
+Water + Earth = Plant
+Wind + Earth = Dust
+Fire + Dust = Ash
+Plant + Ash = Tobacco
+Tobacco + Tobacco = Cigarette
+ ...
+Water + Earth = Plant
+Plant + Plant = Tree
+Fire + Tree = Ash
+Plant + Ash = Tobacco
+Tobacco + Tobacco = Cigarette
+ ...
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Fire + Dandelion = Ash
+Plant + Ash = Tobacco
+Tobacco + Tobacco = Cigarette
+ ...
+Water + Earth = Plant
+Plant + Plant = Tree
+Wind + Tree = Leaf
+Fire + Plant = Smoke
+Smoke + Leaf = Cigarette
+ ...
+Water + Earth = Plant
+Plant + Plant = Tree
+Wind + Tree = Leaf
+Fire + Tree = Ash
+Ash + Leaf = Cigarette
+ ...
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Fire + Dandelion = Ash
+Earth + Dandelion = Flower
+Flower + Ash = Cigarette
+
+
+5 - Hula:
+Water + Water = Lake
+Fire + Fire = Volcano
+Volcano + Lake = Island
+Volcano + Island = Hawaii
+Wind + Hawaii = Hula
+
+
+5 - Meade:
+Water + Earth = Plant
+Wind + Earth = Dust
+Plant + Dust = Pollen
+Water + Pollen = Honey
+Water + Honey = Meade
+
+
+5 - Shatter:
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Sand = Glass
+Wind + Wind = Tornado
+Tornado + Glass = Shatter
+ ...
+Wind + Wind = Tornado
+Water + Wind = Wave
+Earth + Wave = Sand
+Fire + Sand = Glass
+Tornado + Glass = Shatter
+
+
+5 - Iceland:
+Water + Water = Lake
+Fire + Fire = Volcano
+Earth + Earth = Mountain
+Lake + Mountain = Fjord
+Volcano + Fjord = Iceland
+
+
+5 - Palm:
+Water + Earth = Plant
+Wind + Earth = Dust
+Dust + Dust = Sand
+Water + Sand = Beach
+Plant + Beach = Palm
+ ...
+Water + Earth = Plant
+Water + Wind = Wave
+Earth + Wave = Sand
+Wave + Sand = Beach
+Plant + Beach = Palm
+ ...
+Water + Earth = Plant
+Plant + Plant = Tree
+Wind + Wind = Tornado
+Tornado + Tornado = Hurricane
+Tree + Hurricane = Palm
+
+
+5 - Dragonfly:
+Water + Earth = Plant
+Wind + Earth = Dust
+Water + Plant = Swamp
+Fire + Swamp = Dragon
+Dragon + Dust = Dragonfly
+ ...
+Water + Earth = Plant
+Water + Plant = Swamp
+Wind + Plant = Dandelion
+Fire + Swamp = Dragon
+Dandelion + Dragon = Dragonfly
+ ...
+Wind + Earth = Dust
+Water + Dust = Mud
+Water + Mud = Swamp
+Fire + Swamp = Dragon
+Dragon + Dust = Dragonfly
+ ...
+Water + Water = Lake
+Wind + Earth = Dust
+Earth + Lake = Swamp
+Fire + Swamp = Dragon
+Dragon + Dust = Dragonfly
+
+
+5 - Thunderstorm:
+Water + Fire = Steam
+Water + Steam = Cloud
+Fire + Cloud = Lightning
+Lightning + Lightning = Thunder
+Steam + Thunder = Thunderstorm
+
+
+5 - Solar Flare:
+Wind + Earth = Dust
+Wind + Wind = Tornado
+Earth + Dust = Planet
+Fire + Planet = Sun
+Tornado + Sun = Solar Flare
+
+
+5 - Cook:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Plant + Dandelion = Weed
+Plant + Weed = Pot
+Fire + Pot = Cook
+
+
+5 - Fireball:
+Water + Fire = Steam
+Fire + Steam = Engine
+Steam + Engine = Train
+Water + Train = Submarine
+Fire + Submarine = Fireball
+ ...
+Water + Earth = Plant
+Water + Plant = Swamp
+Plant + Swamp = Venus Flytrap
+Fire + Venus Flytrap = Fire Trap
+Fire + Fire Trap = Fireball
+
+
+5 - Steam Turbine:
+Water + Fire = Steam
+Fire + Steam = Engine
+Steam + Engine = Train
+Fire + Train = Steam Engine
+Steam Engine + Steam Engine = Steam Turbine
+ ...
+Water + Fire = Steam
+Earth + Steam = Mud
+Fire + Mud = Brick
+Steam + Brick = Steam Engine
+Steam Engine + Steam Engine = Steam Turbine
+ ...
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Steam + Rocket = Steam Engine
+Steam Engine + Steam Engine = Steam Turbine
+
+
+5 - Broom:
+Water + Earth = Plant
+Plant + Plant = Tree
+Wind + Earth = Dust
+Tree + Dust = Wood
+Dust + Wood = Broom
+
+
+5 - Venus:
+Wind + Earth = Dust
+Fire + Dust = Ash
+Ash + Ash = Stone
+Stone + Ash = Statue
+Water + Statue = Venus
+ ...
+Water + Earth = Plant
+Fire + Fire = Volcano
+Water + Plant = Swamp
+Plant + Swamp = Venus Flytrap
+Volcano + Venus Flytrap = Venus
+ ...
+Wind + Earth = Dust
+Fire + Wind = Smoke
+Water + Smoke = Fog
+Earth + Dust = Planet
+Fog + Planet = Venus
+ ...
+Wind + Earth = Dust
+Wind + Dust = Sandstorm
+Earth + Dust = Planet
+Planet + Sandstorm = Mars
+Water + Mars = Venus
+ ...
+Fire + Wind = Smoke
+Fire + Earth = Lava
+Water + Lava = Stone
+Smoke + Stone = Statue
+Water + Statue = Venus
+
+
+5 - Flamethrower:
+Water + Fire = Steam
+Fire + Steam = Engine
+Earth + Engine = Tractor
+Engine + Tractor = Tank
+Fire + Tank = Flamethrower
+
+
+5 - Starfish:
+Water + Water = Lake
+Wind + Earth = Dust
+Lake + Lake = Ocean
+Water + Ocean = Fish
+Fish + Dust = Starfish
+ ...
+Wind + Earth = Dust
+Earth + Dust = Planet
+Water + Planet = Ocean
+Water + Ocean = Fish
+Fish + Dust = Starfish
+
+
+5 - Village:
+Water + Fire = Steam
+Fire + Steam = Engine
+Earth + Engine = Tractor
+Earth + Tractor = Farm
+Farm + Farm = Village
+
+
+5 - Flame:
+Water + Fire = Steam
+Fire + Steam = Engine
+Steam + Engine = Train
+Wind + Train = Zephyr
+Fire + Zephyr = Flame
+
+
+5 - Leviathan:
+Water + Water = Lake
+Earth + Lake = Swamp
+Fire + Swamp = Dragon
+Water + Dragon = Sea Serpent
+Earth + Sea Serpent = Leviathan
+ ...
+Water + Earth = Plant
+Water + Plant = Swamp
+Fire + Swamp = Dragon
+Water + Dragon = Sea Serpent
+Earth + Sea Serpent = Leviathan
+
+
+5 - Geothermal:
+Water + Fire = Steam
+Fire + Fire = Volcano
+Fire + Steam = Engine
+Wind + Engine = Windmill
+Volcano + Windmill = Geothermal
+ ...
+Water + Fire = Steam
+Fire + Earth = Lava
+Fire + Steam = Engine
+Wind + Engine = Windmill
+Lava + Windmill = Geothermal
+ ...
+Water + Fire = Steam
+Fire + Earth = Lava
+Water + Lava = Stone
+Water + Stone = Rock
+Steam + Rock = Geothermal
+
+
+5 - Toadstool:
+Water + Earth = Plant
+Fire + Plant = Smoke
+Water + Smoke = Fog
+Plant + Fog = Mushroom
+Fog + Mushroom = Toadstool
+
+
+5 - UFO:
+Water + Fire = Steam
+Water + Steam = Cloud
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Cloud + Rocket = Ufo
+
+
+5 - Plane:
+Water + Fire = Steam
+Water + Steam = Cloud
+Fire + Steam = Engine
+Cloud + Engine = Jet
+Wind + Jet = Plane
+
+
+5 - Canyon:
+Water + Earth = Plant
+Plant + Plant = Tree
+Water + Tree = River
+Earth + Earth = Mountain
+River + Mountain = Canyon
+ ...
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Mountain + Mountain = Mountain Range
+Earth + Avalanche = Landslide
+Landslide + Mountain Range = Canyon
+
+
+5 - Crop:
+Water + Fire = Steam
+Water + Steam = Cloud
+Fire + Steam = Engine
+Earth + Engine = Tractor
+Cloud + Tractor = Crop
+
+
+5 - Titanado:
+Water + Fire = Steam
+Wind + Wind = Tornado
+Water + Tornado = Tsunami
+Tsunami + Steam = Titanic
+Tornado + Titanic = Titanado
+
+
+5 - Crash:
+Water + Earth = Plant
+Water + Fire = Steam
+Fire + Steam = Engine
+Plant + Engine = Car
+Fire + Car = Crash
+
+
+5 - Compost:
+Water + Earth = Plant
+Plant + Plant = Tree
+Wind + Earth = Dust
+Wind + Tree = Leaf
+Dust + Leaf = Compost
+
+
+5 - Christmas Tree:
+Water + Earth = Plant
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Plant + Avalanche = Snowman
+Plant + Snowman = Christmas Tree
+ ...
+Water + Earth = Plant
+Earth + Earth = Mountain
+Wind + Mountain = Avalanche
+Wind + Avalanche = Snow
+Plant + Snow = Christmas Tree
+
+
+5 - Boiling Frog:
+Water + Earth = Plant
+Water + Plant = Swamp
+Wind + Plant = Dandelion
+Dandelion + Swamp = Frog
+Fire + Frog = Boiling Frog
+
+
+5 - Map:
+Water + Earth = Plant
+Plant + Plant = Tree
+Water + Tree = River
+Tree + River = Paper
+Earth + Paper = Map
+
+
+5 - Sphinx:
+Water + Wind = Wave
+Earth + Wave = Sand
+Sand + Sand = Desert
+Desert + Sand = Pyramid
+Pyramid + Sand = Sphinx
+ ...
+Earth + Earth = Mountain
+Water + Wind = Wave
+Earth + Wave = Sand
+Mountain + Sand = Pyramid
+Pyramid + Mountain = Sphinx
+ ...
+Wind + Earth = Dust
+Fire + Dust = Ash
+Ash + Ash = Stone
+Stone + Ash = Statue
+Statue + Dust = Sphinx
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Sand + Sand = Desert
+Desert + Sand = Pyramid
+Pyramid + Sand = Sphinx
+ ...
+Fire + Earth = Lava
+Water + Lava = Stone
+Wind + Stone = Sand
+Stone + Sand = Pyramid
+Pyramid + Sand = Sphinx
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Earth + Earth = Mountain
+Mountain + Sand = Pyramid
+Pyramid + Mountain = Sphinx
+ ...
+Wind + Earth = Dust
+Fire + Earth = Lava
+Wind + Dust = Sandstorm
+Water + Lava = Stone
+Stone + Sandstorm = Sphinx
+ ...
+Wind + Earth = Dust
+Fire + Dust = Ash
+Wind + Dust = Sandstorm
+Ash + Ash = Stone
+Stone + Sandstorm = Sphinx
+ ...
+Fire + Wind = Smoke
+Fire + Earth = Lava
+Water + Lava = Stone
+Smoke + Stone = Statue
+Statue + Stone = Sphinx
+
+
+5 - Cave:
+Wind + Earth = Dust
+Water + Dust = Mud
+Fire + Mud = Brick
+Brick + Brick = Wall
+Dust + Wall = Cave
+
+
+5 - Party:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Water + Dandelion = Wine
+Wind + Wine = Balloon
+Wine + Balloon = Party
+
+
+5 - Astronaut:
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Earth + Rocket = Moon
+Rocket + Moon = Astronaut
+
+
+5 - Tire:
+Water + Earth = Plant
+Water + Fire = Steam
+Fire + Steam = Engine
+Plant + Engine = Car
+Earth + Car = Tire
+
+
+5 - Life:
+Wind + Earth = Dust
+Wind + Dust = Sandstorm
+Earth + Dust = Planet
+Planet + Sandstorm = Mars
+Earth + Mars = Life
+
+
+5 - Flying Saucer:
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Engine + Rocket = Space Ship
+Wind + Space Ship = Flying Saucer
+
+
+5 - Giant Mushroom:
+Water + Earth = Plant
+Fire + Plant = Smoke
+Water + Smoke = Fog
+Plant + Fog = Mushroom
+Mushroom + Mushroom = Giant Mushroom
+
+
+5 - Spore:
+Water + Earth = Plant
+Fire + Plant = Smoke
+Water + Smoke = Fog
+Plant + Fog = Mushroom
+Wind + Mushroom = Spore
+
+
+5 - Firework:
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Fire + Rocket = Explosion
+Rocket + Explosion = Firework
+ ...
+Water + Fire = Steam
+Fire + Wind = Smoke
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Smoke + Rocket = Firework
+
+
+5 - Loch Ness:
+Water + Water = Lake
+Lake + Lake = Ocean
+Earth + Lake = Swamp
+Earth + Ocean = Island
+Swamp + Island = Loch Ness
+ ...
+Water + Water = Lake
+Fire + Fire = Volcano
+Earth + Lake = Swamp
+Volcano + Lake = Island
+Swamp + Island = Loch Ness
+
+
+5 - Grass:
+Wind + Earth = Dust
+Fire + Dust = Ash
+Earth + Ash = Soil
+Soil + Soil = Dirt
+Dirt + Dirt = Grass
+
+
+5 - Helicopter:
+Water + Earth = Plant
+Water + Fire = Steam
+Wind + Plant = Dandelion
+Fire + Steam = Engine
+Dandelion + Engine = Helicopter
+
+
+5 - Captain Nemo:
+Water + Fire = Steam
+Fire + Steam = Engine
+Steam + Engine = Train
+Water + Train = Submarine
+Steam + Submarine = Captain Nemo
+
+
+5 - Firebird:
+Wind + Earth = Dust
+Fire + Earth = Lava
+Fire + Dust = Ash
+Fire + Ash = Phoenix
+Lava + Phoenix = Firebird
+ ...
+Fire + Fire = Volcano
+Wind + Earth = Dust
+Fire + Dust = Ash
+Fire + Ash = Phoenix
+Volcano + Phoenix = Firebird
+ ...
+Water + Water = Lake
+Wind + Earth = Dust
+Fire + Dust = Ash
+Fire + Ash = Phoenix
+Lake + Phoenix = Firebird
+ ...
+Wind + Earth = Dust
+Wind + Wind = Tornado
+Fire + Dust = Ash
+Fire + Ash = Phoenix
+Tornado + Phoenix = Firebird
+ ...
+Water + Earth = Plant
+Water + Water = Lake
+Plant + Lake = Lily
+Fire + Lily = Phoenix
+Lake + Phoenix = Firebird
+
+
+5 - Magnifying Glass:
+Water + Wind = Wave
+Earth + Wave = Sand
+Fire + Sand = Glass
+Fire + Glass = Lens
+Fire + Lens = Magnifying Glass
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Sand = Glass
+Fire + Glass = Lens
+Fire + Lens = Magnifying Glass
+
+
+5 - Black Hole:
+Wind + Earth = Dust
+Earth + Dust = Planet
+Planet + Planet = Star
+Star + Star = Galaxy
+Galaxy + Galaxy = Black Hole
+ ...
+Wind + Earth = Dust
+Earth + Dust = Planet
+Earth + Planet = Moon
+Fire + Moon = Eclipse
+Eclipse + Eclipse = Black Hole
+ ...
+Water + Fire = Steam
+Wind + Earth = Dust
+Fire + Steam = Engine
+Engine + Dust = Vacuum
+Vacuum + Vacuum = Black Hole
+ ...
+Wind + Earth = Dust
+Wind + Wind = Tornado
+Earth + Dust = Planet
+Planet + Planet = Star
+Tornado + Star = Black Hole
+
+
+5 - Buddha:
+Water + Earth = Plant
+Fire + Plant = Smoke
+Earth + Earth = Mountain
+Plant + Smoke = Incense
+Incense + Mountain = Buddha
+
+
+5 - Prince:
+Water + Earth = Plant
+Water + Plant = Swamp
+Wind + Plant = Dandelion
+Dandelion + Swamp = Frog
+Wind + Frog = Prince
+
+
+5 - Genie:
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Wind + Dandelion = Seed
+Dandelion + Seed = Wish
+Water + Wish = Genie
+ ...
+Water + Earth = Plant
+Wind + Plant = Dandelion
+Fire + Dandelion = Ash
+Dandelion + Ash = Wish
+Wish + Ash = Genie
+ ...
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Sand = Glass
+Earth + Glass = Bottle
+Dust + Bottle = Genie
+ ...
+Water + Earth = Plant
+Water + Water = Lake
+Wind + Plant = Dandelion
+Dandelion + Lake = Wish
+Wish + Lake = Genie
+ ...
+Water + Earth = Plant
+Plant + Plant = Tree
+Wind + Plant = Dandelion
+Tree + Dandelion = Wish
+Water + Wish = Genie
+ ...
+Water + Earth = Plant
+Wind + Earth = Dust
+Wind + Plant = Dandelion
+Dandelion + Dust = Wish
+Water + Wish = Genie
+
+
+5 - Sky:
+Water + Fire = Steam
+Wind + Earth = Dust
+Water + Steam = Cloud
+Earth + Dust = Planet
+Cloud + Planet = Sky
+ ...
+Wind + Earth = Dust
+Fire + Wind = Smoke
+Wind + Smoke = Cloud
+Earth + Dust = Planet
+Cloud + Planet = Sky
+
+
+5 - Axe:
+Fire + Earth = Lava
+Water + Lava = Stone
+Lava + Stone = Obsidian
+Stone + Obsidian = Blade
+Stone + Blade = Axe
+
+
+5 - Match:
+Water + Earth = Plant
+Plant + Plant = Tree
+Fire + Tree = Ash
+Tree + Ash = Pencil
+Fire + Pencil = Match
+
+
+5 - Sponge:
+Water + Fire = Steam
+Wind + Earth = Dust
+Fire + Steam = Engine
+Engine + Dust = Vacuum
+Water + Vacuum = Sponge
+
+
+5 - Lotus Flower:
+Water + Earth = Plant
+Water + Water = Lake
+Plant + Lake = Lily
+Lake + Lily = Lotus
+Lotus + Lotus = Lotus Flower
+
+
+5 - Crescent:
+Wind + Earth = Dust
+Earth + Earth = Mountain
+Earth + Dust = Planet
+Earth + Planet = Moon
+Moon + Mountain = Crescent
+
+
+5 - Robot:
+Water + Fire = Steam
+Wind + Earth = Dust
+Earth + Dust = Planet
+Steam + Planet = Steampunk
+Dust + Steampunk = Robot
+
+
+5 - Poseidon:
+Water + Wind = Wave
+Wave + Wave = Tsunami
+Earth + Tsunami = Island
+Tsunami + Island = Atlantis
+Earth + Atlantis = Poseidon
+ ...
+Wind + Wind = Tornado
+Water + Tornado = Tsunami
+Earth + Tsunami = Island
+Tsunami + Island = Atlantis
+Earth + Atlantis = Poseidon
+ ...
+Water + Earth = Plant
+Plant + Plant = Tree
+Fire + Plant = Smoke
+Plant + Smoke = Incense
+Tree + Incense = Poseidon
+ ...
+Water + Water = Lake
+Lake + Lake = Ocean
+Earth + Ocean = Island
+Ocean + Island = Atlantis
+Earth + Atlantis = Poseidon
+ ...
+Water + Water = Lake
+Lake + Lake = Ocean
+Water + Ocean = Fish
+Earth + Fish = Whale
+Ocean + Whale = Poseidon
+
+
+5 - Cannon:
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Water + Rocket = Ship
+Fire + Ship = Cannon
+ ...
+Wind + Wind = Tornado
+Water + Tornado = Tsunami
+Earth + Tsunami = Island
+Water + Island = Ship
+Fire + Ship = Cannon
+ ...
+Water + Water = Lake
+Fire + Fire = Volcano
+Volcano + Lake = Island
+Water + Island = Ship
+Fire + Ship = Cannon
+ ...
+Water + Wind = Wave
+Wave + Wave = Tsunami
+Earth + Tsunami = Island
+Water + Island = Ship
+Fire + Ship = Cannon
+ ...
+Water + Water = Lake
+Lake + Lake = Ocean
+Earth + Ocean = Island
+Water + Island = Ship
+Fire + Ship = Cannon
+
+
+5 - Sunset:
+Water + Water = Lake
+Wind + Earth = Dust
+Earth + Dust = Planet
+Fire + Planet = Sun
+Lake + Sun = Sunset
+ ...
+Wind + Earth = Dust
+Water + Wind = Wave
+Earth + Dust = Planet
+Fire + Planet = Sun
+Wave + Sun = Sunset
+ ...
+Water + Wind = Wave
+Earth + Wave = Sand
+Wave + Sand = Beach
+Fire + Beach = Sun
+Wave + Sun = Sunset
+
+
+5 - Sandbox:
+Water + Fire = Steam
+Water + Wind = Wave
+Fire + Steam = Engine
+Earth + Wave = Sand
+Engine + Sand = Sandbox
+ ...
+Water + Fire = Steam
+Wind + Earth = Dust
+Dust + Dust = Sand
+Fire + Steam = Engine
+Engine + Sand = Sandbox
+
+
+5 - Weather:
+Water + Fire = Steam
+Fire + Steam = Engine
+Engine + Engine = Rocket
+Rocket + Rocket = Satellite
+Wind + Satellite = Weather
+
+
+5 - Pudding:
+Wind + Earth = Dust
+Fire + Dust = Ash
+Ash + Ash = Stone
+Water + Ash = Puddle
+Stone + Puddle = Pudding
+
+
+5 - Twister:
+Wind + Wind = Tornado
+Tornado + Tornado = Hurricane
+Water + Hurricane = Tsunami
+Tsunami + Hurricane = Disaster
+Tornado + Disaster = Twister
+
+
+5 - Ring:
+Fire + Earth = Lava
+Water + Lava = Stone
+Lava + Stone = Obsidian
+Earth + Obsidian = Diamond
+Lava + Diamond = Ring
+
+
+
+{
+  "Field": 4,
+  "Stoner": 4,
+  "Mangrove Forest": 4,
+  "Date": 4,
+  "Solar Flare": 4,
+  "Beacon": 4,
+  "Loch Ness Monster": 3,
+  "Brick": 2,
+  "System": 4,
+  "Roll": 4,
+  "Wish": 3,
+  "Spore": 4,
+  "Tire": 4,
+  "Hot Air Balloon": 4,
+  "Viking": 4,
+  "Loch Ness": 4,
+  "Rover": 4,
+  "Beer": 4,
+  "Money": 4,
+  "Engine": 1,
+  "Pencil": 3,
+  "Vampire": 4,
+  "Airplane": 4,
+  "Meteor": 4,
+  "Iceland": 4,
+  "Steam Turbine": 4,
+  "Atlantis": 3,
+  "Amber": 4,
+  "Fireball": 4,
+  "House": 3,
+  "Diamond": 3,
+  "Vacation": 4,
+  "Tea Party": 4,
+  "Boulder": 2,
+  "Saguaro": 4,
+  "Meade": 4,
+  "Shatter": 4,
+  "Tobacco": 3,
+  "Milky Way": 4,
+  "Vinegar": 4,
+  "Soil": 2,
+  "Jupiter": 4,
+  "High": 4,
+  "Bird": 4,
+  "Sword": 4,
+  "Helicopter": 4,
+  "Leaf": 2,
+  "Sun": 2,
+  "Water Lily": 4,
+  "Mirror": 4,
+  "Algae": 4,
+  "Duck": 4,
+  "Aquarium": 4,
+  "Steam Engine": 3,
+  "Ozymandias": 4,
+  "Furnace": 4,
+  "Crescent": 4,
+  "Bog": 2,
+  "Subway": 4,
+  "Fan": 4,
+  "Tractor": 2,
+  "Cannabis": 4,
+  "Eclipse": 3,
+  "Windmill": 2,
+  "Jet": 3,
+  "Fishbowl": 3,
+  "Smoker": 4,
+  "Reef": 4,
+  "Geothermal": 4,
+  "Eruption": 1,
+  "Komodo Dragon": 4,
+  "Window": 3,
+  "Hay Fever": 4,
+  "Funnel Cake": 4,
+  "Rose": 4,
+  "Robot": 4,
+  "Tea": 2,
+  "Fog": 1,
+  "Pot": 3,
+  "Tatooine": 4,
+  "Aeolus": 2,
+  "Acid Rain": 4,
+  "Rebirth": 3,
+  "Spaceship": 4,
+  "Bee": 4,
+  "Sauna": 4,
+  "Sandwich": 4,
+  "Vase": 4,
+  "Surfboard": 3,
+  "Kelp": 3,
+  "Cough": 4,
+  "Pirate": 4,
+  "Lily Pad": 4,
+  "Mummy": 3,
+  "Crop": 4,
+  "Mermaid": 4,
+  "Angel": 4,
+  "Obsidian": 2,
+  "Dust Storm": 2,
+  "Sailboat": 4,
+  "Tank": 3,
+  "Statue": 3,
+  "Lens": 3,
+  "Town": 4,
+  "Toadstool": 4,
+  "Shipwreck": 4,
+  "Ship": 3,
+  "Plant": 0,
+  "Time Machine": 4,
+  "Paper": 3,
+  "Frost": 3,
+  "Rain": 2,
+  "Oasis": 2,
+  "Fjord": 2,
+  "Beach": 2,
+  "Fireworks": 3,
+  "Sandcastle": 3,
+  "Rice": 4,
+  "Goldfish": 4,
+  "Compost": 4,
+  "Wind Turbine": 4,
+  "Map": 4,
+  "Giant Mushroom": 4,
+  "Snow": 2,
+  "Storm": 1,
+  "Plow": 4,
+  "Temple": 4,
+  "Space Plant": 4,
+  "Vacuum": 3,
+  "Fire Trap": 3,
+  "Kettle": 4,
+  "Swamp Fire": 4,
+  "Sharknado": 4,
+  "Seaweed": 2,
+  "Flamethrower": 4,
+  "Grass": 4,
+  "Magnifying Glass": 4,
+  "Weather": 4,
+  "Tree": 1,
+  "Telescope": 3,
+  "Toad": 4,
+  "Cannon": 4,
+  "Salamander": 4,
+  "Truck": 4,
+  "Shark": 3,
+  "Pompeii": 4,
+  "Vineyard": 3,
+  "Geysers": 4,
+  "Salt": 4,
+  "Fire Plant": 4,
+  "Coral": 3,
+  "Rocket": 2,
+  "Solar Wind": 4,
+  "Iceberg": 3,
+  "Bottle": 3,
+  "Diamond Block": 4,
+  "Broom": 4,
+  "Apple": 4,
+  "Sail": 3,
+  "Sandbox": 4,
+  "Lightning": 2,
+  "Ceramic": 4,
+  "Surfer": 3,
+  "Curtain": 4,
+  "Titanado": 4,
+  "Smoke": 0,
+  "Pyramid": 3,
+  "Bulldozer": 4,
+  "Mountain": 0,
+  "Tunnel": 4,
+  "Seed": 2,
+  "Crocodile": 4,
+  "Dragonfly": 4,
+  "Giant Venus Flytrap": 3,
+  "Popcorn": 4,
+  "Tumbleweed": 4,
+  "Steamship": 4,
+  "Fire Flower": 4,
+  "Holy Water": 3,
+  "Penguin": 4,
+  "Nymph": 4,
+  "Genie": 4,
+  "Chaos": 4,
+  "Pollution": 4,
+  "Cigar": 4,
+  "Scent": 4,
+  "Book": 4,
+  "Dragon": 2,
+  "Chai": 3,
+  "Dirt": 3,
+  "Boat": 3,
+  "Bouquet": 4,
+  "Chimney": 4,
+  "Lotus Flower": 4,
+  "Mud": 1,
+  "Campfire": 4,
+  "Lunar": 3,
+  "Thunder": 3,
+  "Smog": 3,
+  "Universe": 4,
+  "Lunar Eclipse": 4,
+  "Rainforest": 4,
+  "Bong": 3,
+  "Catholic Church": 4,
+  "Bomb": 4,
+  "Weed": 2,
+  "Winery": 4,
+  "Stew": 4,
+  "Incense": 2,
+  "Dustbin": 4,
+  "Snowmobile": 4,
+  "Time": 4,
+  "Supervolcano": 4,
+  "Narwhal": 4,
+  "Steam": 0,
+  "Wolf": 4,
+  "Audrey II": 4,
+  "Planet": 1,
+  "Tesla": 4,
+  "Snowball": 4,
+  "UFO": 4,
+  "Spirit": 4,
+  "Ash": 1,
+  "Sea Star": 4,
+  "Paper Boat": 4,
+  "Adobe": 3,
+  "Blade": 3,
+  "Carnivore": 4,
+  "Wind Farm": 3,
+  "Mountain Dew": 3,
+  "Flour": 4,
+  "Carnivorous Plant": 3,
+  "Bush": 3,
+  "Island": 2,
+  "Cook": 4,
+  "Volcano": 0,
+  "Dandelion": 1,
+  "Mist": 2,
+  "Geyser": 3,
+  "Landslide": 2,
+  "Microscope": 4,
+  "Snowman": 3,
+  "Phoenix": 2,
+  "Steamboat": 3,
+  "Lily": 2,
+  "Allergy": 3,
+  "Moonshine": 4,
+  "Tornado": 0,
+  "Cloud": 1,
+  "Hourglass": 3,
+  "Moon": 2,
+  "Hawaii": 3,
+  "Train Station": 3,
+  "Clay": 2,
+  "Onyx": 4,
+  "Tadpole": 4,
+  "Saturn": 4,
+  "Solar System": 3,
+  "Pudding": 4,
+  "Swamp": 1,
+  "Lake": 0,
+  "Plane": 4,
+  "Cave": 4,
+  "Mars": 3,
+  "Dust Bowl": 3,
+  "Tsunami": 1,
+  "Cyclone": 3,
+  "Ring": 4,
+  "Thunderstorm": 4,
+  "Black Hole": 4,
+  "Wine": 2,
+  "Flower": 2,
+  "Farm": 3,
+  "Sunflower": 3,
+  "Coral Reef": 4,
+  "Cactus": 3,
+  "Dune": 2,
+  "Delta": 3,
+  "Blizzard": 3,
+  "Flood": 3,
+  "Honeycomb": 4,
+  "Locomotive": 3,
+  "Sponge": 4,
+  "Airship": 4,
+  "Village": 4,
+  "Space": 4,
+  "Sarcophagus": 4,
+  "Sandstorm": 1,
+  "Sea": 2,
+  "Fossil": 3,
+  "Joint": 4,
+  "Clean": 4,
+  "Alien": 4,
+  "Poseidon": 4,
+  "Forest": 2,
+  "Geysir": 3,
+  "Surfing": 3,
+  "Life": 4,
+  "Canyon": 4,
+  "Graffiti": 4,
+  "Crystal": 4,
+  "Vaporizer": 4,
+  "Super Volcano": 4,
+  "Knife": 4,
+  "Honey": 3,
+  "Bubbles": 4,
+  "Ice Cream": 4,
+  "Twister": 4,
+  "Dust Trap": 4,
+  "Fire Station": 4,
+  "Unicorn": 4,
+  "Supernova": 4,
+  "Shard": 4,
+  "Swamp Thing": 3,
+  "Fisherman": 4,
+  "Whale": 3,
+  "Tea Bag": 4,
+  "Pig": 4,
+  "Burn": 4,
+  "Coal": 4,
+  "Fence": 4,
+  "Leviathan": 4,
+  "Troll": 4,
+  "Sphinx": 4,
+  "Frog": 3,
+  "Archipelago": 4,
+  "Glass": 2,
+  "Energy": 3,
+  "Disaster": 3,
+  "Sushi": 3,
+  "Pangaea": 4,
+  "Werewolf": 3,
+  "Puddle": 2,
+  "Smoke Detector": 4,
+  "Venus Flytrap": 2,
+  "Dandelion Wine": 4,
+  "Cinder": 2,
+  "Hangover": 4,
+  "Jungle": 3,
+  "Space Station": 4,
+  "Kite": 3,
+  "Ocean": 1,
+  "Rock": 2,
+  "Pollen": 2,
+  "Waterfall": 3,
+  "Palm": 4,
+  "Tanker": 4,
+  "Bullet Train": 4,
+  "Mountain Range": 1,
+  "Mosquito": 4,
+  "Coconut": 4,
+  "River": 2,
+  "Lizard": 3,
+  "Nile": 4,
+  "Firebird": 4,
+  "Grape": 4,
+  "Norway": 3,
+  "Teacup": 4,
+  "Balloon": 3,
+  "Tractor Beam": 4,
+  "Boiling Frog": 4,
+  "Dam": 4,
+  "Holy Lake": 4,
+  "Fire Venus": 4,
+  "Cheese": 4,
+  "Kiln": 3,
+  "Pop": 4,
+  "Submarine": 3,
+  "Comet": 3,
+  "Wall": 3,
+  "Mudslide": 4,
+  "Destruction": 2,
+  "Teapot": 3,
+  "Starfish": 4,
+  "Flying Saucer": 4,
+  "Match": 4,
+  "Flying Fish": 3,
+  "Marijuana": 3,
+  "Fish": 2,
+  "Tomb": 4,
+  "Prince": 4,
+  "Wood": 3,
+  "Alcohol": 3,
+  "Buddha": 4,
+  "Lava": 0,
+  "Sunset": 4,
+  "Crash": 4,
+  "Swamp Venus": 4,
+  "Land": 3,
+  "Sashimi": 4,
+  "Lighthouse": 3,
+  "Flame": 4,
+  "Observatory": 4,
+  "Candle": 4,
+  "Sneeze": 4,
+  "Steamroller": 4,
+  "Nebula": 4,
+  "Garden": 3,
+  "Mirage": 3,
+  "Piranha": 4,
+  "Avalanche": 1,
+  "Splash": 4,
+  "Fire Swamp": 4,
+  "Explosion": 3,
+  "Firework": 4,
+  "Lotus": 3,
+  "Hula": 4,
+  "Galaxy": 3,
+  "Astronaut": 4,
+  "Snowstorm": 4,
+  "Hot Spring": 4,
+  "Glacier": 3,
+  "Hurricane": 1,
+  "Quagmire": 3,
+  "Tide": 3,
+  "Marsh": 2,
+  "Nessie": 4,
+  "Golem": 4,
+  "Captain Nemo": 4,
+  "Barbecue": 4,
+  "Space Ship": 3,
+  "Car": 3,
+  "Electricity": 3,
+  "Yellowstone": 3,
+  "Fairy": 4,
+  "Prickly Pear": 4,
+  "Smell": 4,
+  "Drawing": 4,
+  "Titanic": 3,
+  "Ghost": 4,
+  "Sandstone": 4,
+  "Park": 4,
+  "Venus": 4,
+  "Palm Tree": 3,
+  "Steampunk": 3,
+  "Dinosaur": 4,
+  "Solar": 3,
+  "Yeti": 4,
+  "Train": 2,
+  "Sea Monster": 4,
+  "Satellite": 3,
+  "Stone": 1,
+  "Mangrove": 3,
+  "Zephyr": 3,
+  "Flying": 4,
+  "Earthquake": 3,
+  "Party": 4,
+  "Crayon": 4,
+  "Dragon Egg": 3,
+  "Continent": 3,
+  "Fire Tornado": 4,
+  "Oil": 4,
+  "Dust Devil": 3,
+  "Jetpack": 4,
+  "Christmas Tree": 4,
+  "Pond": 3,
+  "Ice": 2,
+  "Wasabi": 4,
+  "Surf": 2,
+  "Pottery": 3,
+  "Mushroom": 3,
+  "Sea Serpent": 3,
+  "Castle": 4,
+  "Soup": 4,
+  "America": 4,
+  "Drunk": 4,
+  "Axe": 4,
+  "Wreck": 4,
+  "Racecar": 4,
+  "Cigarette": 4,
+  "Seeds": 3,
+  "Star": 2,
+  "Fishing": 3,
+  "Wave": 0,
+  "Sky": 4,
+  "Prayer": 3,
+  "Sand": 1,
+  "Perfume": 3,
+  "Vine": 3,
+  "Alligator": 4,
+  "Rainbow": 3,
+  "Fireplace": 4,
+  "Dust": 0,
+  "Desert": 2,
+  "Jewel": 4,
+  "Dandelion Patch": 2
+}

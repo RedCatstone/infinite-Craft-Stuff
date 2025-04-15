@@ -1,0 +1,21 @@
+[package]
+name = "rust"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+rayon = "1.10.0"
+rustc-hash = "2.1"
+dashmap = { version = "6.1.0", features = ["rayon"] }
+smallvec = "1.11"
+libdeflater = "1.23.1" # For Gzip saving
+flate2 = "1.1.1" # For Gzip reading
+
+tokio = { version = "1.44.2", features = ["full"] }
+futures = "0.3.31"
+urlencoding = "2.1" # For safely encoding parameters
+reqwest = { version = "0.12.15", features = ["json"] }
+
+colored = "3.0.0"

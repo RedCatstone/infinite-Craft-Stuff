@@ -15,7 +15,7 @@ use crate::structures::*;
 const NODE_SERVER_URL: &str = "http://localhost:3000";
 const COMBINE_LOGS: bool = true;
 const COMBINE_RETRIES: u64 = 10;
-const COMBINE_TIMEOUT: u64 = 5 * 60;   // 10 minute timeout
+const COMBINE_TIMEOUT: u64 = 5 * 60;   // 5 minute timeout to local server
 const RPS_TRACKER_WINDOW: u64 = 60;
 pub const MAX_CONCURRENT_REQUESTS: usize = 150;
 
@@ -81,7 +81,7 @@ pub async fn combine(first: &str, second: &str) -> Option<CombineResponse> {
 
     for _retries in 0..COMBINE_RETRIES {
 
-        // println!("Rust: Sending request to Node server: {}", request_url);
+        // println!("Rust: Sending request to server: {}", request_url);
 
         let response = match client.get(&request_url).send().await {
             Ok(res) => { res },

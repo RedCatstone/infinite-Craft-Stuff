@@ -30,7 +30,7 @@ const GLOBAL_OPTIONS: GlobalOptions = GlobalOptions {
 
 
 const DEPTH_EXPLORER_OPTIONS: DepthExplorerOptions = DepthExplorerOptions {
-    stop_after_depth: 5,
+    stop_after_depth: 2,
     final_elements_guess: 55000,
     final_seeds_guess: 15_000_000,
     input_text_lineage: r#"
@@ -59,7 +59,7 @@ async fn main() {
     // --- LOAD RECIPES ---
     // you can load using the 3 load_recipes_xxx functions. if you load multiple files, it merges them
 
-    load_recipes_num("D:\\InfiniteCraft\\Codes\\recipesNum.json");
+    // load_recipes_num("D:\\InfiniteCraft\\Codes\\recipesNum.json");
     // load_recipes_gzip("./Recipe Files In/Helper-Save.ic");
 
 

@@ -57,9 +57,9 @@ Alphabet + Quote = Punctuation
 async fn main() {
 
     // --- LOAD RECIPES ---
-    // you can load using the 3 load_recipes_xxx functions. if you load multiple files, it merges them
+    // there are 3 load_recipes_xxx functions. if multiple recipe files are loaded, it merges them
 
-    // load_recipes_num("D:\\InfiniteCraft\\Codes\\recipesNum.json");
+    load_recipes_num("D:\\InfiniteCraft\\Codes\\recipesNum.json");
     // load_recipes_gzip("./Recipe Files In/Helper-Save.ic");
 
 
@@ -72,8 +72,11 @@ async fn main() {
     {
         let variables = VARIABLES.get().expect("VARIABLES not initialized...");
         let recipes_ing = variables.recipes_ing.read().expect("recipes_ing not initialized...");
+        let num_to_str = variables.num_to_str.read().expect("num_to_str not initialized");
+        let neal_case_map = variables.neal_case_map.read().expect("neal_case_map not initialized");
         assert_eq!(*recipes_ing.get(&sort_recipe_tuple((str_to_num_fn("Fire"), str_to_num_fn("Water")))).expect("'Water + Fire' is not in recipes_ing"), str_to_num_fn("Steam"));
         assert_eq!(str_to_num_fn("Nothing"), 0);  // nothing needs to have id 0
+        assert_eq!(num_to_str.len(), neal_case_map.len());  // if these don't match something went wrong...
     }
 
 

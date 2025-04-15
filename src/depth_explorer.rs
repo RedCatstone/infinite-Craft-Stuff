@@ -378,7 +378,7 @@ pub fn generate_lineages_file() -> io::Result<()> {
     let start_time = Instant::now();
 
     let folder_name = "Lineages Files";
-    let file_name = format!("{} Seed - {}.txt", &num_to_str_fn(*de_vars.base_lineage_vec.last().unwrap()), DEPTH_EXPLORER_OPTIONS.stop_after_depth);
+    let file_name = format!("{} Seed - {} Steps.txt", &num_to_str_fn(*de_vars.base_lineage_vec.last().unwrap()), DEPTH_EXPLORER_OPTIONS.stop_after_depth);
 
     let folder_path = PathBuf::from(folder_name);
     fs::create_dir_all(&folder_path)?;

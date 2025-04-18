@@ -155,35 +155,35 @@ pub fn generate_lineage_from_results(results: &[u32], already_made: &[u32], vari
     let recipes_ing = variables.recipes_ing.read().unwrap();
 
     let mut lineage: Vec<[u32; 3]> = Vec::new();
-    let mut to_craft: FxHashSet<u32> = results.iter().copied().collect();
+    let mut to_craft: Vec<u32> = results.iter().copied().collect();
     let mut crafted: FxHashSet<u32> = base_elements.iter().chain(already_made).copied().collect();
 
     while !to_craft.is_empty() {
-        let mut newly_crafted: Vec<u32> = Vec::new();
+        let mut changes = false;
 
-        for element in to_craft.iter() {
-            if let Some(recipe) = recipes_result
-                .get(element)
-                .expect("element not in recipes_result")
-                .iter()
-                .find(|&&rec| crafted.contains(&rec.0) && crafted.contains(&rec.1)) {
+        to_craft = to_craft
+            .iter()
+            .filter(|&element| {
+                if let Some(recipe) = recipes_result
+                    .get(element)
+                    .expect("element not in recipes_result")
+                    .iter()
+                    .find(|&&rec| crafted.contains(&rec.0) && crafted.contains(&rec.1)) {
+                    
+                    crafted.insert(*element);
+                    
+                    let actual_caps = recipes_ing.get(&&sort_recipe_tuple((recipe.0, recipe.1))).unwrap_or_else(|| panic!("{:?} not in recipes_ing", debug_print_recipe_tuple((recipe.0, recipe.1))));
+                    lineage.push([recipe.0, recipe.1, *actual_caps]);
+                    changes = true;
+                    false  // filter out
+                }
+                else { true }  // keep
+            })
+            .copied()
+            .collect();
 
-                newly_crafted.push(*element);
-                crafted.insert(*element);
-
-                let actual_caps = recipes_ing.get(&&sort_recipe_tuple((recipe.0, recipe.1))).unwrap_or_else(|| panic!("{:?} not in recipes_ing", debug_print_recipe_tuple((recipe.0, recipe.1))));
-                lineage.push([recipe.0, recipe.1, *actual_caps]);
-            }
-        }
-        if newly_crafted.is_empty() { panic!("could not generate lineage...\n - lineage: {:?}\n - to_craft: {:?}", lineage, to_craft); }
-        else {
-            for new in newly_crafted {
-                to_craft.remove(&new);
-            }
-        }
+        if !changes { panic!("could not generate lineage...\n - lineage: {:?}\n - to_craft: {:?}", lineage, to_craft); }
     };
-
-
 
     lineage
 }

@@ -5,6 +5,7 @@ use std::{collections::VecDeque, sync::{Arc, Mutex, OnceLock}, time::Instant};
 use dashmap::DashMap;
 use futures::stream::{FuturesUnordered, StreamExt};
 use tokio::{sync::Semaphore, task, time::{sleep, Duration}};
+use colored::Colorize;
 
 use crate::structures::*;
 
@@ -244,6 +245,21 @@ pub async fn process_all_to_request_recipes() {
 
 
 
+
+
+fn interval_message(start_time: Instant, rs: RequestStats) {
+    println!("Request Time: {},  Requests: {}/{},  Current Outgoing Requests: {},  Requests/s: (Total: {}, Last 60s: {})",
+        format!("{:?}", start_time.elapsed()).yellow(),
+
+        rs.responded_requests.to_string().yellow(),
+        (rs.to_request).to_string().yellow(),
+
+        (rs.outgoing_requests - rs.responded_requests).to_string().yellow(),
+        
+        format!("{:.3}", rs.responded_requests as f64 / rs.start_time.elapsed().as_secs_f64()).yellow(),
+        format!("{:.3}", rs.rps_tracker.get_rps()).yellow(),
+    );
+}
 
 
 

@@ -1,5 +1,7 @@
 /target
 js-lib
 Cargo.lock
-Recipe Files In
-Recipe Files Out
+Recipe Files In/*
+Recipe Files Out/*
+Lineages Files/*
+Recipe Files Out/depth_explorer_recipes.json

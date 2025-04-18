@@ -1,12 +1,11 @@
 use serde::{Deserialize, Serialize};
 use std::{
-    fs::{self, File}, io::{self, BufWriter, BufReader, Write}, path::{Path, PathBuf}, sync::RwLock, time::{Instant, SystemTime, UNIX_EPOCH}
+    fs::{self, File}, io::{self, BufWriter, BufReader, Write, Read}, path::{Path, PathBuf}, sync::RwLock, time::{Instant, SystemTime, UNIX_EPOCH}
 };
 use rustc_hash::FxHashMap;
 use rayon::prelude::*;
 
-use flate2::read::GzDecoder;
-use libdeflater::{Compressor, CompressionLvl};
+use libdeflater::{CompressionLvl, Compressor, Decompressor};
 
 use crate::{structures::*, GLOBAL_OPTIONS};
 
@@ -244,16 +243,32 @@ struct RecipesGzipItemData {
     recipes: Vec<(u32, u32)>,
 }
 
-pub fn load_recipes_gzip(filepath: &str) {
+pub fn load_recipes_gzip(filepath: &str) -> io::Result<()> {
     let start_time = Instant::now();
 
-    let path = Path::new(filepath);
-    let file = File::open(path).unwrap_or_else(|_| panic!("path {:?} does not exist", path));
-    let reader = BufReader::with_capacity(1024 * 1024, file); // 1MB buffer
-    let decoder = GzDecoder::new(reader);
+    // 1. Read compressed data
+    let mut file = File::open(filepath)?;
+    let mut gz_data = Vec::new();
+    file.read_to_end(&mut gz_data)?;
 
-    let data: RecipesGzip = serde_json::from_reader(decoder).expect("JSON reading failed...");
+    // 2. Get expected size from GZIP footer
+    if gz_data.len() < 4 { return Err(io::Error::new(io::ErrorKind::InvalidData, "Gzip data too short")); }
+    let isize = u32::from_le_bytes(gz_data[gz_data.len()-4..].try_into().unwrap()) as usize;
+
+    // 3. Decompress
+    let mut decompressor = Decompressor::new();
+    let mut out_buf = vec![0u8; isize];
+    let actual_size = decompressor.gzip_decompress(&gz_data, &mut out_buf)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, format!("Decompression failed: {:?}", e)))?;
+    out_buf.truncate(actual_size); // Adjust size if ISIZE was wrong
+
+    // 4. Parse JSON
+    let data: RecipesGzip = serde_json::from_slice(&out_buf)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, format!("JSON parsing failed: {}", e)))?;
     println!("  - Deserialization complete: {:?}", start_time.elapsed());
+
+
+
 
 
     let mut num_to_str: Vec<String> = vec![String::from("Nothing")];
@@ -283,6 +298,8 @@ pub fn load_recipes_gzip(filepath: &str) {
 
     merge_new_variables_with_existing(&mut num_to_str, &mut str_to_num, recipes_ing);
     println!("Loaded Recipes from {}: {:?}", filepath, start_time.elapsed());
+
+    Ok(())
 }
 
 

@@ -13,6 +13,11 @@ use crate::depth_explorer::*;
 
 struct GlobalOptions {
     saved_recipes_files_location: &'static str,
+
+    depth_explorer_max_seed_length: usize,
+    depth_explorer_final_elements_guess: usize,
+    depth_explorer_depth_grow_factor_guess: usize,
+    depth_explorer_print_progress_every_elements: u32,
 }
 
 
@@ -25,29 +30,10 @@ struct GlobalOptions {
 
 const GLOBAL_OPTIONS: GlobalOptions = GlobalOptions {
     saved_recipes_files_location: "Recipe Files Out",
-};
-
-
-
-const DEPTH_EXPLORER_OPTIONS: DepthExplorerOptions = DepthExplorerOptions {
-    stop_after_depth: 2,
-    final_elements_guess: 55000,
-    final_seeds_guess: 15_000_000,
-    input_text_lineage: r#"
-
-Earth + Water = Plant
-Earth + Plant = Tree
-Tree + Water = River
-Earth + River = Delta
-River + Tree = Paper
-Paper + Tree = Book
-Book + Delta = Alphabet
-Alphabet + Alphabet = Word
-Word + Word = Sentence
-Sentence + Wind = Phrase
-Book + Phrase = Quote
-Alphabet + Quote = Punctuation
-"#,
+    depth_explorer_max_seed_length: 3,
+    depth_explorer_final_elements_guess: 50_000,
+    depth_explorer_depth_grow_factor_guess: 10,
+    depth_explorer_print_progress_every_elements: 1000,
 };
 
 
@@ -59,13 +45,17 @@ async fn main() {
     // --- LOAD RECIPES ---
     // there are 3 load_recipes_xxx functions. if multiple recipe files are loaded, it merges them
 
-    load_recipes_num("D:\\InfiniteCraft\\Codes\\recipesNum.json");
-    // load_recipes_gzip("./Recipe Files In/Helper-Save.ic");
+    // load_recipes_num("D:\\InfiniteCraft\\Codes\\recipesNum.json");
+    // load_recipes_old_depth_explorer("D:\\InfiniteCraft\\Codes\\recipes.json");
+    // load_recipes_gzip("./Recipe Files Out/full_db.ic").expect("a");
 
 
     // auto save / auto load:
-    load_recipes_num("./Recipe Files Out/depth_explorer_recipes.json");
+    load_recipes_num("D:/InfiniteCraft/Codes/rust/Recipe Files Out/depth_explorer_recipes.json");
     auto_save_recipes(Duration::from_secs(60), || save_recipes_num("depth_explorer_recipes.json"));
+
+    // v analyzer format!!! v
+    // save_recipes_gzip("full_db.ic", "Full Db").expect("could not save...");
 
 
     // verify recipes:
@@ -81,11 +71,33 @@ async fn main() {
 
 
 
-    depth_explorer_start().await;
+    let mut de_vars = DepthExplorerVars {
+        stop_after_depth: GLOBAL_OPTIONS.depth_explorer_max_seed_length - 1,  // modify the global variable instead because yes
+        input_text_lineage: r#"
 
-    save_recipes_num("depth_explorer_recipes.json").expect("could not save...");
+Earth + Water = Plant
+Earth + Plant = Tree
+Tree + Water = River
+Earth + River = Delta
+River + Tree = Paper
+Paper + Tree = Book
+Book + Delta = Alphabet
+Alphabet + Alphabet = Word
+Word + Word = Sentence
+Sentence + Wind = Phrase
+Book + Phrase = Quote
+Alphabet + Quote = Punctuation
 
-    generate_lineages_file().expect("could not generate lineages file...");
+"#,
+        ..Default::default()
+    };
+
+
+    depth_explorer_start(&mut de_vars).await;
+
+    // save_recipes_num("depth_explorer_recipes.json").expect("could not save...");
+
+    generate_lineages_file(&de_vars).expect("could not generate lineages file...");
 
 
 

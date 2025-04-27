@@ -3,12 +3,6 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::structures::*;
 
-#[derive(Debug, Clone)]
-pub struct Lineage {
-    pub lineage: Vec<[u32; 3]>,
-    pub goals: Vec<u32>,
-}
-
 
 
 pub fn format_lineage(lineage: Lineage) -> String {
@@ -143,50 +137,6 @@ pub fn generate_lineage(goals: &[u32], recalc: u8) -> Lineage {
 
 
 
-
-
-
-
-
-
-pub fn generate_lineage_from_results(results: &[u32], already_made: &[u32], variables: &Variables) -> Vec<[u32; 3]> {
-    let base_elements = variables.base_elements;
-    let recipes_result = variables.recipes_result.read().unwrap();
-    let recipes_ing = variables.recipes_ing.read().unwrap();
-
-    let mut lineage: Vec<[u32; 3]> = Vec::new();
-    let mut to_craft: Vec<u32> = results.iter().copied().collect();
-    let mut crafted: FxHashSet<u32> = base_elements.iter().chain(already_made).copied().collect();
-
-    while !to_craft.is_empty() {
-        let mut changes = false;
-
-        to_craft = to_craft
-            .iter()
-            .filter(|&element| {
-                if let Some(recipe) = recipes_result
-                    .get(element)
-                    .expect("element not in recipes_result")
-                    .iter()
-                    .find(|&&rec| crafted.contains(&rec.0) && crafted.contains(&rec.1)) {
-                    
-                    crafted.insert(*element);
-                    
-                    let actual_caps = recipes_ing.get(&&sort_recipe_tuple((recipe.0, recipe.1))).unwrap_or_else(|| panic!("{:?} not in recipes_ing", debug_print_recipe_tuple((recipe.0, recipe.1))));
-                    lineage.push([recipe.0, recipe.1, *actual_caps]);
-                    changes = true;
-                    false  // filter out
-                }
-                else { true }  // keep
-            })
-            .copied()
-            .collect();
-
-        if !changes { panic!("could not generate lineage...\n - lineage: {:?}\n - to_craft: {:?}", lineage, to_craft); }
-    };
-
-    lineage
-}
 
 
 
@@ -328,4 +278,16 @@ pub fn correctly_order(lineage: Lineage) -> Lineage {
         lineage: new_lineage,
         goals: lineage.goals,
     }
+}
+
+
+
+
+
+
+
+
+
+pub fn remove_unneccessary_v2(blacklist_map: FxHashMap<Element, Vec<Element>>) {
+
 }

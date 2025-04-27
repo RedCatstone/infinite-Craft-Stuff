@@ -1,9 +1,10 @@
 use std::collections::BinaryHeap;
+use std::thread::JoinHandle;
 use std::time::Instant;
 use dashmap::DashSet;
 use rustc_hash::FxHashMap;
 use std::cmp::Reverse;
-use std::sync::{OnceLock, RwLock, RwLockWriteGuard};
+use std::sync::{Arc, Mutex, OnceLock, RwLock, RwLockWriteGuard};
 use tokio::time::{self, Duration};
 use std::io::Error;
 
@@ -24,6 +25,16 @@ pub struct Variables {
 }
 
 pub static VARIABLES: OnceLock<Variables> = OnceLock::new();
+
+
+
+pub type Element = u32;
+
+#[derive(Debug, Clone)]
+pub struct Lineage {
+    pub lineage: Vec<[Element; 3]>,
+    pub goals: Vec<Element>,
+}
 
 
 
@@ -96,30 +107,61 @@ pub fn str_to_num_fn(str: &str) -> u32 {
 
 
 
-pub fn auto_save_recipes(interval: Duration, save_func: impl Fn() -> Result<(), Error> + Send + Sync + 'static) {
-    let mut recipe_count;
-    {
+
+
+
+
+pub struct AutoSaver {
+    save_logic: Arc<dyn Fn() + Send + Sync + 'static>,
+    interval_task: tokio::task::JoinHandle<()>,
+}
+
+impl AutoSaver {
+    pub fn save_now(&self) {
+        (self.save_logic)();
+    }
+    pub fn abort(&self) {
+        self.interval_task.abort();
+    }
+}
+impl Drop for AutoSaver {
+    fn drop(&mut self) {
+        self.interval_task.abort();
+    }
+}
+
+
+pub fn auto_save_recipes(interval: Duration, save_fn: impl Fn() + Send + Sync + 'static) -> AutoSaver {
+    let recipe_count_mutex = Arc::new(Mutex::new({
         let variables = VARIABLES.get().expect("VARIABLES not initialized");
         let recipes_ing = variables.recipes_ing.read().unwrap();
-        recipe_count = recipes_ing.len();
-    }
+        recipes_ing.len()
+    }));
+    
 
-    tokio::spawn(async move {
-        let mut interval = time::interval(interval);
-        loop {
-            interval.tick().await;
-
-            let bigger;
-            {
-                let variables = VARIABLES.get().expect("VARIABLES not initialized");
-                let recipes_ing = variables.recipes_ing.read().unwrap();
-                bigger = recipe_count < recipes_ing.len(); 
-                recipe_count = recipes_ing.len();
-            }
-
-            if bigger { save_func().unwrap(); }
+    let arc_save_fn =  Arc::new(move || {
+        let bigger;
+        {
+            let variables = VARIABLES.get().expect("VARIABLES not initialized");
+            let recipes_ing = variables.recipes_ing.read().unwrap();
+            let mut recipe_count_guard = recipe_count_mutex.lock().expect("lock poisoned");
+            bigger = *recipe_count_guard < recipes_ing.len(); 
+            *recipe_count_guard = recipes_ing.len();
         }
+
+        if bigger { save_fn(); }
     });
+
+    AutoSaver {
+        save_logic: arc_save_fn.clone(),
+        interval_task: tokio::spawn(async move {
+            let mut interval = time::interval(interval);
+            loop {
+                interval.tick().await;
+                arc_save_fn();
+            }
+        }),
+    }
 }
 
 

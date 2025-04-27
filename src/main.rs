@@ -17,7 +17,7 @@ struct GlobalOptions {
     depth_explorer_max_seed_length: usize,
     depth_explorer_final_elements_guess: usize,
     depth_explorer_depth_grow_factor_guess: usize,
-    depth_explorer_print_progress_every_elements: u32,
+    depth_explorer_print_progress_every_elements: usize,
 }
 
 
@@ -30,7 +30,7 @@ struct GlobalOptions {
 
 const GLOBAL_OPTIONS: GlobalOptions = GlobalOptions {
     saved_recipes_files_location: "Recipe Files Out",
-    depth_explorer_max_seed_length: 3,
+    depth_explorer_max_seed_length: 6,
     depth_explorer_final_elements_guess: 50_000,
     depth_explorer_depth_grow_factor_guess: 10,
     depth_explorer_print_progress_every_elements: 1000,
@@ -50,9 +50,13 @@ async fn main() {
     // load_recipes_gzip("./Recipe Files Out/full_db.ic").expect("a");
 
 
-    // auto save / auto load:
+    // loading from auto save:
     load_recipes_num("D:/InfiniteCraft/Codes/rust/Recipe Files Out/depth_explorer_recipes.json");
-    auto_save_recipes(Duration::from_secs(60), || save_recipes_num("depth_explorer_recipes.json"));
+    // auto save:
+    let auto_save = auto_save_recipes(Duration::from_secs(60), || {
+        println!("saving recipes...");
+        save_recipes_num("depth_explorer_recipes.json").expect("could not auto save...")
+    });
 
     // v analyzer format!!! v
     // save_recipes_gzip("full_db.ic", "Full Db").expect("could not save...");
@@ -72,7 +76,7 @@ async fn main() {
 
 
     let mut de_vars = DepthExplorerVars {
-        stop_after_depth: GLOBAL_OPTIONS.depth_explorer_max_seed_length - 1,  // modify the global variable instead because yes
+        stop_after_depth: GLOBAL_OPTIONS.depth_explorer_max_seed_length,  // modify the global variable instead because yes
         input_text_lineage: r#"
 
 Earth + Water = Plant
@@ -95,7 +99,7 @@ Alphabet + Quote = Punctuation
 
     depth_explorer_start(&mut de_vars).await;
 
-    // save_recipes_num("depth_explorer_recipes.json").expect("could not save...");
+    auto_save.save_now();
 
     generate_lineages_file(&de_vars).expect("could not generate lineages file...");
 

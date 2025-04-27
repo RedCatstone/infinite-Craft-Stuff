@@ -1,3 +1,4 @@
+use std::collections::{hash_map, HashMap};
 use std::time::Instant;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::cmp;
@@ -5,6 +6,7 @@ use std::fmt::Write as FmtWrite;
 use std::fs::{self, File};
 use std::io::{self, Write, BufWriter};
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use rayon::prelude::*;
 use dashmap::{DashMap, DashSet};
 use tinyvec::TinyVec;   // can move to heap
@@ -58,7 +60,10 @@ struct DepthExplorerPrivateStructures {
     encountered: DashMap<u32, TinyVec<[Seed; 5]>>,
 
     element_combined_with_base: DashMap<u32, Vec<u32>>,
-    num_to_str_len: Vec<usize>
+    num_to_str_len: Vec<usize>,
+
+    start_time: Instant,
+    processed_seed_count: AtomicUsize,
 }
 
 
@@ -68,8 +73,6 @@ struct DepthExplorerPrivateStructures {
 
 
 pub async fn depth_explorer_start(de_vars: &mut DepthExplorerVars<'_>) {
-    let start_time = Instant::now();
-
     let variables = VARIABLES.get().expect("VARIABLES not initialized");
     let base_elements = variables.base_elements;
     
@@ -89,6 +92,9 @@ pub async fn depth_explorer_start(de_vars: &mut DepthExplorerVars<'_>) {
                 .iter()
                 .map(|x| x.len())
                 .collect(),
+
+        start_time: Instant::now(),
+        processed_seed_count: AtomicUsize::new(0),
     };
 
 
@@ -99,7 +105,7 @@ pub async fn depth_explorer_start(de_vars: &mut DepthExplorerVars<'_>) {
     let mut depth1 = FxHashSet::default();
     all_combination_results(&de_struc.base_lineage_vec, &mut depth1, &de_struc, false);
     for &x in depth1.iter() {
-        add_to_encountered(x, &Seed::new(), &de_struc.encountered);
+        add_to_encountered(x, &Seed::new(), &de_struc);
     }
     de_struc.base_lineage_depth1.extend(depth1.iter());
     de_struc.depth1 = depth1;
@@ -138,7 +144,7 @@ pub async fn depth_explorer_start(de_vars: &mut DepthExplorerVars<'_>) {
         if variables.to_request_recipes.is_empty() {
             println!("\nDepth {} complete!\n - Time: {:?}\n - Elements: {}\n - Seeds: {} -> {}\n",
                 depth + 1,
-                start_time.elapsed(),
+                de_struc.start_time.elapsed(),
                 de_struc.encountered.len(),
                 de_struc.seed_sets[depth].len(),
                 if let Some(x) = de_struc.seed_sets.get(depth + 1) { x.len() } else { 0 },
@@ -154,6 +160,7 @@ pub async fn depth_explorer_start(de_vars: &mut DepthExplorerVars<'_>) {
             process_all_to_request_recipes().await;
             de_struc.element_combined_with_base.clear();
         }
+        de_struc.processed_seed_count.store(0, Ordering::Relaxed);
     }
 
     de_vars.encountered = de_struc.encountered;
@@ -190,7 +197,7 @@ fn proccess_seed_logic(seed: dashmap::setref::multiple::RefMulti<'_, Seed>, dept
 
     if final_depth {
         for &result in all_results.iter() {
-            add_to_encountered(result, &seed, &de_struc.encountered);
+            add_to_encountered(result, &seed, &de_struc);
         }
     }
 
@@ -220,7 +227,7 @@ fn proccess_seed_logic(seed: dashmap::setref::multiple::RefMulti<'_, Seed>, dept
 
 
         for &result in all_results.iter() {
-            add_to_encountered(result, &seed, &de_struc.encountered);
+            add_to_encountered(result, &seed, &de_struc);
 
             if de_struc.num_to_str_len[result as usize] > 30 { continue; }
         
@@ -250,6 +257,8 @@ fn proccess_seed_logic(seed: dashmap::setref::multiple::RefMulti<'_, Seed>, dept
         let mut pool = pool_cell.borrow_mut();
         pool.push(all_results);
    });
+
+   de_struc.processed_seed_count.fetch_add(1, Ordering::Relaxed);
 }
 
 
@@ -352,35 +361,75 @@ fn all_combination_results(input_seed: &[u32], existing_set: &mut FxHashSet<u32>
 
 
 
-fn add_to_encountered(element: u32, seed: &Seed, encountered: &DashMap<u32, TinyVec<[Seed; 5]>>) {
 
-    let mut entry = encountered.entry(element).or_default();
-    let existing_seeds = entry.value_mut();
 
-    if existing_seeds.is_empty() {
-        // first time seeing this element
-        existing_seeds.push(seed.clone());
-    }
-    else {
-        // already exists, compare lengths
-        match seed.len().cmp(&existing_seeds.first().unwrap().len()) {
-            cmp::Ordering::Less => {
-                // new seed is shorter, replace the list
-                existing_seeds.clear();
-                existing_seeds.push(seed.clone());
-            },
-            cmp::Ordering::Equal => {
-                // new seed is same length, add if not already present (linear scan ok for few ties)
-                if !existing_seeds.contains(seed) {
+
+
+fn add_to_local_encountered(element: Element, seed: &Seed, local_map: &mut FxHashMap<Element, TinyVec<[Seed; 5]>>) {
+    match local_map.entry(element) {
+        hash_map::Entry::Occupied(mut entry) => {
+            let existing_seeds = entry.get_mut();
+
+            match seed.len().cmp(&existing_seeds.first().unwrap().len()) {
+                cmp::Ordering::Less => {
+                    // new seed is shorter, replace the list
+                    existing_seeds.clear();
                     existing_seeds.push(seed.clone());
-                }
-            },
-            cmp::Ordering::Greater => {
-                // new seed is longer, do nothing
-            },
+                },
+                cmp::Ordering::Equal => {
+                    // new seed is same length, add if not already present (linear scan ok for few ties)
+                    if !existing_seeds.contains(seed) {
+                        existing_seeds.push(seed.clone());
+                    }
+                },
+                cmp::Ordering::Greater => {
+                    // new seed is longer, do nothing
+                },
+            }
+        }
+        hash_map::Entry::Vacant(entry) => {
+            // element is new for this thread
+            let mut new_vec = TinyVec::new();
+            new_vec.push(seed.clone());
+            entry.insert(new_vec);
         }
     }
-    // Lock for this entry is released when `entry` goes out of scope
+}
+
+
+
+
+fn merge_to_main_encountered_map(main_map: &mut FxHashMap<Element, TinyVec<[Seed; 5]>>, local_map: &mut FxHashMap<Element, TinyVec<[Seed; 5]>>) {
+    for (element, local_seeds) in local_map.drain() {
+        match main_map.entry(element) {
+            hash_map::Entry::Occupied(mut entry) => {
+                let main_seeds = entry.get_mut();
+                let main_len = main_seeds.first().unwrap().len(); // Assumes non-empty
+                let local_len = local_seeds.first().unwrap().len();
+
+                match local_len.cmp(&main_len) {
+                    cmp::Ordering::Less => {
+                        // Local map's seeds are shorter, replace main's
+                        *main_seeds = local_seeds;
+                    }
+                    cmp::Ordering::Equal => {
+                        // Same length, add seeds from local map if not already present
+                        for seed in local_seeds.into_iter() {
+                            if !main_seeds.contains(&seed) {
+                                main_seeds.push(seed);
+                            }
+                        }
+                    }
+                    cmp::Ordering::Greater => {
+                        // Main map's seeds are shorter, do nothing with this element
+                    }
+                }
+            }
+            hash_map::Entry::Vacant(entry) => {
+                entry.insert(local_seeds);
+            }
+        }
+    }
 }
 
 
@@ -389,18 +438,136 @@ fn add_to_encountered(element: u32, seed: &Seed, encountered: &DashMap<u32, Tiny
 
 
 
-pub fn get_encountered_entry(element: u32, seeds: &[Seed], base_lineage_vec: &[u32]) -> String {
+
+
+
+
+fn add_to_encountered(element: u32, seed: &Seed, de_struc: &DepthExplorerPrivateStructures) {
+    let mut needs_write = false;
+
+    if let Some(read_entry) = de_struc.encountered.get(&element) {
+        let existing_seeds = read_entry.value();
+        match seed.len().cmp(&existing_seeds.first().unwrap().len()) {
+            cmp::Ordering::Less => {
+                // new seed is shorter, replace the list
+                needs_write = true;
+            },
+            cmp::Ordering::Equal => {
+                // new seed is same length, add if not already present (linear scan ok for few ties)
+                if !existing_seeds.contains(seed) {
+                    needs_write = true;
+                }
+            },
+            cmp::Ordering::Greater => {
+                // new seed is longer, do nothing
+            },
+        }
+    }
+    else { needs_write = true; }
+
+
+
+    if needs_write {
+        let mut entry = de_struc.encountered.entry(element).or_default();
+        let existing_seeds = entry.value_mut();
+
+        if existing_seeds.is_empty() {
+            // first time seeing this element
+            existing_seeds.push(seed.clone());
+            // prevent deadlock
+            drop(entry);
+            if de_struc.encountered.len() % GLOBAL_OPTIONS.depth_explorer_print_progress_every_elements == 0 {
+                print_interval_message(seed.len(), de_struc);
+            }
+        }
+        else {
+            // already exists, compare lengths
+            match seed.len().cmp(&existing_seeds.first().unwrap().len()) {
+                cmp::Ordering::Less => {
+                    // new seed is shorter, replace the list
+                    existing_seeds.clear();
+                    existing_seeds.push(seed.clone());
+                },
+                cmp::Ordering::Equal => {
+                    // new seed is same length, add if not already present (linear scan ok for few ties)
+                    if !existing_seeds.contains(seed) {
+                        existing_seeds.push(seed.clone());
+                    }
+                },
+                cmp::Ordering::Greater => {
+                    // new seed is longer, do nothing
+                },
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+pub fn get_encountered_entry(element: Element, seeds: &[Seed], initial_crafted: &FxHashSet<Element>, real_recipes_result: &FxHashMap<Element, Vec<(Element, Element, Option<Element>)>>) -> String {
     let mut message = String::with_capacity(seeds.len() * seeds[0].len() * 7);    
     write!(message, "{} - {}:", seeds[0].len() + 1, num_to_str_fn(element)).unwrap();
 
-    let variables = VARIABLES.get().expect("VARIABLES not initialized");
-    let neal_case_map = variables.neal_case_map.read().expect("neal_case_map not initialized");
+    for (i, seed) in seeds.iter().enumerate() {        
 
-    for (i, seed) in seeds.iter().enumerate() {
-        let mut actual_seed = seed.clone();
-        actual_seed.push(*neal_case_map.get(element as usize).unwrap());
+        let mut lineage: Vec<[Element; 3]> = Vec::with_capacity(seed.len() + 1);
+        let mut to_craft: Vec<Element> = seed.iter().copied().collect();
+        let mut crafted: FxHashSet<Element> = initial_crafted.clone();
+        let mut caps_map: FxHashMap<Element, Element> = FxHashMap::default();
 
-        let lineage = generate_lineage_from_results(&actual_seed, base_lineage_vec, variables);
+        while !to_craft.is_empty() {
+            let mut changes = false;
+
+            to_craft = to_craft
+                .iter()
+                .filter(|&to_craft_element| {
+                    if let Some(recipe) = real_recipes_result
+                        .get(to_craft_element)
+                        .expect("to_craft_element not in real_recipes_result")
+                        .iter()
+                        .find(|&&rec| crafted.contains(&rec.0) && crafted.contains(&rec.1)) {
+                        
+                        crafted.insert(*to_craft_element);
+
+                        if let Some(actual_caps_result) = recipe.2 {
+                            caps_map.insert(*to_craft_element, actual_caps_result);
+                        }
+                        
+                        lineage.push([
+                            *caps_map.get(&recipe.0).unwrap_or_else(|| &recipe.0),
+                            *caps_map.get(&recipe.1).unwrap_or_else(|| &recipe.1),
+                            *caps_map.get(to_craft_element).unwrap_or_else(|| to_craft_element),
+                        ]);
+                        changes = true;
+                        false  // filter out
+                    }
+                    else { true }  // keep
+                })
+                .copied()
+                .collect();
+
+            if !changes { panic!("could not generate lineage...\n - lineage: {:?}\n - to_craft: {:?}", lineage, to_craft); }
+        };
+
+        let final_recipe = real_recipes_result
+            .get(&element)
+            .expect("element not in real_recipes_result")
+            .iter()
+                // find with correct caps
+            .find(|&&rec| crafted.contains(&rec.0) && crafted.contains(&rec.1) && rec.2.unwrap_or_else(|| element) == element)
+            .expect("could not find a final_recipe...");
+
+        lineage.push([
+            *caps_map.get(&final_recipe.0).unwrap_or_else(|| &final_recipe.0),
+            *caps_map.get(&final_recipe.1).unwrap_or_else(|| &final_recipe.1),
+            element
+        ]);
+
+
         let lineage_string = format_lineage_no_goals(lineage);
 
         if i != 0 {
@@ -422,12 +589,33 @@ pub fn get_encountered_entry(element: u32, seeds: &[Seed], base_lineage_vec: &[u
 
 pub fn generate_lineages_file(de_vars: &DepthExplorerVars) -> io::Result<()> {
     // required for this function:
-    update_recipes_result();
+    let start_time = Instant::now();
 
-    
     let variables = VARIABLES.get().expect("VARIABLES not initialized");
+    let recipes_ing = variables.recipes_ing.read().unwrap();
+    let neal_case_map = variables.neal_case_map.read().unwrap();
+    let mut real_recipes_result: FxHashMap<Element, Vec<(Element, Element, Option<Element>)>> = FxHashMap::with_capacity_and_hasher(neal_case_map.len(), Default::default());
+
+    for (&(first, second), &result) in recipes_ing.iter() {
+        let f = neal_case_map[first as usize];
+        let s = neal_case_map[second as usize];
+        let r = neal_case_map[result as usize];
+        if result == r {
+            // if result is neal case
+            real_recipes_result.entry(r).or_default().push((f, s, None));
+        }
+        else {
+            // if result is not neal case
+            real_recipes_result.entry(r).or_default().push((f, s, Some(result)));
+            real_recipes_result.entry(result).or_default().push((f, s, None));
+        };
+    };
+    println!("made recipes_result in {:?}", start_time.elapsed());
+
+
     let base_elements = variables.base_elements;
     let base_lineage_vec: Vec<u32> = base_elements.iter().chain(&string_lineage_results(de_vars.input_text_lineage)).copied().collect();
+    let initial_crafted: FxHashSet<Element> = base_lineage_vec.iter().copied().collect();
 
 
     let start_time = Instant::now();
@@ -448,10 +636,10 @@ pub fn generate_lineages_file(de_vars: &DepthExplorerVars) -> io::Result<()> {
         .par_iter()
         .map(|entry| {
             let element = *entry.key();
-            let lineages = entry.value();
+            let seeds = entry.value();
 
-            let bucket_key = lineages.first().map_or(0, |first_seed| first_seed.len() + 1);
-            let formatted_string = get_encountered_entry(element, lineages, &base_lineage_vec);
+            let bucket_key = seeds.first().map_or(0, |first_seed| first_seed.len() + 1);
+            let formatted_string = get_encountered_entry(element, seeds, &initial_crafted, &real_recipes_result);
             (bucket_key, element, formatted_string)
         })
         .collect();
@@ -515,12 +703,12 @@ pub fn generate_lineages_file(de_vars: &DepthExplorerVars) -> io::Result<()> {
 
 
 
-fn print_interval_message(start_time: &Instant, depth: usize, de_struc: &DepthExplorerPrivateStructures) {
+fn print_interval_message(depth: usize, de_struc: &DepthExplorerPrivateStructures) {
     println!("Depth: {},  Time: {},  Elements: {},  Seeds: {}/{}",
-        depth.to_string().yellow(),
+        (depth + 1).to_string().yellow(),
+        format!("{:?}", de_struc.start_time.elapsed()).yellow(),
         de_struc.encountered.len().to_string().yellow(),
-        format!("{:?}", start_time.elapsed()).yellow(),
-        0.to_string().yellow(),
+        de_struc.processed_seed_count.load(Ordering::Relaxed).to_string().yellow(),
         de_struc.seed_sets[depth].len().to_string().yellow(),
     );
 }

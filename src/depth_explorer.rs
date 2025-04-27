@@ -1,4 +1,4 @@
-use std::collections::{hash_map, HashMap};
+use std::collections::hash_map;
 use std::time::Instant;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::cmp;
@@ -7,6 +7,8 @@ use std::fs::{self, File};
 use std::io::{self, Write, BufWriter};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
+use arc_swap::ArcSwap;
 use rayon::prelude::*;
 use dashmap::{DashMap, DashSet};
 use tinyvec::TinyVec;   // can move to heap
@@ -14,7 +16,7 @@ use tinyvec::ArrayVec;  // can't move to heap
 use colored::Colorize;
 use std::cell::RefCell;
 
-use crate::GLOBAL_OPTIONS;
+use crate::{main, GLOBAL_OPTIONS};
 use crate::lineage::*;
 use crate::structures::*;
 use crate::recipe_requestor::process_all_to_request_recipes;
@@ -47,8 +49,10 @@ thread_local! {
 pub struct DepthExplorerVars<'a> {
     pub input_text_lineage: &'a str,
     pub stop_after_depth: usize,
-    pub encountered: DashMap<u32, TinyVec<[Seed; 5]>>
+    pub encountered: FxHashMap<u32, TinyVec<[Seed; 5]>>
 }
+
+type EncounteredMap = FxHashMap<Element, TinyVec<[Seed; 5]>>;
 
 
 struct DepthExplorerPrivateStructures {
@@ -57,8 +61,8 @@ struct DepthExplorerPrivateStructures {
     base_lineage_depth1: FxHashSet<u32>,
 
     seed_sets: Vec<DashSet<Seed>>,
-    encountered: DashMap<u32, TinyVec<[Seed; 5]>>,
-
+    main_encountered: ArcSwap<EncounteredMap>,
+    
     element_combined_with_base: DashMap<u32, Vec<u32>>,
     num_to_str_len: Vec<usize>,
 
@@ -85,7 +89,7 @@ pub async fn depth_explorer_start(de_vars: &mut DepthExplorerVars<'_>) {
         depth1: FxHashSet::default(),
 
         seed_sets: vec![DashSet::default()],
-        encountered: DashMap::with_capacity(GLOBAL_OPTIONS.depth_explorer_final_elements_guess),
+        main_encountered: ArcSwap::from(Arc::new(FxHashMap::with_capacity_and_hasher(GLOBAL_OPTIONS.depth_explorer_final_elements_guess, Default::default()))),
 
         element_combined_with_base: DashMap::with_capacity(GLOBAL_OPTIONS.depth_explorer_final_elements_guess / GLOBAL_OPTIONS.depth_explorer_depth_grow_factor_guess),
         num_to_str_len: variables.num_to_str.read().unwrap()
@@ -100,13 +104,15 @@ pub async fn depth_explorer_start(de_vars: &mut DepthExplorerVars<'_>) {
 
 
 
-
     // --- Depth 1 ---
     let mut depth1 = FxHashSet::default();
     all_combination_results(&de_struc.base_lineage_vec, &mut depth1, &de_struc, false);
+    let mut depth1_map = EncounteredMap::default();
+    let empty_arc = Arc::new(EncounteredMap::default());
     for &x in depth1.iter() {
-        add_to_encountered(x, &Seed::new(), &de_struc);
+        add_to_local_encountered(x, &Seed::new(), &mut depth1_map, &empty_arc);
     }
+    de_struc.main_encountered.store(Arc::new(depth1_map));
     de_struc.base_lineage_depth1.extend(depth1.iter());
     de_struc.depth1 = depth1;
 
@@ -136,16 +142,51 @@ pub async fn depth_explorer_start(de_vars: &mut DepthExplorerVars<'_>) {
             .expect("depth larger than seed_set");
 
 
-        seeds
+
+        // --- Parallel Processing with Fold/Reduce ---
+        let depth_results_map = seeds
             .into_par_iter()
-            .for_each(|seed| proccess_seed_logic(seed, depth, &de_struc, final_depth));
+            .fold(
+                // Initial value factory: Each thread gets an empty local map
+                || EncounteredMap::default(),
+                // Fold operation: Process seed, check shared map, update local map
+                |mut local_encountered_map, seed| { // seed is owned
+                    // Pass the Arc'd shared map to the processing logic
+                    proccess_seed_logic(
+                        seed,
+                        depth,
+                        &de_struc,
+                        final_depth,
+                        &mut local_encountered_map,     // Pass local write map
+                    );
+                    local_encountered_map // Return the updated local map
+                }
+            )
+            // Reduce operation: Combine local maps using the merge helper
+            .reduce(
+                || EncounteredMap::default(), // Identity for merging
+                merge_local_encountered_maps // Use the merge helper
+            );
+        // --- End Fold/Reduce ---
+
+        // --- Merge and Update ---
+        // 1. Load the *current* Arc pointer
+        let current_main_arc = de_struc.main_encountered.load_full();
+        // 2. Clone the data *from the current Arc*
+        let current_main_map_data = (*current_main_arc).clone();
+        // 3. Merge the depth results into the *cloned* data
+        let new_main_map_data = merge_local_encountered_maps(current_main_map_data, depth_results_map);
+        // 4. Create a *new Arc* pointing to the merged data
+        let new_main_arc = Arc::new(new_main_map_data);
+        // 5. Atomically store the new Arc into the ArcSwap
+        de_struc.main_encountered.store(new_main_arc);
         
 
         if variables.to_request_recipes.is_empty() {
             println!("\nDepth {} complete!\n - Time: {:?}\n - Elements: {}\n - Seeds: {} -> {}\n",
                 depth + 1,
                 de_struc.start_time.elapsed(),
-                de_struc.encountered.len(),
+                de_struc.main_encountered.load().len(),
                 de_struc.seed_sets[depth].len(),
                 if let Some(x) = de_struc.seed_sets.get(depth + 1) { x.len() } else { 0 },
             );
@@ -157,13 +198,16 @@ pub async fn depth_explorer_start(de_vars: &mut DepthExplorerVars<'_>) {
             depth += 1;
         }
         else {
+            println!("Depth {} paused. Requesting {} new recipes...", depth + 1, variables.to_request_recipes.len());
             process_all_to_request_recipes().await;
             de_struc.element_combined_with_base.clear();
         }
         de_struc.processed_seed_count.store(0, Ordering::Relaxed);
     }
 
-    de_vars.encountered = de_struc.encountered;
+    let final_arc = de_struc.main_encountered.load_full();
+    de_vars.encountered = Arc::try_unwrap(final_arc)
+        .unwrap_or_else(|arc| (*arc).clone()); // Clone if other Arcs somehow still exist
 }
 
 
@@ -177,9 +221,17 @@ pub async fn depth_explorer_start(de_vars: &mut DepthExplorerVars<'_>) {
 
 
 
-fn proccess_seed_logic(seed: dashmap::setref::multiple::RefMulti<'_, Seed>, depth: usize, de_struc: &DepthExplorerPrivateStructures, final_depth: bool) {
+fn proccess_seed_logic(
+        seed: dashmap::setref::multiple::RefMulti<'_, Seed>,
+        depth: usize, de_struc: &DepthExplorerPrivateStructures,
+        final_depth: bool,
+        local_encountered_map: &mut EncounteredMap
+    ) {
+
+
     let variables = VARIABLES.get().expect("VARIABLES not initialized");
     let neal_case_map = variables.neal_case_map.read().expect("neal_case_map read lock");
+    let shared_read_encountered_map = de_struc.main_encountered.load();
 
 
     // all seed-seed and seed-base combinations
@@ -197,7 +249,7 @@ fn proccess_seed_logic(seed: dashmap::setref::multiple::RefMulti<'_, Seed>, dept
 
     if final_depth {
         for &result in all_results.iter() {
-            add_to_encountered(result, &seed, &de_struc);
+            add_to_local_encountered(result, &seed, local_encountered_map, &shared_read_encountered_map);
         }
     }
 
@@ -227,7 +279,7 @@ fn proccess_seed_logic(seed: dashmap::setref::multiple::RefMulti<'_, Seed>, dept
 
 
         for &result in all_results.iter() {
-            add_to_encountered(result, &seed, &de_struc);
+            add_to_local_encountered(result, &seed, local_encountered_map, &shared_read_encountered_map);
 
             if de_struc.num_to_str_len[result as usize] > 30 { continue; }
         
@@ -365,33 +417,59 @@ fn all_combination_results(input_seed: &[u32], existing_set: &mut FxHashSet<u32>
 
 
 
-fn add_to_local_encountered(element: Element, seed: &Seed, local_map: &mut FxHashMap<Element, TinyVec<[Seed; 5]>>) {
-    match local_map.entry(element) {
-        hash_map::Entry::Occupied(mut entry) => {
-            let existing_seeds = entry.get_mut();
+fn add_to_local_encountered(element: Element, seed: &Seed, local_map: &mut EncounteredMap, shared_read_encountered_map: &Arc<EncounteredMap>) {
+    let mut update = false;
 
-            match seed.len().cmp(&existing_seeds.first().unwrap().len()) {
-                cmp::Ordering::Less => {
-                    // new seed is shorter, replace the list
-                    existing_seeds.clear();
-                    existing_seeds.push(seed.clone());
-                },
-                cmp::Ordering::Equal => {
-                    // new seed is same length, add if not already present (linear scan ok for few ties)
-                    if !existing_seeds.contains(seed) {
-                        existing_seeds.push(seed.clone());
-                    }
-                },
-                cmp::Ordering::Greater => {
-                    // new seed is longer, do nothing
-                },
-            }
+    if let Some(existing_seeds) = shared_read_encountered_map.get(&element) {
+        match seed.len().cmp(&existing_seeds.first().unwrap().len()) {
+            cmp::Ordering::Less => {
+                // new seed is shorter, replace the list
+                update = true;
+            },
+            cmp::Ordering::Equal => {
+                // new seed is same length, add if not already present (linear scan ok for few ties)
+                if !existing_seeds.contains(seed) {
+                    update = true;
+                }
+            },
+            cmp::Ordering::Greater => {
+                // new seed is longer, do nothing
+            },
         }
-        hash_map::Entry::Vacant(entry) => {
-            // element is new for this thread
-            let mut new_vec = TinyVec::new();
-            new_vec.push(seed.clone());
-            entry.insert(new_vec);
+    }
+    else { update = true; }
+
+
+
+
+    if update {
+        match local_map.entry(element) {
+            hash_map::Entry::Occupied(mut entry) => {
+                let existing_seeds = entry.get_mut();
+
+                match seed.len().cmp(&existing_seeds.first().unwrap().len()) {
+                    cmp::Ordering::Less => {
+                        // new seed is shorter, replace the list
+                        existing_seeds.clear();
+                        existing_seeds.push(seed.clone());
+                    },
+                    cmp::Ordering::Equal => {
+                        // new seed is same length, add if not already present (linear scan ok for few ties)
+                        if !existing_seeds.contains(seed) {
+                            existing_seeds.push(seed.clone());
+                        }
+                    },
+                    cmp::Ordering::Greater => {
+                        // new seed is longer, do nothing
+                    },
+                }
+            }
+            hash_map::Entry::Vacant(entry) => {
+                // element is new for this thread
+                let mut new_vec = TinyVec::new();
+                new_vec.push(seed.clone());
+                entry.insert(new_vec);
+            }
         }
     }
 }
@@ -399,8 +477,8 @@ fn add_to_local_encountered(element: Element, seed: &Seed, local_map: &mut FxHas
 
 
 
-fn merge_to_main_encountered_map(main_map: &mut FxHashMap<Element, TinyVec<[Seed; 5]>>, local_map: &mut FxHashMap<Element, TinyVec<[Seed; 5]>>) {
-    for (element, local_seeds) in local_map.drain() {
+fn merge_local_encountered_maps(mut main_map: EncounteredMap, local_map: EncounteredMap) -> EncounteredMap {
+    for (element, local_seeds) in local_map {
         match main_map.entry(element) {
             hash_map::Entry::Occupied(mut entry) => {
                 let main_seeds = entry.get_mut();
@@ -430,6 +508,7 @@ fn merge_to_main_encountered_map(main_map: &mut FxHashMap<Element, TinyVec<[Seed
             }
         }
     }
+    main_map
 }
 
 
@@ -438,69 +517,6 @@ fn merge_to_main_encountered_map(main_map: &mut FxHashMap<Element, TinyVec<[Seed
 
 
 
-
-
-
-
-fn add_to_encountered(element: u32, seed: &Seed, de_struc: &DepthExplorerPrivateStructures) {
-    let mut needs_write = false;
-
-    if let Some(read_entry) = de_struc.encountered.get(&element) {
-        let existing_seeds = read_entry.value();
-        match seed.len().cmp(&existing_seeds.first().unwrap().len()) {
-            cmp::Ordering::Less => {
-                // new seed is shorter, replace the list
-                needs_write = true;
-            },
-            cmp::Ordering::Equal => {
-                // new seed is same length, add if not already present (linear scan ok for few ties)
-                if !existing_seeds.contains(seed) {
-                    needs_write = true;
-                }
-            },
-            cmp::Ordering::Greater => {
-                // new seed is longer, do nothing
-            },
-        }
-    }
-    else { needs_write = true; }
-
-
-
-    if needs_write {
-        let mut entry = de_struc.encountered.entry(element).or_default();
-        let existing_seeds = entry.value_mut();
-
-        if existing_seeds.is_empty() {
-            // first time seeing this element
-            existing_seeds.push(seed.clone());
-            // prevent deadlock
-            drop(entry);
-            if de_struc.encountered.len() % GLOBAL_OPTIONS.depth_explorer_print_progress_every_elements == 0 {
-                print_interval_message(seed.len(), de_struc);
-            }
-        }
-        else {
-            // already exists, compare lengths
-            match seed.len().cmp(&existing_seeds.first().unwrap().len()) {
-                cmp::Ordering::Less => {
-                    // new seed is shorter, replace the list
-                    existing_seeds.clear();
-                    existing_seeds.push(seed.clone());
-                },
-                cmp::Ordering::Equal => {
-                    // new seed is same length, add if not already present (linear scan ok for few ties)
-                    if !existing_seeds.contains(seed) {
-                        existing_seeds.push(seed.clone());
-                    }
-                },
-                cmp::Ordering::Greater => {
-                    // new seed is longer, do nothing
-                },
-            }
-        }
-    }
-}
 
 
 
@@ -634,9 +650,7 @@ pub fn generate_lineages_file(de_vars: &DepthExplorerVars) -> io::Result<()> {
     // --- Parallel Processing ---
     let keyed_entries: Vec<(usize, u32, String)> = de_vars.encountered
         .par_iter()
-        .map(|entry| {
-            let element = *entry.key();
-            let seeds = entry.value();
+        .map(|(&element, seeds)| {
 
             let bucket_key = seeds.first().map_or(0, |first_seed| first_seed.len() + 1);
             let formatted_string = get_encountered_entry(element, seeds, &initial_crafted, &real_recipes_result);
@@ -707,7 +721,7 @@ fn print_interval_message(depth: usize, de_struc: &DepthExplorerPrivateStructure
     println!("Depth: {},  Time: {},  Elements: {},  Seeds: {}/{}",
         (depth + 1).to_string().yellow(),
         format!("{:?}", de_struc.start_time.elapsed()).yellow(),
-        de_struc.encountered.len().to_string().yellow(),
+        0, // de_struc.main_encountered.read().unwrap().len().to_string().yellow(),
         de_struc.processed_seed_count.load(Ordering::Relaxed).to_string().yellow(),
         de_struc.seed_sets[depth].len().to_string().yellow(),
     );

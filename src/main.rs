@@ -11,30 +11,18 @@ use crate::structures::*; // Import public static if needed directly
 use crate::lineage::*;
 use crate::depth_explorer::*;
 
-struct GlobalOptions {
-    saved_recipes_files_location: &'static str,
-
-    depth_explorer_max_seed_length: usize,
-    depth_explorer_final_elements_guess: usize,
-    depth_explorer_depth_grow_factor_guess: usize,
-    depth_explorer_print_progress_every_elements: usize,
-}
 
 
 
 
 
+const SAVED_RECIPES_FILES_LOCATION: &'static str = "Recipe Files Out";
+const DEPTH_EXPLORER_MAX_SEED_LENGTH: usize = 4;
 
 
+const DEPTH_EXPLORER_DEPTH_GROW_FACTOR_GUESS: usize = 15;
+const DEPTH_EXPLORER_PRINT_PROGRESS_EVERY_ELEMENTS: usize = 1000;
 
-
-const GLOBAL_OPTIONS: GlobalOptions = GlobalOptions {
-    saved_recipes_files_location: "Recipe Files Out",
-    depth_explorer_max_seed_length: 6,
-    depth_explorer_final_elements_guess: 50_000,
-    depth_explorer_depth_grow_factor_guess: 10,
-    depth_explorer_print_progress_every_elements: 1000,
-};
 
 
 
@@ -75,33 +63,31 @@ async fn main() {
 
 
 
-    let mut de_vars = DepthExplorerVars {
-        stop_after_depth: GLOBAL_OPTIONS.depth_explorer_max_seed_length,  // modify the global variable instead because yes
-        input_text_lineage: r#"
+    let de_vars = DepthExplorerVars {
+        stop_after_depth: DEPTH_EXPLORER_MAX_SEED_LENGTH,  // modify the global variable so that the compiler knows how big stuff is gonna be -> SPEEEEED
+        split_start: 0,
+        lineage_elements: string_lineage_results(r#"
 
+Fire + Water = Steam
 Earth + Water = Plant
-Earth + Plant = Tree
-Tree + Water = River
-Earth + River = Delta
-River + Tree = Paper
-Paper + Tree = Book
-Book + Delta = Alphabet
-Alphabet + Alphabet = Word
-Word + Word = Sentence
-Sentence + Wind = Phrase
-Book + Phrase = Quote
-Alphabet + Quote = Punctuation
+Plant + Steam = Tea
+Plant + Wind = Dandelion
+Dandelion + Earth = Flower
+Fire + Steam = Engine
+Engine + Plant = Car
+Car + Flower = Carnation
+Carnation + Tea = T
 
-"#,
+"#),
         ..Default::default()
     };
 
 
-    depth_explorer_start(&mut de_vars).await;
+    let encountered = depth_explorer_split_start(&de_vars).await;
 
     auto_save.save_now();
 
-    generate_lineages_file(&de_vars).expect("could not generate lineages file...");
+    generate_lineages_file(&de_vars, encountered).expect("could not generate lineages file...");
 
 
 

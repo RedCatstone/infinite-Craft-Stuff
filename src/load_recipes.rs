@@ -7,7 +7,7 @@ use rayon::prelude::*;
 
 use libdeflater::{CompressionLvl, Compressor, Decompressor};
 
-use crate::{structures::*, GLOBAL_OPTIONS};
+use crate::{structures::*, SAVED_RECIPES_FILES_LOCATION};
 
 
 
@@ -92,7 +92,7 @@ pub fn save_recipes_num(filename: &str) -> io::Result<()> {
     data.num_to_str = num_to_str.clone();
 
 
-    let folder_path = PathBuf::from(GLOBAL_OPTIONS.saved_recipes_files_location);
+    let folder_path = PathBuf::from(SAVED_RECIPES_FILES_LOCATION);
     fs::create_dir_all(&folder_path)?;
     let full_path = folder_path.join(filename);
 
@@ -194,7 +194,7 @@ pub fn save_recipes_old_depth_explorer(filename: &str) -> io::Result<()> {
     }
 
 
-    let folder_path = PathBuf::from(GLOBAL_OPTIONS.saved_recipes_files_location);
+    let folder_path = PathBuf::from(SAVED_RECIPES_FILES_LOCATION);
     fs::create_dir_all(&folder_path)?;
     let full_path = folder_path.join(filename);
 
@@ -355,7 +355,7 @@ pub fn save_recipes_gzip(filename: &str, save_name: &str) -> io::Result<()> {
     };
 
 
-    let folder_path = PathBuf::from(GLOBAL_OPTIONS.saved_recipes_files_location);
+    let folder_path = PathBuf::from(SAVED_RECIPES_FILES_LOCATION);
     fs::create_dir_all(&folder_path)?;
     let full_path = folder_path.join(filename);
 

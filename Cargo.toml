@@ -5,10 +5,10 @@ edition = "2024"
 
 
 [profile.release]
-debug = false
-lto = "fat"
-codegen-units = 1
-opt-level = 3    # Max optimization level (default for release). 0=none, 1=basic, 2=some, 3=all, s=size, z=size+more
+# debug = false
+# lto = "fat"
+# codegen-units = 1
+# opt-level = 3    # Max optimization level (default for release). 0=none, 1=basic, 2=some, 3=all, s=size, z=size+more
 
 
 [dependencies]
@@ -23,6 +23,7 @@ libdeflater = "1.23.1" # For Gzip
 
 tokio = { version = "1.44.2", features = ["rt-multi-thread", "macros", "sync", "time", "net"] }
 futures = "0.3.31"
+async-recursion = "1.1.1"
 urlencoding = "2.1.3" # For safely encoding parameters
 reqwest = { version = "0.12.15", features = ["json"] }
 

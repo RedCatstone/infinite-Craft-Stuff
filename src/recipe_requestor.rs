@@ -1,4 +1,5 @@
 use reqwest::Client;
+use rustc_hash::FxHashMap;
 use serde::Deserialize;
 
 use std::{collections::VecDeque, sync::{Arc, Mutex, OnceLock}, time::Instant};
@@ -132,20 +133,14 @@ pub async fn combine(first: &str, second: &str) -> Option<CombineResponse> {
 
 pub async fn process_all_to_request_recipes() {
     let variables = VARIABLES.get().expect("VARIABLES not initialized");
-    let num_to_str = variables.num_to_str.read().unwrap();
-    let str_to_num: DashMap<String, u32> = num_to_str
-                .iter()
-                .enumerate()
-                .map(|(i, str)| (str.clone(), i as u32))
-                .collect();
-
-    drop(num_to_str);
+    let mut str_to_num = get_str_to_num_map();
 
     // reset Request Stats
-    let mut rs = REQUEST_STATS.get_or_init(|| Mutex::new(RequestStats::default())).lock().expect("lock poisoned");
-    *rs = RequestStats::default();
-    rs.to_request = variables.to_request_recipes.len() as u32;
-    drop(rs);
+    {
+        let mut rs = REQUEST_STATS.get_or_init(|| Mutex::new(RequestStats::default())).lock().expect("lock poisoned");
+        *rs = RequestStats::default();
+        rs.to_request = variables.to_request_recipes.len() as u32;
+    }
 
 
     let semaphore = Arc::new(Semaphore::new(MAX_CONCURRENT_REQUESTS));
@@ -180,7 +175,13 @@ pub async fn process_all_to_request_recipes() {
             let result_str = combine(&first, &second).await
                 .map_or_else(|| String::from("Nothing"), |res| res.result);
 
-            (comb, result_str)            
+            {
+                let mut rs = REQUEST_STATS.get().expect("REQUEST_STATS not initialized.").lock().expect("lock poisoned");
+                rs.responded_requests += 1;
+                rs.rps_tracker.increment();
+            }
+
+            ((first, second), result_str)
         }));
     }
     variables.to_request_recipes.clear();
@@ -188,56 +189,12 @@ pub async fn process_all_to_request_recipes() {
             
 
     while let Some(task_result) = futures.next().await {
-        let mut rs = REQUEST_STATS.get().expect("REQUEST_STATS not initialized.").lock().expect("lock poisoned");
-        rs.responded_requests += 1;
-        rs.rps_tracker.increment();
-        drop(rs);
-
         match task_result {
-            Ok((comb, result_str)) => {
-                let mut num_to_str = variables.num_to_str.write().unwrap();
-                let mut recipes_ing = variables.recipes_ing.write().unwrap();
-                let mut neal_case_map = variables.neal_case_map.write().unwrap();
-
-                // add recipe
-                match str_to_num.get(&result_str) {
-                    Some(num) => {
-                        // result already exists
-                        recipes_ing.insert(sort_recipe_tuple(comb), *num.value());
-                    }
-                    None => {
-                        // result does not exist, add it
-                    
-                        let id = num_to_str.len() as u32;
-                        num_to_str.push(result_str.clone());
-                        str_to_num.insert(result_str.clone(), id);
-                        recipes_ing.insert(sort_recipe_tuple(comb), id);
-
-                        let neal_str = start_case_unicode(&result_str.clone());
-                        // add neal_str
-                        match str_to_num.get(&neal_str) {
-                            Some(x) => {
-                                // neal case version exists, link to it
-                                neal_case_map.push(*x);
-                            }
-                            None => {
-                                // neal case version does not exist, create it and link to it
-                                let neal_id = num_to_str.len() as u32;
-                                str_to_num.insert(neal_str.clone(), neal_id);
-                                num_to_str.push(neal_str);
-                
-                                // links result_str -> neal_id
-                                neal_case_map.push(neal_id);
-                                // links neal_id -> neal_id
-                                neal_case_map.push(neal_id);
-                            }
-                        }
-                    }
-                }
+            Ok(((first_str, second_str), result_str)) => {
+                variables_add_recipe(first_str, second_str, result_str, &mut str_to_num);
             },
             Err(join_err) => {
                 eprintln!("Task panicked or was cancelled: {}", join_err);
-                sleep(Duration::from_secs(60)).await;  // await 60s
             },
         }
     }

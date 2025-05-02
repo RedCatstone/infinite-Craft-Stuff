@@ -1,12 +1,10 @@
 use std::collections::BinaryHeap;
-use std::thread::JoinHandle;
 use std::time::Instant;
 use dashmap::DashSet;
 use rustc_hash::FxHashMap;
 use std::cmp::Reverse;
 use std::sync::{Arc, Mutex, OnceLock, RwLock, RwLockWriteGuard};
 use tokio::time::{self, Duration};
-use std::io::Error;
 
 
 #[derive(Debug, Default)]
@@ -14,14 +12,15 @@ pub struct Variables {
     pub base_elements: [u32; 4],
     pub num_to_str: RwLock<Vec<String>>,
     pub neal_case_map: RwLock<Vec<u32>>,
-
     pub recipes_ing: RwLock<FxHashMap<(u32, u32), u32>>,
-    pub recipes_result: RwLock<FxHashMap<u32, Vec<(u32, u32)>>>,
-    pub recipes_uses: RwLock<FxHashMap<u32, Vec<(u32, u32)>>>,
-
-    pub element_heuristic: RwLock<FxHashMap<u32, u64>>,
 
     pub to_request_recipes: DashSet<(u32, u32)>,
+
+    // not always there
+    pub recipes_result: RwLock<FxHashMap<u32, Vec<(u32, u32)>>>,
+    pub recipes_uses: RwLock<FxHashMap<u32, Vec<(u32, u32)>>>,
+    pub element_heuristic: RwLock<FxHashMap<u32, u64>>,
+
 }
 
 pub static VARIABLES: OnceLock<Variables> = OnceLock::new();
@@ -209,6 +208,81 @@ pub fn string_lineage_results(lineage_text: &str) -> Vec<u32> {
         .map(|elem| str_to_num_fn(elem))
         .collect()
 }
+
+
+
+
+
+pub fn variables_add_recipe(first_str: String, second_str: String, result_str: String, str_to_num: &mut FxHashMap<String, u32>) {
+    let f = variables_add_element_str(first_str, str_to_num);
+    let s = variables_add_element_str(second_str, str_to_num);
+    let r = variables_add_element_str(result_str, str_to_num);
+
+    let variables = VARIABLES.get().expect("VARIABLES not initialized");
+    let mut recipes_ing = variables.recipes_ing.write().unwrap();
+
+    recipes_ing.insert((f, s), r);
+}
+
+
+
+pub fn variables_add_element_str(element_str: String, str_to_num: &mut FxHashMap<String, u32>) -> Element {
+    match str_to_num.get(&element_str) {
+        Some(&num) => {
+            num
+        }
+        None => {
+            let variables = VARIABLES.get().expect("VARIABLES not initialized");
+            let id;
+            {
+                let mut num_to_str = variables.num_to_str.write().unwrap();
+                id = num_to_str.len() as u32;
+                num_to_str.push(element_str.clone());
+                str_to_num.insert(element_str.clone(), id);
+
+                let mut neal_case_map = variables.neal_case_map.write().unwrap();
+                neal_case_map.push(0);  // immidiately push to reserve a spot
+            }
+
+            let neal_str = start_case_unicode(&element_str.clone());
+            let neal_id = variables_add_element_str(neal_str, str_to_num);
+            
+            let mut neal_case_map = variables.neal_case_map.write().unwrap();
+            neal_case_map[id as usize] = neal_id;
+
+            id
+        }
+    }
+}
+
+
+
+
+
+pub fn get_str_to_num_map() -> FxHashMap<String, u32> {
+    let variables = VARIABLES.get().expect("VARIABLES not initialized");
+    let num_to_str = variables.num_to_str.read().unwrap();
+    num_to_str
+        .iter()
+        .enumerate()
+        .map(|(i, str)| (str.clone(), i as u32))
+        .collect()
+}
+
+
+
+
+pub fn get_num_to_str_len() -> Vec<usize> {
+    let variables = VARIABLES.get().expect("VARIABLES not initialized");
+    let num_to_str = variables.num_to_str.read().unwrap();
+
+    num_to_str
+        .iter()
+        .map(|x| x.len())
+        .collect()
+}
+
+
 
 
 

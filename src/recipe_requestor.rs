@@ -1,11 +1,9 @@
 use reqwest::Client;
-use rustc_hash::FxHashMap;
 use serde::Deserialize;
 
 use std::{collections::VecDeque, sync::{Arc, Mutex, OnceLock}, time::Instant};
-use dashmap::DashMap;
 use futures::stream::{FuturesUnordered, StreamExt};
-use tokio::{sync::Semaphore, task, time::{sleep, Duration}};
+use tokio::{sync::Semaphore, task, time::Duration};
 use colored::Colorize;
 
 use crate::structures::*;
@@ -15,20 +13,18 @@ use crate::structures::*;
 
 
 const NODE_SERVER_URL: &str = "http://localhost:3000";
-const COMBINE_LOGS: bool = true;
 const COMBINE_RETRIES: u64 = 10;
 const COMBINE_TIMEOUT: u64 = 5 * 60;   // 5 minute timeout to local server
 const RPS_TRACKER_WINDOW: u64 = 60;
 pub const MAX_CONCURRENT_REQUESTS: usize = 150;
+const COMBINE_INTERVAL_MESSAGE_SECS: u64 = 30;
 
 
 static CLIENT: OnceLock<Client> = OnceLock::new();
 
-pub static REQUEST_STATS: OnceLock<Mutex<RequestStats>> = OnceLock::new();
 
 
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RequestStats {
     pub outgoing_requests: u32,
     pub responded_requests: u32,
@@ -43,7 +39,7 @@ impl Default for RequestStats {
             responded_requests: 0,
             to_request: 0,
             start_time: Instant::now(),
-            rps_tracker: RpsTracker::new(),
+            rps_tracker: RpsTracker::new(RPS_TRACKER_WINDOW),
         }
     }
 }
@@ -84,7 +80,6 @@ pub async fn combine(first: &str, second: &str) -> Option<CombineResponse> {
     for _retries in 0..COMBINE_RETRIES {
 
         // println!("Rust: Sending request to server: {}", request_url);
-
         let response = match client.get(&request_url).send().await {
             Ok(res) => { res },
             Err(e) => {
@@ -95,7 +90,6 @@ pub async fn combine(first: &str, second: &str) -> Option<CombineResponse> {
 
         let status = response.status();
         let response_text = response.text().await.expect("could not get response.text()"); // Get body text
-
         // println!("Rust: Received status: {}", status);
 
         if status.is_success() {
@@ -105,10 +99,8 @@ pub async fn combine(first: &str, second: &str) -> Option<CombineResponse> {
                     return Some(CombineResponse { result: data.result, emoji: data.emoji, is_new: data.is_new });
                 }
                 Err(e) => {
-                    if COMBINE_LOGS {
-                        println!("Rust: Failed to parse SUCCESS JSON: {}. Body was: {}", e, response_text);
-                        continue;
-                    };
+                    println!("Rust: Failed to parse SUCCESS JSON: {}. Body was: {}", e, response_text);
+                    continue;
                 },
             }
         } else {
@@ -135,21 +127,25 @@ pub async fn process_all_to_request_recipes() {
     let variables = VARIABLES.get().expect("VARIABLES not initialized");
     let mut str_to_num = get_str_to_num_map();
 
-    // reset Request Stats
-    {
-        let mut rs = REQUEST_STATS.get_or_init(|| Mutex::new(RequestStats::default())).lock().expect("lock poisoned");
-        *rs = RequestStats::default();
-        rs.to_request = variables.to_request_recipes.len() as u32;
-    }
+    let request_stats_arc = Arc::new(Mutex::new(RequestStats {
+        to_request: variables.to_request_recipes.len() as u32,
+        ..Default::default()
+    }));
 
 
     let semaphore = Arc::new(Semaphore::new(MAX_CONCURRENT_REQUESTS));
     let mut futures = FuturesUnordered::new();
 
-    println!(
-        "Processing {} recipes...",
-        variables.to_request_recipes.len()
-    );
+
+    let rs_clone_for_interval = request_stats_arc.clone();
+    let interval_task = tokio::spawn(async move {
+        let mut interval_timer = tokio::time::interval(Duration::from_secs(COMBINE_INTERVAL_MESSAGE_SECS));
+        loop {
+            interval_timer.tick().await;
+            let rs_data = rs_clone_for_interval.lock().expect("Interval lock poisoned").clone();
+            interval_message(rs_data);
+        }
+    });
 
 
     for entry in variables.to_request_recipes.iter() {
@@ -157,31 +153,27 @@ pub async fn process_all_to_request_recipes() {
 
         let sem_clone = Arc::clone(&semaphore);
 
+        let rs_clone_for_task = request_stats_arc.clone();
+
         futures.push(task::spawn(async move {
             // Wait for a permit *before* doing work or accessing shared data
             let _permit = sem_clone.acquire_owned().await.expect("Semaphore acquisition failed");
 
-            let first; 
-            let second;
+            let first_str;
+            let second_str;
             {
                 let num_to_str = variables.num_to_str.read().unwrap();
-                first = num_to_str[comb.0 as usize].clone();
-                second = num_to_str[comb.1 as usize].clone();
+                first_str = num_to_str[comb.0 as usize].clone();
+                second_str = num_to_str[comb.1 as usize].clone();
 
-                let mut rs = REQUEST_STATS.get().expect("REQUEST_STATS not initialized").lock().expect("lock poisoned");
+                let mut rs = rs_clone_for_task.lock().expect("Outgoing lock poisoned");
                 rs.outgoing_requests += 1;
             }
 
-            let result_str = combine(&first, &second).await
+            let result_str = combine(&first_str, &second_str).await
                 .map_or_else(|| String::from("Nothing"), |res| res.result);
 
-            {
-                let mut rs = REQUEST_STATS.get().expect("REQUEST_STATS not initialized.").lock().expect("lock poisoned");
-                rs.responded_requests += 1;
-                rs.rps_tracker.increment();
-            }
-
-            ((first, second), result_str)
+            (first_str, second_str, result_str)
         }));
     }
     variables.to_request_recipes.clear();
@@ -189,8 +181,13 @@ pub async fn process_all_to_request_recipes() {
             
 
     while let Some(task_result) = futures.next().await {
+        {
+            let mut rs = request_stats_arc.lock().expect("rs lock poisoned");
+            rs.responded_requests += 1;
+            rs.rps_tracker.increment();
+        }
         match task_result {
-            Ok(((first_str, second_str), result_str)) => {
+            Ok((first_str, second_str, result_str)) => {
                 variables_add_recipe(first_str, second_str, result_str, &mut str_to_num);
             },
             Err(join_err) => {
@@ -198,23 +195,27 @@ pub async fn process_all_to_request_recipes() {
             },
         }
     }
+
+    let rs = request_stats_arc.lock().expect("Final lock poisoned").clone();
+    interval_message(rs);
+    interval_task.abort();
 }
 
 
 
 
 
-fn interval_message(start_time: Instant, rs: RequestStats) {
+fn interval_message(rs: RequestStats) {
     println!("Request Time: {},  Requests: {}/{},  Current Outgoing Requests: {},  Requests/s: (Total: {}, Last 60s: {})",
-        format!("{:?}", start_time.elapsed()).yellow(),
+        format!("{:?}", rs.start_time.elapsed()).green(),
 
-        rs.responded_requests.to_string().yellow(),
-        (rs.to_request).to_string().yellow(),
+        rs.responded_requests.to_string().green(),
+        (rs.to_request).to_string().green(),
 
-        (rs.outgoing_requests - rs.responded_requests).to_string().yellow(),
+        (rs.outgoing_requests - rs.responded_requests).to_string().green(),
         
-        format!("{:.3}", rs.responded_requests as f64 / rs.start_time.elapsed().as_secs_f64()).yellow(),
-        format!("{:.3}", rs.rps_tracker.get_rps()).yellow(),
+        format!("{:.3}", rs.responded_requests as f64 / rs.start_time.elapsed().as_secs_f64()).green(),
+        format!("{:.3}", rs.rps_tracker.get_rps()).green(),
     );
 }
 
@@ -223,7 +224,7 @@ fn interval_message(start_time: Instant, rs: RequestStats) {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RpsTracker {
     timestamps: Arc<Mutex<VecDeque<Instant>>>,
     window: Duration,
@@ -231,10 +232,10 @@ pub struct RpsTracker {
 
 
 impl RpsTracker {
-    fn new() -> Self {
+    fn new(window_sec: u64) -> Self {
         RpsTracker {
             timestamps: Arc::new(Mutex::new(VecDeque::new())),
-            window: Duration::from_secs(RPS_TRACKER_WINDOW),
+            window: Duration::from_secs(window_sec),
         }
     }
 

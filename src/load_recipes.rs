@@ -321,7 +321,7 @@ pub fn save_recipes_gzip(filename: &str, save_name: &str) -> io::Result<()> {
     let recipes_ing = variables.recipes_ing.read().unwrap();
 
     let mut recipes_result: FxHashMap<u32, Vec<(u32, u32)>> = FxHashMap::with_capacity_and_hasher(num_to_str.len(), Default::default());
-    for (&recipe, &r) in recipes_ing.iter() {
+    for (&recipe, &r) in recipes_ing.iter().take(16777215) {
         recipes_result.entry(r).or_default().push(recipe);
     }
     println!("  - updated recipes_uses in {:?}", start_time.elapsed());

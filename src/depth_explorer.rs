@@ -88,7 +88,18 @@ pub async fn depth_explorer_split_start(de_vars: &DepthExplorerVars) -> Encounte
 
     // iterate over every 1-step element
     let total_to_process = initial_split_encountered.len();
+
     for (i, element) in initial_split_encountered.into_keys().enumerate() {
+        if !de_vars.disable_depth_logs {
+            println!("{} Split Depth Explorer - {}/{}: {} - Time: {} - Elements: {}",
+                (de_vars.split_start).to_string().purple(),
+                (i + 1).to_string().purple(),
+                (total_to_process).to_string().purple(),
+                num_to_str_fn(element).purple(),
+                format!("{:?}", start_time.elapsed()).yellow(),
+                (collected_encountereds.len()).to_string().yellow(),
+            );
+        }
 
         // create new de_vars starting from every 1-step
         let mut new_de_vars = de_vars.clone();
@@ -96,7 +107,7 @@ pub async fn depth_explorer_split_start(de_vars: &DepthExplorerVars) -> Encounte
         new_de_vars.stop_after_depth -= 1;
         new_de_vars.split_start -= 1;
         new_de_vars.exclude_depth1_elements = excluded_depth1_elements;
-        new_de_vars.disable_depth_logs = true;
+        // new_de_vars.disable_depth_logs = true;
 
         let new_encountered = if new_de_vars.split_start == 0
         { depth_explorer_start(&new_de_vars).await }
@@ -114,15 +125,6 @@ pub async fn depth_explorer_split_start(de_vars: &DepthExplorerVars) -> Encounte
         excluded_depth1_elements = new_de_vars.exclude_depth1_elements;
         excluded_depth1_elements.push(element);
 
-        if !de_vars.disable_depth_logs {
-            println!("Split Depth Explorer - {}/{}: {} - Time: {} - Elements: {}",
-                (i + 1).to_string().purple(),
-                (total_to_process).to_string().purple(),
-                num_to_str_fn(element).purple(),
-                format!("{:?}", start_time.elapsed()).yellow(),
-                (collected_encountereds.len()).to_string().yellow(),
-            );
-        }
     }
 
     if !de_vars.disable_depth_logs {
@@ -271,7 +273,8 @@ pub async fn depth_explorer_start(de_vars: &DepthExplorerVars) -> EncounteredMap
         let new_main_map_data = merge_local_encountered_maps((*current_main_arc).clone(), depth_results_map);
         de_struc.main_encountered.store(Arc::new(new_main_map_data));
         
-
+        
+        
         if variables.to_request_recipes.is_empty() {
             if !de_vars.disable_depth_logs {
                 println!("Depth {} complete!  Time: {},  Elements: {},  Seeds: {} -> {}",

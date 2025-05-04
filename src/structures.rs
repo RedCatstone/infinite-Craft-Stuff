@@ -3,6 +3,7 @@ use std::time::Instant;
 use dashmap::DashSet;
 use rustc_hash::FxHashMap;
 use std::cmp::Reverse;
+use std::panic;
 use std::sync::{Arc, Mutex, OnceLock, RwLock, RwLockWriteGuard};
 use tokio::time::{self, Duration};
 
@@ -130,7 +131,7 @@ impl Drop for AutoSaver {
 }
 
 
-pub fn auto_save_recipes(interval: Duration, save_fn: impl Fn() + Send + Sync + 'static) -> AutoSaver {
+pub fn auto_save_recipes(interval: Duration, save_fn: impl Fn() + Send + Sync + 'static + panic::RefUnwindSafe) -> AutoSaver {
     let recipe_count_mutex = Arc::new(Mutex::new({
         let variables = VARIABLES.get().expect("VARIABLES not initialized");
         let recipes_ing = variables.recipes_ing.read().unwrap();
@@ -157,7 +158,20 @@ pub fn auto_save_recipes(interval: Duration, save_fn: impl Fn() + Send + Sync + 
             let mut interval = time::interval(interval);
             loop {
                 interval.tick().await;
-                arc_save_fn();
+
+                let arc_save_fn_clone = arc_save_fn.clone();
+                let result = panic::catch_unwind(move || {
+                    // Execute the potentially panicking function
+                    arc_save_fn_clone();
+                });
+                if let Err(panic_payload) = result {
+                    let msg = panic_payload.downcast_ref::<&str>().copied()
+                       .or_else(|| panic_payload.downcast_ref::<String>().map(|s| s.as_str()))
+                       .unwrap_or("Panic occurred with unknown payload type");
+    
+                    // Log the error instead of crashing
+                    eprintln!("Auto-save function panicked: {}", msg);
+               }
             }
         }),
     }

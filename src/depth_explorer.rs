@@ -89,7 +89,7 @@ pub async fn depth_explorer_split_start(de_vars: &DepthExplorerVars) -> Encounte
     // iterate over every 1-step element
     let total_to_process = initial_split_encountered.len();
 
-    for (i, element) in initial_split_encountered.into_keys().enumerate() {
+    for (i, element) in initial_split_encountered.into_keys().collect::<Vec<Element>>().into_iter().rev().enumerate() {
         if !de_vars.disable_depth_logs {
             println!("{} Split Depth Explorer - {}/{}: {} - Time: {} - Elements: {}",
                 (de_vars.split_start).to_string().purple(),
@@ -164,9 +164,8 @@ fn extend_encountered_seeds(mut encountered: EncounteredMap, add_element: Elemen
 
 pub async fn depth_explorer_start(de_vars: &DepthExplorerVars) -> EncounteredMap {
     let variables = VARIABLES.get().expect("VARIABLES not initialized");
-    let base_elements = variables.base_elements;
     
-    let base_lineage_vec: Vec<Element> = base_elements.iter().chain(de_vars.lineage_elements.iter()).copied().collect();
+    let base_lineage_vec: Vec<Element> = BASE_IDS.chain(de_vars.lineage_elements.iter().copied()).collect();
     let base_lineage_vec_ic: Vec<Element>;
     {
         let neal_case_map = variables.neal_case_map.read().unwrap();
@@ -229,7 +228,7 @@ pub async fn depth_explorer_start(de_vars: &DepthExplorerVars) -> EncounteredMap
 
 
         // --- do all Element - Base combinations and cache them ---
-        cache_all_element_base_results(&de_struc);
+        cache_all_element_base_results(&de_struc, depth);
 
 
 
@@ -296,10 +295,10 @@ pub async fn depth_explorer_start(de_vars: &DepthExplorerVars) -> EncounteredMap
         }
         else {
             println!("Depth {} paused. Requesting {} new recipes...", depth + 1, variables.to_request_recipes.len());
-            process_all_to_request_recipes().await;
             let mut cloned_element_base_arc = (*de_struc.element_base_cache.load_full()).clone();
             cloned_element_base_arc.clear();
             de_struc.element_base_cache.store(Arc::new(cloned_element_base_arc));
+            process_all_to_request_recipes().await;
             de_struc.num_to_str_len = get_num_to_str_len();
         }
     }
@@ -450,7 +449,7 @@ fn all_combination_results(input_seed: &[Element], results_vec: &mut Vec<Element
         for &ing2 in input_seed.iter().take(i + 1) {
             let comb = sort_recipe_tuple((ing1, ing2));
             if let Some(&result) = recipes_ing.get(&comb) {
-                if result != 0 && !base_lineage_depth1.contains(&result) {
+                if result != NOTHING_ID && !base_lineage_depth1.contains(&result) {
                     results_vec.push(result);
                 }
             }
@@ -475,7 +474,7 @@ fn all_combination_results(input_seed: &[Element], results_vec: &mut Vec<Element
 
 
 
-fn cache_all_element_base_results(de_struc: &DepthExplorerPrivateStructures) {
+fn cache_all_element_base_results(de_struc: &DepthExplorerPrivateStructures, depth: usize) {
     // let start_time = Instant::now();
 
     let mut update_element_base_cache: ElementBaseCacheMap = (*de_struc.element_base_cache.load_full()).clone();
@@ -490,8 +489,8 @@ fn cache_all_element_base_results(de_struc: &DepthExplorerPrivateStructures) {
     update_element_base_cache.resize(neal_case_map.len(), None);
 
 
-    for &element in encountered.keys() {
-        if de_struc.num_to_str_len[element as usize] > 30 { continue; }
+    for (&element, seeds) in encountered.iter() {
+        if de_struc.num_to_str_len[element as usize] > 30 || seeds.first().unwrap().len() >= depth { continue; }
         let neal_element = neal_case_map[element as usize];
 
         if update_element_base_cache[neal_element as usize].is_none() {
@@ -501,7 +500,7 @@ fn cache_all_element_base_results(de_struc: &DepthExplorerPrivateStructures) {
             for &base_element in de_struc.base_lineage_vec.iter() {
                 let comb = sort_recipe_tuple((neal_element, base_element));
                 if let Some(&result) = recipes_ing.get(&comb) {
-                    if result != 0 && !de_struc.base_lineage_depth1.contains(&result) && !cache_results.contains(&result) {
+                    if result != NOTHING_ID && !de_struc.base_lineage_depth1.contains(&result) && !cache_results.contains(&result) {
                         cache_results.push(result);
                     }
                 }
@@ -669,7 +668,7 @@ pub fn get_encountered_entry(
                         .get(to_craft_element)
                         .expect("to_craft_element not in real_recipes_result")
                         .iter()
-                        .find(|&&rec| crafted.contains(&rec.0) && crafted.contains(&rec.1)) {
+                        .find(|&rec| crafted.contains(&rec.0) && crafted.contains(&rec.1)) {
                         
                         crafted.insert(*to_craft_element);
 
@@ -689,7 +688,7 @@ pub fn get_encountered_entry(
                 })
                 .copied()
                 .collect();
-            if !changes { panic!("could not generate lineage...\n - lineage: {:?}\n - to_craft: {:?}", lineage, debug_print_element_vec(&to_craft)); }
+            if !changes { panic!("could not generate lineage...\n - lineage: {:?}\n - to_craft: {:?}", lineage, debug_element_vec(&to_craft)); }
 
         };
 
@@ -755,8 +754,7 @@ pub fn generate_lineages_file(de_vars: &DepthExplorerVars, encountered: Encounte
     println!("made recipes_result in {:?}", start_time.elapsed());
 
 
-    let base_elements = variables.base_elements;
-    let base_lineage_vec: Vec<u32> = base_elements.iter().chain(de_vars.lineage_elements.iter()).copied().collect();
+    let base_lineage_vec: Vec<u32> = BASE_IDS.chain(de_vars.lineage_elements.iter().copied()).collect();
     let initial_crafted: FxHashSet<Element> = base_lineage_vec.iter().copied().collect();
 
 

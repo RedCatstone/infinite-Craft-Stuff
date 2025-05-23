@@ -1,7 +1,7 @@
 use reqwest::Client;
 use serde::Deserialize;
 
-use std::{collections::VecDeque, sync::{Arc, Mutex, OnceLock}, time::Instant};
+use std::{sync::{Arc, Mutex, OnceLock}, time::Instant};
 use futures::stream::{FuturesUnordered, StreamExt};
 use tokio::{sync::Semaphore, task, time::Duration};
 use colored::Colorize;
@@ -12,10 +12,9 @@ use crate::structures::*;
 
 
 
-const NODE_SERVER_URL: &str = "http://localhost:3000";
+const REQUEST_SERVER_URL: &str = "http://localhost:3000";
 const COMBINE_RETRIES: u64 = 10;
 const COMBINE_TIMEOUT: u64 = 5 * 60;   // 5 minute timeout to local server
-const RPS_TRACKER_WINDOW: u64 = 60;
 pub const MAX_CONCURRENT_REQUESTS: usize = 150;
 const COMBINE_INTERVAL_MESSAGE_SECS: u64 = 30;
 
@@ -30,18 +29,6 @@ pub struct RequestStats {
     pub responded_requests: u32,
     pub to_request: u32,
     pub start_time: Instant,
-    pub rps_tracker: RpsTracker,
-}
-impl Default for RequestStats {
-    fn default() -> Self {
-        RequestStats {
-            outgoing_requests: 0,
-            responded_requests: 0,
-            to_request: 0,
-            start_time: Instant::now(),
-            rps_tracker: RpsTracker::new(RPS_TRACKER_WINDOW),
-        }
-    }
 }
 
 
@@ -49,7 +36,7 @@ impl Default for RequestStats {
 
 
 
-// Structure to match the JSON response from the Node server
+// Structure to match the JSON response from the Request server
 #[derive(Deserialize, Debug)]
 pub struct CombineResponse {
     pub result: String,
@@ -62,9 +49,10 @@ pub struct CombineResponse {
 pub async fn combine(first: &str, second: &str) -> Option<CombineResponse> {
     // Build URL with query parameters
     let request_url = format!("{}/?first={}&second={}",
-                             NODE_SERVER_URL,
-                             urlencoding::encode(first),
-                             urlencoding::encode(second));
+        REQUEST_SERVER_URL,
+        urlencoding::encode(first),
+        urlencoding::encode(second)
+    );
 
 
     let client = CLIENT.get_or_init(|| {
@@ -129,7 +117,9 @@ pub async fn process_all_to_request_recipes() {
 
     let request_stats_arc = Arc::new(Mutex::new(RequestStats {
         to_request: variables.to_request_recipes.len() as u32,
-        ..Default::default()
+        outgoing_requests: 0,
+        responded_requests: 0,
+        start_time: Instant::now(),
     }));
 
 
@@ -184,7 +174,6 @@ pub async fn process_all_to_request_recipes() {
         {
             let mut rs = request_stats_arc.lock().expect("rs lock poisoned");
             rs.responded_requests += 1;
-            rs.rps_tracker.increment();
         }
         match task_result {
             Ok((first_str, second_str, result_str)) => {
@@ -206,65 +195,14 @@ pub async fn process_all_to_request_recipes() {
 
 
 fn interval_message(rs: RequestStats) {
-    println!("Request Time: {},  Requests: {}/{},  Current Outgoing Requests: {},  Requests/s: (Total: {}, Last 60s: {})",
-        format!("{:?}", rs.start_time.elapsed()).green(),
-
+    println!("Requests: {}/{},  Time: {},  Current Outgoing: {},  Rps: {}",
         rs.responded_requests.to_string().green(),
         (rs.to_request).to_string().green(),
+
+        format!("{:?}", rs.start_time.elapsed()).green(),
 
         (rs.outgoing_requests - rs.responded_requests).to_string().green(),
         
         format!("{:.3}", rs.responded_requests as f64 / rs.start_time.elapsed().as_secs_f64()).green(),
-        format!("{:.3}", rs.rps_tracker.get_rps()).green(),
     );
-}
-
-
-
-
-
-
-#[derive(Debug, Clone)]
-pub struct RpsTracker {
-    timestamps: Arc<Mutex<VecDeque<Instant>>>,
-    window: Duration,
-}
-
-
-impl RpsTracker {
-    fn new(window_sec: u64) -> Self {
-        RpsTracker {
-            timestamps: Arc::new(Mutex::new(VecDeque::new())),
-            window: Duration::from_secs(window_sec),
-        }
-    }
-
-    fn increment(&self) {
-        let mut timestamps = self.timestamps.lock().expect("Mutex poisoned");
-        timestamps.push_back(Instant::now());
-    }
-
-    pub fn get_rps(&self) -> f64 {
-        let mut timestamps = self.timestamps.lock().expect("Mutex poisoned");
-        let now = Instant::now();
-
-        // --- Trim old timestamps ---
-        while let Some(oldest) = timestamps.front() {
-            if now.duration_since(*oldest) > self.window {
-                timestamps.pop_front(); // Remove it if it's too old
-            } else {
-                // The rest are within the window (since VecDeque is ordered)
-                break;
-            }
-        }
-
-        // --- Calculate RPS ---
-        let count_in_window = timestamps.len();
-        let window_secs = self.window.as_secs_f64();
-        if window_secs > 0.0 {
-            count_in_window as f64 / window_secs
-        } else {
-            69420.0
-        }
-    }
 }

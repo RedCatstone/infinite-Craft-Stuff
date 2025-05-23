@@ -4,51 +4,45 @@ use dashmap::DashSet;
 use rustc_hash::FxHashMap;
 use std::cmp::Reverse;
 use std::panic;
-use std::sync::{Arc, Mutex, OnceLock, RwLock, RwLockWriteGuard};
+use std::sync::{Arc, Mutex, OnceLock, RwLock};
 use tokio::time::{self, Duration};
+
+use crate::lineage::LineageStep;
+use crate::recipe_requestor::process_all_to_request_recipes;
+
+
+
+
+pub static VARIABLES: OnceLock<Variables> = OnceLock::new();
+pub const NOTHING_ID: Element = 0;
+pub const BASE_ELEMENTS: &'static [&'static str] = &["Water" /* id: 1 */, "Fire" /* id: 2 */, "Earth" /* id: 3 */, "Wind" /* id: 4 */];
+pub const BASE_IDS: std::ops::RangeInclusive<Element> = 1..=(BASE_ELEMENTS.len() as u32);
+
+pub fn is_base_element(element: Element) -> bool {
+    BASE_IDS.contains(&element)
+}
+
+
+
+
 
 
 #[derive(Debug, Default)]
 pub struct Variables {
-    pub base_elements: [u32; 4],
     pub num_to_str: RwLock<Vec<String>>,
     pub neal_case_map: RwLock<Vec<u32>>,
     pub recipes_ing: RwLock<FxHashMap<(u32, u32), u32>>,
 
     pub to_request_recipes: DashSet<(u32, u32)>,
-
-    // not always there
-    pub recipes_result: RwLock<FxHashMap<u32, Vec<(u32, u32)>>>,
-    pub recipes_uses: RwLock<FxHashMap<u32, Vec<(u32, u32)>>>,
-    pub element_heuristic: RwLock<FxHashMap<u32, u64>>,
-
 }
-
-pub static VARIABLES: OnceLock<Variables> = OnceLock::new();
-
 
 
 pub type Element = u32;
 
-#[derive(Debug, Clone)]
-pub struct Lineage {
-    pub lineage: Vec<[Element; 3]>,
-    pub goals: Vec<Element>,
-}
 
-
-
-
-
-pub fn init_heuristic() {
-    let variables = VARIABLES.get().expect("VARIABLES not initialized");
-    let mut element_heuristic: RwLockWriteGuard<'_, FxHashMap<u32, u64>> = variables.element_heuristic.write().unwrap();
-
-    update_recipes_uses();
-
-    let empty_array: [u32; 0] = [];
-    update_element_heuristics(&empty_array, &mut element_heuristic, u64::MAX);
-}
+pub type RecipesResultICMap = Vec<Vec<(Element, Element)>>;
+pub type RecipesUsesICMap = Vec<Vec<(Element, Element)>>;
+pub type ElementHeuristicMap = Vec<u64>;
 
 
 
@@ -191,24 +185,30 @@ pub fn sort_recipe_tuple(tup: (u32, u32)) -> (u32, u32) {
 }
 
 
-pub fn debug_print_recipe_tuple(tup: (u32, u32)) {
-    println!("{:?} - {:?}", (tup.0, tup.1), (num_to_str_fn(tup.0), num_to_str_fn(tup.1)));
+
+pub fn debug_element(element: Element) -> (Element, String) {
+    (element, num_to_str_fn(element))
 }
 
-pub fn debug_print_element_vec(vec: &[u32]) -> Vec<(u32, String)> {
-    let strings: Vec<(u32, String)> = vec
+pub fn debug_element_vec(element_vec: &[Element]) -> Vec<(Element, String)> {
+    element_vec
         .iter()
-        .map(|&x| (x, num_to_str_fn(x)))
-        .collect();
+        .map(|&element| debug_element(element))
+        .collect()
+}
 
-    println!("{:?}", strings);
-    strings
+pub fn debug_lineage_step_vec(lineage_step_vec: &Vec<LineageStep>) -> Vec<Vec<(Element, String)>> {
+    lineage_step_vec
+        .iter()
+        .map(|step| step.iter().map(|&x| debug_element(x)).collect())
+        .collect()
 }
 
 
 
-pub fn string_lineage_results(lineage_text: &str) -> Vec<u32> {
-    lineage_text
+pub fn string_lineage_results(string_lineage: &str) -> Vec<u32> {
+    let mut str_to_num = get_str_to_num_map();
+    string_lineage
         .lines()
         .map(|line| {
             match line.rsplit_once('=') {
@@ -219,7 +219,7 @@ pub fn string_lineage_results(lineage_text: &str) -> Vec<u32> {
             }
         })
         .filter(|trimmed| !trimmed.is_empty())
-        .map(|elem| str_to_num_fn(elem))
+        .map(|elem| variables_add_element_str(start_case_unicode(elem), &mut str_to_num))
         .collect()
 }
 
@@ -301,41 +301,70 @@ pub fn get_num_to_str_len() -> Vec<usize> {
 
 
 
-pub fn update_recipes_result() {
+pub fn get_recipes_result_map() -> RecipesResultICMap {
     let start_time = Instant::now();
-
     let variables = VARIABLES.get().expect("VARIABLES not initialized");
+
+    let mut recipes_result_ic_map = Vec::new();
+    recipes_result_ic_map.resize(variables.num_to_str.read().unwrap().len(), Vec::new());
+
     let recipes_ing = variables.recipes_ing.read().unwrap();
-    let mut recipes_result = variables.recipes_result.write().unwrap();
     let neal_case_map = variables.neal_case_map.read().unwrap();
 
-    for (&(first, second), &result) in recipes_ing.iter() {
-        let f = neal_case_map[first as usize];
-        let s = neal_case_map[second as usize];
-        let r = neal_case_map[result as usize];
+    for (&(f, s), &r) in recipes_ing.iter() {
+        let f_ic = neal_case_map[f as usize];
+        let s_ic = neal_case_map[s as usize];
+        let r_ic = neal_case_map[r as usize];
 
-        recipes_result.entry(r).or_default().push((f, s));
+        recipes_result_ic_map[r_ic as usize].push((f_ic, s_ic));
     };
-    println!("updated recipes_result in {:?}", start_time.elapsed());
+    println!("made recipes_result_ic_map in {:?}", start_time.elapsed());
+
+    recipes_result_ic_map
 }
 
 
 
 
-pub fn update_recipes_uses() {
+pub fn get_recipes_uses_map() -> RecipesUsesICMap {
     let start_time = Instant::now();
-
     let variables = VARIABLES.get().expect("VARIABLES not initialized");
-    let recipes_result = variables.recipes_result.read().unwrap();
-    let mut recipes_uses = variables.recipes_uses.write().unwrap();
 
-    for (&r, recipes) in recipes_result.iter() {
-        for &(f, s) in recipes {
-            recipes_uses.entry(f).or_default().push((s, r));
-            recipes_uses.entry(s).or_default().push((f, r));
-        }
+    let mut recipes_uses_map = Vec::new();
+    recipes_uses_map.resize(variables.num_to_str.read().unwrap().len(), Vec::new());
+
+    let recipes_ing = variables.recipes_ing.read().unwrap();
+    let neal_case_map = variables.neal_case_map.read().unwrap();
+
+    for (&(f, s), &r) in recipes_ing.iter() {
+        let f_ic = neal_case_map[f as usize];
+        let s_ic = neal_case_map[s as usize];
+        let r_ic = neal_case_map[r as usize];
+
+        recipes_uses_map[f_ic as usize].push((s_ic, r_ic));
+        recipes_uses_map[s_ic as usize].push((f_ic, r_ic));
     }
-    println!("updated recipes_uses in {:?}", start_time.elapsed());
+    println!("made recipes_uses_ic_map in {:?}", start_time.elapsed());
+    recipes_uses_map
+}
+
+
+
+
+
+pub fn get_element_heuristic_map(recipes_uses_map: &RecipesUsesICMap) -> ElementHeuristicMap {
+    let start_time = Instant::now();
+    let variables = VARIABLES.get().expect("VARIABLES not initialized");
+
+    let mut heuristic_map = Vec::new();
+    heuristic_map.resize(variables.num_to_str.read().unwrap().len(), u64::MAX);
+    for base_element in BASE_IDS {
+        heuristic_map.insert(base_element as usize, 0);
+    }
+    update_heuristic_map(&mut heuristic_map, &Vec::from_iter(BASE_IDS), &recipes_uses_map, u64::MAX);
+
+    println!("made element_heuristic_map in {:?}", start_time.elapsed());
+    heuristic_map
 }
 
 
@@ -343,48 +372,51 @@ pub fn update_recipes_uses() {
 
 
 
-pub fn update_element_heuristics(start_elements: &[u32], heuristic_map: &mut FxHashMap<u32, u64>, end: u64) {
-    let variables = VARIABLES.get().expect("VARIABLES not initialized");
-    let recipes_uses = variables.recipes_uses.read().unwrap();
-
+pub fn update_heuristic_map(heuristic_map: &mut ElementHeuristicMap, start_elements: &[u32], recipes_uses_map: &RecipesUsesICMap, end: u64) {
     let mut heap: BinaryHeap<(Reverse<u64>, u32)> = BinaryHeap::new();
 
-    let initial_elements = if !start_elements.is_empty() {start_elements} else { &variables.base_elements };
-
-    for &elem in initial_elements {
-        let heur = heuristic_map.get(&elem).copied().unwrap_or(0);
-        if heuristic_map.insert(elem, heur).is_none() {
-            heap.push((Reverse(heur), elem));
-        }
+    for &element in start_elements.iter() {
+        let heur = heuristic_map[element as usize];
+        heap.push((Reverse(heur), element));
     }
 
     while let Some((Reverse(element_cost), element)) = heap.pop() {
 
-        if element_cost > heuristic_map.get(&element).copied().unwrap_or(u64::MAX) {
-            continue;
-        }
+        if element_cost > heuristic_map[element as usize] { continue; }
 
-        if let Some(uses) = recipes_uses.get(&element) {
-            for &(other, result) in uses {
+        for &(other, result) in &recipes_uses_map[element as usize] {
 
-                let other_cost = if element == other { 0 } else {
-                    match heuristic_map.get(&other) {
-                        Some(&x) => x,
-                        None => continue,
-                    }
-                };
+            let other_cost = if element == other { 0 }
+            else { heuristic_map[other as usize] };
 
-                let new_cost = element_cost.saturating_add(other_cost).saturating_add(1);
-                if new_cost > end { continue; }
+            let new_cost = element_cost.saturating_add(other_cost).saturating_add(1);
 
-                let result_cost = heuristic_map.get(&result).copied().unwrap_or(u64::MAX);
-
-                if new_cost < result_cost {
-                    heuristic_map.insert(result, new_cost);
+            let result_current_heuristic = &mut heuristic_map[result as usize]; // Get mutable ref
+            if new_cost < *result_current_heuristic {
+                *result_current_heuristic = new_cost;
+                if new_cost <= end {
                     heap.push((Reverse(new_cost), result));
                 }
             }
         }
     }
     // no return needed
+}
+
+
+
+
+
+
+
+
+pub async fn rerequest_all_nothing_recipes() {
+    let variables = VARIABLES.get().expect("VARIABLES not initialized");
+
+    for (recipe, r) in variables.recipes_ing.read().unwrap().iter() {
+        if *r == NOTHING_ID {
+            variables.to_request_recipes.insert(*recipe);
+        }
+    }
+    process_all_to_request_recipes().await;
 }

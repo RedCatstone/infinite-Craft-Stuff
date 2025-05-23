@@ -230,12 +230,11 @@ struct RecipesGzip {
     version: String,
     created: u128, // Milliseconds since UNIX epoch
     updated: u128, // Milliseconds since UNIX epoch
-    instances: Vec<()>,
+    instances: Vec<serde_json::Value>,
     items: Vec<RecipesGzipItemData>,
 }
 #[derive(Deserialize, Serialize)]
 struct RecipesGzipItemData {
-    #[serde(default)]
     id: u32,
     text: String,
 
@@ -407,14 +406,6 @@ pub fn save_recipes_gzip(filename: &str, save_name: &str) -> io::Result<()> {
 
 
 fn merge_new_variables_with_existing(new_num_to_str: &mut Vec<String>, new_str_to_num: &mut FxHashMap<String, u32>, new_recipes_ing: FxHashMap<(u32, u32), u32>) {
-
-    let base_elements: [u32; 4] = ["Fire", "Water", "Earth", "Wind"].map(|x| {
-        *new_str_to_num
-            .get(x)
-            .unwrap_or_else(|| panic!("Base element '{}' not found in str_to_num map", x))
-    });
-
-
     let neal_case_time = Instant::now();
     let mut new_neal_case_map: Vec<u32> = Vec::with_capacity(new_num_to_str.len());
     let mut added: Vec<String> = Vec::new();
@@ -447,66 +438,91 @@ fn merge_new_variables_with_existing(new_num_to_str: &mut Vec<String>, new_str_t
 
 
     // --- Try to get existing Variables or initialize ---
-    let merge_time = Instant::now();
-
-    match VARIABLES.get() {
+    let existing_variables = match VARIABLES.get() {
+        Some(x) => x,
         None => {
-            // --- First time loading: Initialize ---
-            let new_variables = Variables {
-                base_elements,
-                num_to_str: RwLock::new(new_num_to_str.to_owned()),
-                neal_case_map: RwLock::new(new_neal_case_map),
-                recipes_ing: RwLock::new(new_recipes_ing),
+            // first time setting, use the hardcoded default id stuff
+            VARIABLES.set(Variables {
+                // vec!["Nothing", ...BASE_ELEMENTS]
+                num_to_str: RwLock::new(std::iter::once("Nothing").chain(BASE_ELEMENTS.iter().copied()).map(|x| x.to_string()).collect()),
+                // vec![0, 1, 2, 3, ...] mapping to itself
+                neal_case_map: RwLock::new((0..=BASE_ELEMENTS.len() as Element).collect()),
                 ..Default::default()
-            };
-            VARIABLES.set(new_variables).expect("Failed to set global VARIABLES");
+            }).expect("could nto set VARIABLES...");
+
+            VARIABLES.get().unwrap()
         }
-        Some(old_variables) => {
+    };
 
-            // --- Variables already exist: Merge ---            
-            let mut existing_recipes_ing = old_variables.recipes_ing.write().unwrap();
-            let mut existing_neal_case_map = old_variables.neal_case_map.write().unwrap();
-            let mut existing_num_to_str = old_variables.num_to_str.write().unwrap();
+    // --- Merge with existing Variables ---
+    {
+        let mut existing_recipes_ing = existing_variables.recipes_ing.write().unwrap();
+        let mut existing_neal_case_map = existing_variables.neal_case_map.write().unwrap();
+        let mut existing_num_to_str = existing_variables.num_to_str.write().unwrap();
 
 
-            // maps new ids to the old existing ids
-            let mut newnum_to_existingnum: Vec<Option<u32>> = vec![None; new_num_to_str.len()];
-            for (existingnum, existingstr) in existing_num_to_str.iter().enumerate() {
-                if let Some(newnum) = new_str_to_num.get(existingstr) {
-                    newnum_to_existingnum[*newnum as usize] = Some(existingnum as u32);
-                }
+        // maps new ids to the old existing ids
+        let newnum_to_existingnum_time = Instant::now();
+
+        let mut newnum_to_existingnum: Vec<Option<u32>> = vec![None; new_num_to_str.len()];
+        for (existingnum, existingstr) in existing_num_to_str.iter().enumerate() {
+            if let Some(&newnum) = new_str_to_num.get(existingstr) {
+                newnum_to_existingnum[newnum as usize] = Some(existingnum as u32);
             }
-
-            let mut neal_queue = Vec::new();
-            // merge new elements over to the existing ones
-            for (newnum, newstr) in new_num_to_str.iter().enumerate() {
-                if newnum_to_existingnum[newnum].is_none() {
-                    // newstr is not in existing_num_to_str
-                    let new_existing_id = existing_num_to_str.len();
-
-                    existing_num_to_str.push(newstr.clone());
-                    neal_queue.push(newnum);
-
-                    newnum_to_existingnum[newnum] = Some(new_existing_id as u32);
-                } 
-            }
-
-            // finally, merge the neal map
-            for newnum in neal_queue.into_iter() {
-                existing_neal_case_map.push(newnum_to_existingnum[new_neal_case_map[newnum] as usize].unwrap());
-            }
-
-
-            for (&(first, second), &result) in new_recipes_ing.iter() {
-                let comb = sort_recipe_tuple((newnum_to_existingnum[first as usize].unwrap(), newnum_to_existingnum[second as usize].unwrap()));
-                existing_recipes_ing.insert(
-                    comb,
-                    newnum_to_existingnum[result as usize].unwrap()
-                );
-            }
-
-
-            println!("  - Merging complete: {:?}", merge_time.elapsed());
         }
+
+        let mut neal_queue = Vec::new();
+        // merge new elements over to the existing ones
+        for (newnum, newstr) in new_num_to_str.iter().enumerate() {
+            if newnum_to_existingnum[newnum].is_none() {
+                // newstr is not in existing_num_to_str
+                let new_existing_id = existing_num_to_str.len();
+
+                existing_num_to_str.push(newstr.clone());
+                neal_queue.push(newnum);
+
+                newnum_to_existingnum[newnum] = Some(new_existing_id as u32);
+            } 
+        }
+
+        // finally, merge the neal map
+        for newnum in neal_queue.into_iter() {
+            existing_neal_case_map.push(newnum_to_existingnum[new_neal_case_map[newnum] as usize].unwrap());
+        }
+        println!("  - newnum to existingnum map complete: {:?}", newnum_to_existingnum_time.elapsed());
+
+
+        // merge recipes_ing
+        let recipes_ing_merge_time = Instant::now();
+
+        let transformed_recipes: Vec<((Element, Element), Element)> = new_recipes_ing
+            .par_iter()
+            .map(|(&(first, second), &result)| {
+                let existing_first = newnum_to_existingnum[first as usize].expect("Missing existing ID for first ingredient");
+                let existing_second = newnum_to_existingnum[second as usize].expect("Missing existing ID for second ingredient");
+                let existing_result = newnum_to_existingnum[result as usize].expect("Missing existing ID for result");
+
+                (sort_recipe_tuple((existing_first, existing_second)), existing_result)
+            })
+            .collect();
+
+        existing_recipes_ing.extend(transformed_recipes);
+
+        println!("  - Merging recipes_ing complete: {:?}", recipes_ing_merge_time.elapsed());
     }
+
+    verify_recipe_stuff();
+}
+
+
+
+
+pub fn verify_recipe_stuff() {
+    let variables = VARIABLES.get().expect("VARIABLES not initialized...");
+    let recipes_ing = variables.recipes_ing.read().expect("recipes_ing not initialized...");
+    let num_to_str = variables.num_to_str.read().expect("num_to_str not initialized");
+    let neal_case_map = variables.neal_case_map.read().expect("neal_case_map not initialized");
+    assert_eq!(*recipes_ing.get(&sort_recipe_tuple((str_to_num_fn("Fire"), str_to_num_fn("Water")))).expect("'Water + Fire' is not in recipes_ing"), str_to_num_fn("Steam"));
+    assert_eq!(str_to_num_fn("Nothing"), 0);  // nothing needs to have id 0
+    assert_eq!(num_to_str.len(), neal_case_map.len());  // if these don't match something went wrong...
 }

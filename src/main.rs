@@ -21,7 +21,6 @@ const DEPTH_EXPLORER_MAX_SEED_LENGTH: usize = 8;
 
 
 const DEPTH_EXPLORER_DEPTH_GROW_FACTOR_GUESS: usize = 15;
-const DEPTH_EXPLORER_PRINT_PROGRESS_EVERY_ELEMENTS: usize = 1000;
 
 
 
@@ -38,63 +37,44 @@ async fn main() {
     // load_recipes_gzip("./Recipe Files Out/full_db.ic").expect("a");
 
 
-    // loading from auto save:
-    load_recipes_num("D:/InfiniteCraft/Codes/rust/Recipe Files Out/depth_explorer_recipes - Punc 8.json");
-    // auto save:
-    let auto_save = auto_save_recipes(Duration::from_secs(120), || {
-        println!("saving recipes...");
-        save_recipes_num("depth_explorer_recipes - Punc 8.json").expect("could not auto save...")
-    });
-
     // v analyzer format!!! v
     // save_recipes_gzip("full_db.ic", "Full Db").expect("could not save...");
 
-
-    // verify recipes:
-    {
-        let variables = VARIABLES.get().expect("VARIABLES not initialized...");
-        let recipes_ing = variables.recipes_ing.read().expect("recipes_ing not initialized...");
-        let num_to_str = variables.num_to_str.read().expect("num_to_str not initialized");
-        let neal_case_map = variables.neal_case_map.read().expect("neal_case_map not initialized");
-        assert_eq!(*recipes_ing.get(&sort_recipe_tuple((str_to_num_fn("Fire"), str_to_num_fn("Water")))).expect("'Water + Fire' is not in recipes_ing"), str_to_num_fn("Steam"));
-        assert_eq!(str_to_num_fn("Nothing"), 0);  // nothing needs to have id 0
-        assert_eq!(num_to_str.len(), neal_case_map.len());  // if these don't match something went wrong...
-    }
+    do_punc_8().await;
 
 
 
-    let de_vars = DepthExplorerVars {
-        stop_after_depth: DEPTH_EXPLORER_MAX_SEED_LENGTH,  // modify the global variable so that the compiler knows how big stuff is gonna be -> SPEEEEED
-        split_start: 2,
-        lineage_elements: string_lineage_results(r#"
-
-Water + Earth = Plant
-Plant + Earth = Tree
-Water + Tree = River
-River + Earth = Delta
-Tree + River = Paper
-Tree + Paper = Book
-Delta + Book = Alphabet
-Alphabet + Alphabet = Word
-Word + Word = Sentence
-Wind + Sentence = Phrase
-Phrase + Book = Quote
-Quote + Alphabet = Punctuation
-
-"#),
-        ..Default::default()
-    };
+    // load_recipes_num(&format!("{}/depth_explorer_recipes.json", SAVED_RECIPES_FILES_LOCATION));
 
 
-    let encountered = depth_explorer_split_start(&de_vars).await;
-
-    auto_save.save_now();
-
-    generate_lineages_file(&de_vars, encountered).expect("could not generate lineages file...");
+    // let recipes_result_map = get_recipes_result_map();
+    // let recipes_uses_map = get_recipes_uses_map();
+    // let mut heuristic_map = get_element_heuristic_map(&recipes_uses_map);
 
 
+    // let punc_alts = generate_lineage_multiple_methods(&["Punctuation", "Alphabet", "Delta"], &mut heuristic_map, &recipes_result_map, &recipes_uses_map, false);
+    // punc_alts.print_lineages_ordered();
 
-
+    let ass_lineage = string_lineage_to_lineage(r#"
+Earth + Wind = Dust
+Dust + Earth = Planet
+Fire + Planet = Sun
+Sun + Water = Rainbow
+Earth + Earth = Mountain
+Mountain + Rainbow = Unicorn
+Earth + Water = Plant
+Fire + Water = Steam
+Fire + Steam = Engine
+Engine + Plant = Car
+Car + Earth = Tire
+Tire + Unicorn = Puncture
+Sun + Wind = Sunflower
+Fire + Wind = Smoke
+Smoke + Sunflower = Smoke Signal
+Smoke Signal + Puncture = Punctuation
+"#);
+    // let improved_lineage = improve_lineage_depth_explorer(ass_lineage, 1, 0).await;
+    // improved_lineage.print_lineages_ordered();
 
 
 
@@ -107,4 +87,48 @@ Quote + Alphabet = Punctuation
     // println!("{}", format_lineage(lineage));
     // let lineage = remove_unneccessary(generate_lineage(&binding, 1));
     // println!("{}", format_lineage(lineage));
+}
+
+
+
+
+
+
+async fn do_punc_8() {
+    let auto_load_and_save_file = "depth_explorer_recipes - Punc 8.json";
+    load_recipes_num(&format!("{}/{}", SAVED_RECIPES_FILES_LOCATION, auto_load_and_save_file));
+    // load_recipes_gzip("D:/InfiniteCraft/Codes/rust/Recipe Files In/Helper-Save (May 19, 2025, 07-47 PM).ic").expect("could not load");
+
+    let auto_save = auto_save_recipes(Duration::from_secs(30 * 60), || {
+        println!("saving recipes...");
+        save_recipes_num(auto_load_and_save_file).expect("could not auto save...")
+    });
+
+    let de_vars = DepthExplorerVars {
+        stop_after_depth: DEPTH_EXPLORER_MAX_SEED_LENGTH,  // modify the global variable, so the compiler knows how big stuff is gonna be -> SPEEEEED
+        split_start: 2,
+        lineage_elements: string_lineage_results(r#"
+
+Earth + Water = Plant
+Earth + Plant = Tree
+Tree + Water = River
+Earth + River = Delta
+River + Tree = Paper
+Paper + Tree = Book
+Book + Delta = Alphabet
+Alphabet + Alphabet = Word
+Word + Word = Sentence
+Sentence + Wind = Phrase
+Book + Phrase = Quote
+Alphabet + Quote = Punctuation
+
+            "#),
+        ..Default::default()
+    };
+
+    rerequest_all_nothing_recipes().await;
+
+    // let encountered = depth_explorer_split_start(&de_vars).await;
+    auto_save.save_now();
+    // generate_lineages_file(&de_vars, encountered).expect("could not generate lineages file...");
 }

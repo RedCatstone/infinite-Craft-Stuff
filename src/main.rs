@@ -1,15 +1,12 @@
+#![allow(dead_code)]
 mod structures;
 mod recipe_loader;
 mod lineage;
 mod depth_explorer;
 mod recipe_requestor;
 
-use std::fs;
 use std::time::Duration;
-use std::time::Instant;
 
-use rustc_hash::FxHashMap;
-use rustc_hash::FxHashSet;
 use crate::structures::*; // Import public static if needed directly
 use crate::lineage::*;
 use crate::depth_explorer::*;
@@ -62,7 +59,7 @@ async fn main() {
 
 
 async fn test_depth_explorer() {
-    recipe_loader::load("depth_explorer_recipes.json", recipe_loader::RecipeFileFormat::JSONRecipesNum).unwrap();
+    recipe_loader::load("depth_explorer_recipes - Punc 8.json", recipe_loader::RecipeFileFormat::JSONRecipesNum).unwrap();
 
     let de_vars = DepthExplorerVars {
         stop_after_depth: DEPTH_EXPLORER_MAX_SEED_LENGTH,  // modify the global variable, so the compiler knows how big stuff is gonna be -> SPEEEEED

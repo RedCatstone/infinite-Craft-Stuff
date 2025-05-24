@@ -1,7 +1,7 @@
-use std::{fmt::{self, Write}, time::Instant};
+use std::time::Instant;
+use std::fmt::Write;
 use rand::Rng;
 use rustc_hash::{FxHashMap, FxHashSet};
-use async_recursion::async_recursion;
 
 use crate::{depth_explorer::*, structures::*};
 

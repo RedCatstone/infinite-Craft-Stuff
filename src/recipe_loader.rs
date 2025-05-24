@@ -35,8 +35,8 @@ pub fn load(file_name: &str, format: RecipeFileFormat) -> io::Result<()> {
     };
 
     match response {
-        Err(e) => panic!(" - FAILED TO LOAD... ({:?}): {}", start_time.elapsed(), e),
-        Ok(_) => println!(" - Complete! ({:?})", start_time.elapsed()),
+        Err(e) => panic!("  - FAILED TO LOAD... ({:?}): {}", start_time.elapsed(), e),
+        Ok(_) => println!("  - Complete! ({:?})", start_time.elapsed()),
     }
     response
 }
@@ -55,8 +55,8 @@ pub fn save(file_name: &str, format: RecipeFileFormat) -> io::Result<()> {
     };
 
     match response {
-        Err(ref e) => println!(" - FAILED TO SAVE... ({:?}): {}", start_time.elapsed(), e),
-        Ok(_) => println!(" - Complete! ({:?})", start_time.elapsed()),
+        Err(ref e) => println!("  - FAILED TO SAVE... ({:?}): {}", start_time.elapsed(), e),
+        Ok(_) => println!("  - Complete! ({:?})", start_time.elapsed()),
     }
     response
 }
@@ -88,6 +88,7 @@ fn load_recipes_num(file: &File) -> io::Result<()> {
     println!("  - Deserialization complete: {:?}", deserialize_time.elapsed());
 
     // --- Parallel Processing ---
+    let recipe_process_time = Instant::now();
     let mut str_to_num: FxHashMap<String, u32> = data.num_to_str
         .par_iter()
         .enumerate()
@@ -95,7 +96,6 @@ fn load_recipes_num(file: &File) -> io::Result<()> {
         .collect();
 
 
-    let recipe_process_time = Instant::now();
     let mut recipes_ing: FxHashMap<(u32, u32), u32> = FxHashMap::with_capacity_and_hasher(data.num_to_str.len(), Default::default());
 
     for (first_ingredient, inner_map) in data.recipes.iter() {
@@ -130,7 +130,7 @@ fn save_recipes_num(file_path: &str) -> io::Result<()> {
         recipes,
         num_to_str: num_to_str.clone(),
     };
-    println!(" - Recipe Processing complete: {:?}", recipe_process_time.elapsed());
+    println!("  - Recipe Processing complete: {:?}", recipe_process_time.elapsed());
 
 
     let file = File::create(file_path)?;
@@ -221,7 +221,7 @@ fn save_recipes_old_depth_explorer(file_path: &str) -> io::Result<()> {
 
         recipes.insert(comb, result);
     }
-    println!(" - Recipe Processing complete: {:?}", recipe_process_time.elapsed());
+    println!("  - Recipe Processing complete: {:?}", recipe_process_time.elapsed());
 
     let file = File::create(file_path)?;
     let mut writer = BufWriter::with_capacity(1024 * 1024, file);

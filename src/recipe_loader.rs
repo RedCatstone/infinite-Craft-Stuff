@@ -1,13 +1,65 @@
 use serde::{Deserialize, Serialize};
-use std::{
-    fs::{self, File}, io::{self, BufWriter, BufReader, Write, Read}, path::{Path, PathBuf}, sync::RwLock, time::{Instant, SystemTime, UNIX_EPOCH}
-};
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use std::sync::RwLock;
+use std::io::{self, BufWriter, BufReader, Write, Read};
+use std::fs::File;
 use rustc_hash::FxHashMap;
 use rayon::prelude::*;
 
 use libdeflater::{CompressionLvl, Compressor, Decompressor};
 
-use crate::{structures::*, SAVED_RECIPES_FILES_LOCATION};
+use crate::{structures::*, RECIPE_FILES_FOLDER};
+
+
+
+
+#[derive(Debug, Copy, Clone)]
+pub enum RecipeFileFormat {
+    ICSaveFile,
+    JSONRecipesNum,
+    JSONOldDepthExplorerRecipes
+}
+
+
+pub fn load(file_name: &str, format: RecipeFileFormat) -> io::Result<()> {
+    println!("Loading {} ({:?})", file_name, format);
+    let start_time = Instant::now();
+
+    let file_path = format!("{}/{}", RECIPE_FILES_FOLDER, file_name);
+    let file = &mut File::open(file_path)?;
+
+    let response = match format {
+        RecipeFileFormat::ICSaveFile => load_recipes_gzip(file),
+        RecipeFileFormat::JSONRecipesNum => load_recipes_num(file),
+        RecipeFileFormat::JSONOldDepthExplorerRecipes => load_recipes_old_depth_explorer(file),
+    };
+
+    match response {
+        Err(e) => panic!(" - FAILED TO LOAD... ({:?}): {}", start_time.elapsed(), e),
+        Ok(_) => println!(" - Complete! ({:?})", start_time.elapsed()),
+    }
+    response
+}
+
+
+pub fn save(file_name: &str, format: RecipeFileFormat) -> io::Result<()> {
+    println!("Saving {} ({:?})", file_name, format);
+    let start_time = Instant::now();
+
+    let file_path = &format!("{}/{}", RECIPE_FILES_FOLDER, file_name);
+
+    let response = match format {
+        RecipeFileFormat::ICSaveFile => save_recipes_gzip(file_path),
+        RecipeFileFormat::JSONRecipesNum => save_recipes_num(file_path),
+        RecipeFileFormat::JSONOldDepthExplorerRecipes => save_recipes_old_depth_explorer(file_path),
+    };
+
+    match response {
+        Err(ref e) => println!(" - FAILED TO SAVE... ({:?}): {}", start_time.elapsed(), e),
+        Ok(_) => println!(" - Complete! ({:?})", start_time.elapsed()),
+    }
+    response
+}
 
 
 
@@ -28,22 +80,15 @@ struct RecipesNum {
     recipes: FxHashMap<u32, FxHashMap<u32, u32>>,
 }
 
-pub fn load_recipes_num(filepath: &str) {
-    let start_time = Instant::now();
+fn load_recipes_num(file: &File) -> io::Result<()> {
+    let deserialize_time = Instant::now();
 
-    let path = Path::new(filepath);
-    let file = File::open(path).unwrap_or_else(|_| panic!("path {:?} does not exist", path));
     let reader = BufReader::with_capacity(1024 * 1024, file); // 1MB buffer
-
-    let data: RecipesNum = serde_json::from_reader(reader).expect("JSON reading failed...");
-    println!("  - Deserialization complete: {:?}", start_time.elapsed());
-
-
-    let mut num_to_str: Vec<String> = if !data.num_to_str.is_empty() { data.num_to_str }
-        else { vec![String::from("Nothing"), String::from("Fire"), String::from("Water"), String::from("Earth"), String::from("Wind")] };
+    let mut data: RecipesNum = serde_json::from_reader(reader)?;
+    println!("  - Deserialization complete: {:?}", deserialize_time.elapsed());
 
     // --- Parallel Processing ---
-    let mut str_to_num: FxHashMap<String, u32> = num_to_str
+    let mut str_to_num: FxHashMap<String, u32> = data.num_to_str
         .par_iter()
         .enumerate()
         .map(|(i, s)| (s.clone(), i as u32))
@@ -51,9 +96,7 @@ pub fn load_recipes_num(filepath: &str) {
 
 
     let recipe_process_time = Instant::now();
-    let mut recipes_ing: FxHashMap<(u32, u32), u32> = FxHashMap::with_capacity_and_hasher(num_to_str.len(), Default::default());
-
-
+    let mut recipes_ing: FxHashMap<(u32, u32), u32> = FxHashMap::with_capacity_and_hasher(data.num_to_str.len(), Default::default());
 
     for (first_ingredient, inner_map) in data.recipes.iter() {
         for (second_ingredient, result) in inner_map.iter() {
@@ -62,8 +105,8 @@ pub fn load_recipes_num(filepath: &str) {
     }
     println!("  - Recipe processing complete: {:?}", recipe_process_time.elapsed());
 
-    merge_new_variables_with_existing(&mut num_to_str, &mut str_to_num, recipes_ing);
-    println!("Loaded Recipes from {}: {:?}", filepath, start_time.elapsed());
+    merge_new_variables_with_existing(&mut data.num_to_str, &mut str_to_num, recipes_ing);
+    Ok(())
 }
 
 
@@ -71,37 +114,28 @@ pub fn load_recipes_num(filepath: &str) {
 
 
 
-pub fn save_recipes_num(filename: &str) -> io::Result<()> {
-    let start_time = Instant::now();
-
-    let variables = VARIABLES.get().expect("VARIABLES not initialized.");
+fn save_recipes_num(file_path: &str) -> io::Result<()> {
+    let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized.");
     let recipes_ing = variables.recipes_ing.read().unwrap();
     let num_to_str = variables.num_to_str.read().unwrap();
 
-    let mut data = RecipesNum::default();
+    let recipe_process_time = Instant::now();
+    let mut recipes: FxHashMap<u32, FxHashMap<u32, u32>> = FxHashMap::with_capacity_and_hasher(num_to_str.len(), Default::default());
 
-    let mut recipes: FxHashMap<u32, FxHashMap<u32, u32>> = FxHashMap::with_capacity_and_hasher(recipes_ing.len(), Default::default());
-
-    for (&(first, second), &result) in recipes_ing.iter() {
-        let comb = if first < second { (first, second) } else { (second, first) };
-
-        recipes.entry(comb.0).or_default().insert(comb.1, result);
+    for (&recipe, &result) in recipes_ing.iter() {
+        recipes.entry(recipe.0).or_default().insert(recipe.1, result);
     }
-    
-    data.recipes = recipes;
-    data.num_to_str = num_to_str.clone();
+
+    let data = RecipesNum {
+        recipes,
+        num_to_str: num_to_str.clone(),
+    };
+    println!(" - Recipe Processing complete: {:?}", recipe_process_time.elapsed());
 
 
-    let folder_path = PathBuf::from(SAVED_RECIPES_FILES_LOCATION);
-    fs::create_dir_all(&folder_path)?;
-    let full_path = folder_path.join(filename);
-
-    let file = File::create(&full_path)?;
+    let file = File::create(file_path)?;
     let mut writer = BufWriter::with_capacity(1024 * 1024, file);
-
-    serde_json::to_writer(&mut writer, &data).expect("JSON seriliaziation failed...");
-
-    println!("Saved recipesNum to {:?}: {:?}", full_path, start_time.elapsed());
+    serde_json::to_writer(&mut writer, &data)?;
     Ok(())
 }
 
@@ -122,21 +156,17 @@ pub fn save_recipes_num(filename: &str) -> io::Result<()> {
 
 
 
-pub fn load_recipes_old_depth_explorer(filepath: &str) {
-    let start_time = Instant::now();
+fn load_recipes_old_depth_explorer(file: &File) -> io::Result<()> {
+    let deserialize_time = Instant::now();
 
-    let path = Path::new(filepath);
-    let file = File::open(path).unwrap_or_else(|_| panic!("path {:?} does not exist", path));
     let reader = BufReader::with_capacity(1024 * 1024, file); // 1MB buffer
+    let recipes: FxHashMap<String, String> = serde_json::from_reader(reader)?;
+    println!("  - Deserialization complete: {:?}", deserialize_time.elapsed());
 
-    let recipes: FxHashMap<String, String> = serde_json::from_reader(reader).expect("JSON reading failed...");
-    println!("  - Deserialization complete: {:?}", start_time.elapsed());
 
-
-    let mut num_to_str: Vec<String> = vec![String::from("Nothing")];
-    let mut str_to_num: FxHashMap<String, u32> = num_to_str.iter().enumerate().map(|(i, str)| (str.clone(), i as u32)).collect();
-    let mut recipes_ing: FxHashMap<(u32, u32), u32> = FxHashMap::default();
-
+    let mut num_to_str: Vec<String> = Vec::new();
+    let mut str_to_num: FxHashMap<String, u32> = FxHashMap::default();
+    let mut recipes_ing: FxHashMap<(u32, u32), u32> = FxHashMap::with_capacity_and_hasher(recipes.len(), Default::default());
 
     let mut get_id = |elem: &str| {
         match str_to_num.get(elem) {
@@ -150,16 +180,15 @@ pub fn load_recipes_old_depth_explorer(filepath: &str) {
         }
     };
 
-
     for (recipe_string, result) in recipes.into_iter() {
-        let (first, second) = recipe_string.split_once("=").expect("recipe_str did not have an '='");
-
+        let (first, second) = recipe_string.split_once("=")
+            .ok_or(io::Error::new(io::ErrorKind::InvalidData, format!("Invalid Recipe, couldn't split by '=': {}", recipe_string)))?;
         let comb = sort_recipe_tuple((get_id(first), get_id(second)));
         recipes_ing.insert(comb, get_id(&result));
     }
 
     merge_new_variables_with_existing(&mut num_to_str, &mut str_to_num, recipes_ing);
-    println!("Loaded Recipes from {}: {:?}", filepath, start_time.elapsed());
+    Ok(())
 }
 
 
@@ -168,10 +197,10 @@ pub fn load_recipes_old_depth_explorer(filepath: &str) {
 
 
 
-pub fn save_recipes_old_depth_explorer(filename: &str) -> io::Result<()> {
-    let start_time = Instant::now();
+fn save_recipes_old_depth_explorer(file_path: &str) -> io::Result<()> {
+    let recipe_process_time = Instant::now();
 
-    let variables = VARIABLES.get().expect("VARIABLES not initialized.");
+    let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized.");
     let recipes_ing = variables.recipes_ing.read().unwrap();
     let num_to_str = variables.num_to_str.read().unwrap();
 
@@ -180,30 +209,23 @@ pub fn save_recipes_old_depth_explorer(filename: &str) -> io::Result<()> {
     for (&(f, s), &r) in recipes_ing.iter() {
         let first = &num_to_str[f as usize];
         let second = &num_to_str[s as usize];
-        let result = &num_to_str[r as usize];
+        let result = num_to_str[r as usize].clone();
 
-        let a = if f < s { (first, second) } else { (second, first) };
+        let string_recipe = if f < s { (first, second) } else { (second, first) };
         // let comb = format!("{}={}", a.0, a.1);
 
-        let mut comb = String::with_capacity(a.0.len() + 1 + a.1.len());
-        comb.push_str(a.0);
+        let mut comb = String::with_capacity(string_recipe.0.len() + 1 + string_recipe.1.len());
+        comb.push_str(string_recipe.0);
         comb.push('=');
-        comb.push_str(a.1);
+        comb.push_str(string_recipe.1);
 
-        recipes.insert(comb, result.to_string());
+        recipes.insert(comb, result);
     }
+    println!(" - Recipe Processing complete: {:?}", recipe_process_time.elapsed());
 
-
-    let folder_path = PathBuf::from(SAVED_RECIPES_FILES_LOCATION);
-    fs::create_dir_all(&folder_path)?;
-    let full_path = folder_path.join(filename);
-
-    let file = File::create(&full_path)?;
+    let file = File::create(file_path)?;
     let mut writer = BufWriter::with_capacity(1024 * 1024, file);
-
-    serde_json::to_writer_pretty(&mut writer, &recipes).expect("JSON seriliaziation failed...");
-
-    println!("Saved old depth_explorer_recipes to {:?}: {:?}", full_path, start_time.elapsed());
+    serde_json::to_writer_pretty(&mut writer, &recipes)?;
     Ok(())
 }
 
@@ -242,62 +264,46 @@ struct RecipesGzipItemData {
     recipes: Vec<(u32, u32)>,
 }
 
-pub fn load_recipes_gzip(filepath: &str) -> io::Result<()> {
-    let start_time = Instant::now();
+fn load_recipes_gzip(file: &mut File) -> io::Result<()> {
+    let deserialize_time = Instant::now();
 
     // 1. Read compressed data
-    let mut file = File::open(filepath)?;
-    let mut gz_data = Vec::new();
-    file.read_to_end(&mut gz_data)?;
+    let mut gz_buffer = Vec::new();
+    file.read_to_end(&mut gz_buffer)?;
 
     // 2. Get expected size from GZIP footer
-    if gz_data.len() < 4 { return Err(io::Error::new(io::ErrorKind::InvalidData, "Gzip data too short")); }
-    let isize = u32::from_le_bytes(gz_data[gz_data.len()-4..].try_into().unwrap()) as usize;
+    if gz_buffer.len() < 4 { return Err(io::Error::new(io::ErrorKind::InvalidData, "Gzip data too short")); }
+    let isize = u32::from_le_bytes(gz_buffer[gz_buffer.len()-4..].try_into().unwrap()) as usize;
 
     // 3. Decompress
     let mut decompressor = Decompressor::new();
     let mut out_buf = vec![0u8; isize];
-    let actual_size = decompressor.gzip_decompress(&gz_data, &mut out_buf)
+    let actual_size = decompressor.gzip_decompress(&gz_buffer, &mut out_buf)
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, format!("Decompression failed: {:?}", e)))?;
     out_buf.truncate(actual_size); // Adjust size if ISIZE was wrong
 
     // 4. Parse JSON
-    let data: RecipesGzip = serde_json::from_slice(&out_buf)
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, format!("JSON parsing failed: {}", e)))?;
-    println!("  - Deserialization complete: {:?}", start_time.elapsed());
+    let data: RecipesGzip = serde_json::from_slice(&out_buf)?;
+    println!("  - Deserialization complete: {:?}", deserialize_time.elapsed());
 
 
-
-
-
-    let mut num_to_str: Vec<String> = vec![String::from("Nothing")];
-    let mut str_to_num: FxHashMap<String, u32> = num_to_str.iter().enumerate().map(|(i, str)| (str.clone(), i as u32)).collect();
+    let mut num_to_str: Vec<String> = vec![String::new(); data.items.len()];
+    let mut str_to_num: FxHashMap<String, u32> = FxHashMap::default();
     let mut recipes_ing: FxHashMap<(u32, u32), u32> = FxHashMap::default();
 
-    let mut old_id_to_new_id: FxHashMap<u32, u32> = FxHashMap::default();
+    for item in data.items.into_iter() {
+        let id_usize = item.id as usize;
+        if id_usize >= num_to_str.len() { num_to_str.resize(id_usize, String::new()); }
 
-    for item in data.items.iter() {
-        let id = if item.text == *"Nothing" { 0 } else { num_to_str.len() as u32 };
-        num_to_str.push(item.text.to_string());
-        str_to_num.insert(item.text.to_string(), id);
-        old_id_to_new_id.insert(item.id, id);
-    }
-    
-    for item in data.items.iter() {
-        let r = *old_id_to_new_id.get(&item.id).expect("Id does not exist?!");
+        num_to_str[id_usize] = item.text.clone();
+        str_to_num.insert(item.text, item.id);
 
-        for (first, second) in item.recipes.iter() {
-            let f = *old_id_to_new_id.get(first).expect("Id does not exist?!");
-            let s = *old_id_to_new_id.get(second).expect("Id does not exist?!");
-            let comb = if f < s { (f, s) } else { (s, f) };
-
-            recipes_ing.insert(comb, r);
+        for recipe in item.recipes.into_iter() {
+            recipes_ing.insert(recipe, item.id);
         }
     }
 
     merge_new_variables_with_existing(&mut num_to_str, &mut str_to_num, recipes_ing);
-    println!("Loaded Recipes from {}: {:?}", filepath, start_time.elapsed());
-
     Ok(())
 }
 
@@ -310,33 +316,25 @@ pub fn load_recipes_gzip(filepath: &str) -> io::Result<()> {
 
 
 
-pub fn save_recipes_gzip(filename: &str, save_name: &str) -> io::Result<()> {
-    let start_time = Instant::now();
-
-    let variables = VARIABLES.get().expect("VARIABLES not initialized.");
-
-    // --- Acquire Read Locks ---
+fn save_recipes_gzip(file_path: &str) -> io::Result<()> {
+    let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized.");
     let num_to_str = variables.num_to_str.read().unwrap();
-    let recipes_ing = variables.recipes_ing.read().unwrap();
 
-    let mut recipes_result: FxHashMap<u32, Vec<(u32, u32)>> = FxHashMap::with_capacity_and_hasher(num_to_str.len(), Default::default());
-    for (&recipe, &r) in recipes_ing.iter().take(16777215) {
-        recipes_result.entry(r).or_default().push(recipe);
-    }
-    println!("  - updated recipes_uses in {:?}", start_time.elapsed());
-
-
-
-    let mut items: Vec<RecipesGzipItemData> = Vec::with_capacity(num_to_str.len());
+    
+    let recipes_result_time = Instant::now();
+    let recipes_result = get_recipes_result_map();
+    println!("  - made recipes_result: {:?}", recipes_result_time.elapsed());
 
     let build_items_vec_time = Instant::now();
-    for (id_u32, text) in num_to_str.iter().enumerate().map(|(i, s)| (i as u32, s)) {
+    let mut items: Vec<RecipesGzipItemData> = Vec::with_capacity(num_to_str.len());
+    for (id, text) in num_to_str.iter().enumerate() {
         items.push(RecipesGzipItemData {
-            id: id_u32,
-            text: text.clone(),         // Clone the string for owned ItemData
-            recipes: recipes_result.get(&id_u32).cloned().unwrap_or_default(), // Clone vec or provide empty,
+            id: id as u32,
+            text: text.clone(),
+            recipes: recipes_result[id].clone(),
         });
     }
+    drop(recipes_result);
     println!("  - built items vector: {:?}", build_items_vec_time.elapsed());
 
     let now_ms = SystemTime::now()
@@ -345,7 +343,7 @@ pub fn save_recipes_gzip(filename: &str, save_name: &str) -> io::Result<()> {
         .as_millis();
 
     let gzip_save_data = RecipesGzip {
-        name: save_name.to_string(),
+        name: String::from("pee pee, Poo Poo"),
         version: String::from("1.0"),
         created: now_ms,
         updated: now_ms,
@@ -354,16 +352,11 @@ pub fn save_recipes_gzip(filename: &str, save_name: &str) -> io::Result<()> {
     };
 
 
-    let folder_path = PathBuf::from(SAVED_RECIPES_FILES_LOCATION);
-    fs::create_dir_all(&folder_path)?;
-    let full_path = folder_path.join(filename);
-
-    let file = File::create(&full_path)?;
+    let file = File::create(file_path)?;
     let mut writer = BufWriter::with_capacity(1024 * 1024, file);
 
     // Step 1: Serialize to an in-memory buffer (uses RAM)
-    let uncompressed_data = serde_json::to_vec(&gzip_save_data)
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("JSON serialization to vec failed: {}", e)))?;
+    let uncompressed_data = serde_json::to_vec(&gzip_save_data)?;
 
     // Step 2: Compress the buffer using libdeflate
     let mut compressor = Compressor::new(CompressionLvl::new(1)
@@ -378,8 +371,6 @@ pub fn save_recipes_gzip(filename: &str, save_name: &str) -> io::Result<()> {
     compressed_buffer.resize(actual_compressed_size, 0);
     writer.write_all(&compressed_buffer)?;
 
-
-    println!("Saved savefile to {:?}: {:?}", full_path, start_time.elapsed());
     Ok(())
 }
 
@@ -438,11 +429,11 @@ fn merge_new_variables_with_existing(new_num_to_str: &mut Vec<String>, new_str_t
 
 
     // --- Try to get existing Variables or initialize ---
-    let existing_variables = match VARIABLES.get() {
+    let existing_variables = match GLOBAL_VARS.get() {
         Some(x) => x,
         None => {
             // first time setting, use the hardcoded default id stuff
-            VARIABLES.set(Variables {
+            GLOBAL_VARS.set(GlobalVars {
                 // vec!["Nothing", ...BASE_ELEMENTS]
                 num_to_str: RwLock::new(std::iter::once("Nothing").chain(BASE_ELEMENTS.iter().copied()).map(|x| x.to_string()).collect()),
                 // vec![0, 1, 2, 3, ...] mapping to itself
@@ -450,7 +441,7 @@ fn merge_new_variables_with_existing(new_num_to_str: &mut Vec<String>, new_str_t
                 ..Default::default()
             }).expect("could nto set VARIABLES...");
 
-            VARIABLES.get().unwrap()
+            GLOBAL_VARS.get().unwrap()
         }
     };
 
@@ -518,7 +509,7 @@ fn merge_new_variables_with_existing(new_num_to_str: &mut Vec<String>, new_str_t
 
 
 pub fn verify_recipe_stuff() {
-    let variables = VARIABLES.get().expect("VARIABLES not initialized...");
+    let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized...");
     let recipes_ing = variables.recipes_ing.read().expect("recipes_ing not initialized...");
     let num_to_str = variables.num_to_str.read().expect("num_to_str not initialized");
     let neal_case_map = variables.neal_case_map.read().expect("neal_case_map not initialized");

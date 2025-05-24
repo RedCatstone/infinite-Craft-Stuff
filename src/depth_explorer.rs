@@ -1,19 +1,18 @@
 use std::collections::hash_map;
+use std::sync::Arc;
 use std::time::Instant;
-use rustc_hash::{FxHashMap, FxHashSet};
 use std::cmp;
 use std::fmt::Write as FmtWrite;
 use std::fs::{self, File};
 use std::io::{self, Write, BufWriter};
 use std::path::PathBuf;
-use std::sync::Arc;
-use async_recursion::async_recursion;
-use arc_swap::ArcSwap;
-use rayon::prelude::*;
+use std::cell::RefCell;
 use dashmap::DashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
+use async_recursion::async_recursion;
+use rayon::prelude::*;
 use tinyvec::ArrayVec;  // can't move to heap
 use colored::Colorize;
-use std::cell::RefCell;
 
 use crate::{lineage::*, DEPTH_EXPLORER_DEPTH_GROW_FACTOR_GUESS, DEPTH_EXPLORER_MAX_SEED_LENGTH};
 use crate::structures::*;
@@ -56,10 +55,10 @@ struct DepthExplorerPrivateStructures {
     depth1: FxHashSet<u32>,
     base_lineage_depth1: FxHashSet<u32>,
 
-    seed_sets: Vec<DashSet<Seed>>,
-    main_encountered: ArcSwap<EncounteredMap>,
+    next_seed_set: DashSet<Seed>,
+    encountered: Arc<EncounteredMap>,
     
-    element_base_cache: ArcSwap<ElementBaseCacheMap>,
+    element_base_cache: Arc<ElementBaseCacheMap>,
     num_to_str_len: Vec<usize>,
 
     start_time: Instant,
@@ -78,28 +77,22 @@ pub async fn depth_explorer_split_start(de_vars: &DepthExplorerVars) -> Encounte
 
     let start_time = Instant::now();
 
+    // calculate depth 1
     let mut initial_split_de_vars = de_vars.clone();
     initial_split_de_vars.stop_after_depth = 1;
     let initial_split_encountered = depth_explorer_start(&mut initial_split_de_vars).await;
 
-        
-    let mut collected_encountereds = initial_split_encountered.clone();
-    let mut excluded_depth1_elements = de_vars.exclude_depth1_elements.clone();
-
     // iterate over every 1-step element
     let total_to_process = initial_split_encountered.len();
 
-    for (i, element) in initial_split_encountered.into_keys().collect::<Vec<Element>>().into_iter().rev().enumerate() {
-        if !de_vars.disable_depth_logs {
-            println!("{} Split Depth Explorer - {}/{}: {} - Time: {} - Elements: {}",
-                (de_vars.split_start).to_string().purple(),
-                (i + 1).to_string().purple(),
-                (total_to_process).to_string().purple(),
-                num_to_str_fn(element).purple(),
-                format!("{:?}", start_time.elapsed()).yellow(),
-                (collected_encountereds.len()).to_string().yellow(),
-            );
-        }
+    let process_element = async |element: Element, excluded_depth1_elements: Vec<u32>| {
+        println!("{} Split Depth Explorer - {}/{}: {} - Time: {}",
+            de_vars.split_start.to_string().purple(),
+            (excluded_depth1_elements.len() + 1).to_string().purple(),
+            total_to_process.to_string().purple(),
+            num_to_str_fn(element).purple(),
+            format!("{:?}", start_time.elapsed()).yellow(),
+        );
 
         // create new de_vars starting from every 1-step
         let mut new_de_vars = de_vars.clone();
@@ -107,31 +100,43 @@ pub async fn depth_explorer_split_start(de_vars: &DepthExplorerVars) -> Encounte
         new_de_vars.stop_after_depth -= 1;
         new_de_vars.split_start -= 1;
         new_de_vars.exclude_depth1_elements = excluded_depth1_elements;
-        // new_de_vars.disable_depth_logs = true;
+        new_de_vars.disable_depth_logs = true;
 
         let new_encountered = if new_de_vars.split_start == 0
         { depth_explorer_start(&new_de_vars).await }
         else { depth_explorer_split_start(&new_de_vars).await };
 
-        let element_ic;
-        {
-            let variables = VARIABLES.get().expect("VARIABLES not initialized");
-            let neal_case_map = variables.neal_case_map.read().unwrap();
-            element_ic = neal_case_map[element as usize];
-        }
+        let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized");
+        let element_ic = variables.neal_case_map.read().unwrap()[element as usize];
+
         let new_extended_encountered = extend_encountered_seeds(new_encountered, element_ic);
-        collected_encountereds = merge_local_encountered_maps(collected_encountereds, new_extended_encountered);
+        new_extended_encountered
+    };
 
-        excluded_depth1_elements = new_de_vars.exclude_depth1_elements;
-        excluded_depth1_elements.push(element);
-
+    
+    // sequential processing
+    let mut collected_encountereds = initial_split_encountered.clone();
+    let mut excluded_depth1s = Vec::new();
+    for element in initial_split_encountered.into_keys() {
+        let element_encountered = process_element(element, excluded_depth1s.clone()).await;
+        collected_encountereds = merge_encountered_maps(collected_encountereds, element_encountered);
+        excluded_depth1s.push(element);
     }
 
+
+
+
     if !de_vars.disable_depth_logs {
-        println!("finished split depth explorer: {}", format!("{:?}", start_time.elapsed()).red());
+        println!("finished split depth explorer: {},  Elements: {}",
+            format!("{:?}", start_time.elapsed()).red(),
+            collected_encountereds.len().to_string().red()
+        );
     }
     collected_encountereds
 }
+
+
+
 
 
 
@@ -143,8 +148,8 @@ fn extend_encountered_seeds(mut encountered: EncounteredMap, add_element: Elemen
             original_seeds
                 .iter_mut()
                     .for_each(|original_seed| {
-                        original_seed.push(add_element);
-                        original_seed.sort_unstable();
+                        let insertion_point = original_seed.binary_search(&add_element).unwrap_or_else(|idx| idx);
+                        original_seed.insert(insertion_point, add_element);
                     });
         });
     encountered
@@ -163,7 +168,7 @@ fn extend_encountered_seeds(mut encountered: EncounteredMap, add_element: Elemen
 
 
 pub async fn depth_explorer_start(de_vars: &DepthExplorerVars) -> EncounteredMap {
-    let variables = VARIABLES.get().expect("VARIABLES not initialized");
+    let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized");
     
     let base_lineage_vec: Vec<Element> = BASE_IDS.chain(de_vars.lineage_elements.iter().copied()).collect();
     let base_lineage_vec_ic: Vec<Element>;
@@ -177,10 +182,10 @@ pub async fn depth_explorer_start(de_vars: &DepthExplorerVars) -> EncounteredMap
         base_lineage_vec: base_lineage_vec_ic,
         depth1: FxHashSet::default(),
 
-        seed_sets: vec![DashSet::default()],
-        main_encountered: ArcSwap::from(Arc::new(FxHashMap::default())),
+        next_seed_set: DashSet::default(),
+        encountered: Arc::new(FxHashMap::default()),
 
-        element_base_cache: ArcSwap::from(Arc::new(Vec::new())),
+        element_base_cache: Arc::new(Vec::new()),
         num_to_str_len: get_num_to_str_len(),
 
         start_time: Instant::now(),
@@ -190,23 +195,27 @@ pub async fn depth_explorer_start(de_vars: &DepthExplorerVars) -> EncounteredMap
 
 
     // --- Depth 1 ---
-    let mut depth1 = Vec::new();
-    all_combination_results(&de_struc.base_lineage_vec, &mut depth1, &de_struc, false);
     {
-        let mut depth1_map = EncounteredMap::default();
-        let empty_arc = Arc::new(EncounteredMap::default());
+        let mut depth1 = Vec::new();
+        all_combination_results(&de_struc.base_lineage_vec, &mut depth1, &de_struc, &variables.recipes_ing.read().unwrap(), false);
+    
+        let empty_seed = Seed::default();
+        let empty_encountered_arc = Arc::new(EncounteredMap::default());
         for &x in depth1.iter().filter(|x| !de_vars.exclude_depth1_elements.contains(x)) {
-            add_to_local_encountered(x, &Seed::new(), &mut depth1_map, &empty_arc);
+            add_to_local_encountered(x, &empty_seed, Arc::get_mut(&mut de_struc.encountered).unwrap(), &empty_encountered_arc);
         }
-        de_struc.main_encountered.store(Arc::new(depth1_map));
-
 
         let neal_case_map = variables.neal_case_map.read().unwrap();
-        depth1 = depth1.into_iter().map(|x| neal_case_map[x as usize]).filter(|&x| de_struc.num_to_str_len[x as usize] <= 30).collect();
-        de_struc.base_lineage_depth1.extend(depth1.iter());
+        let depth1_ic: Vec<Element> = depth1
+            .into_iter()
+            .map(|x| neal_case_map[x as usize])
+            .filter(|&x| de_struc.num_to_str_len[x as usize] <= 30)
+            .collect();
 
-        de_struc.depth1 = depth1.into_iter().filter(|x| !de_vars.exclude_depth1_elements.contains(x)).collect();
-        de_struc.seed_sets[0] = de_struc.depth1.iter().map(|&x| {
+        de_struc.base_lineage_depth1.extend(depth1_ic.iter());
+
+        de_struc.depth1 = depth1_ic.into_iter().filter(|x| !de_vars.exclude_depth1_elements.contains(x)).collect();
+        de_struc.next_seed_set = de_struc.depth1.iter().map(|&x| {
             let mut seed = Seed::new();
             seed.push(x);
             seed
@@ -222,90 +231,68 @@ pub async fn depth_explorer_start(de_vars: &DepthExplorerVars) -> EncounteredMap
     // --- Main Loop ---
     let mut depth = 1;
     while depth < de_vars.stop_after_depth {
-        let final_depth = depth + 1 == de_vars.stop_after_depth;
-
-        // println!("now processing depth {}", depth + 1);
-
 
         // --- do all Element - Base combinations and cache them ---
-        cache_all_element_base_results(&de_struc, depth);
+        cache_all_element_base_results(&mut de_struc, depth);
 
 
+        let past_seed_set = de_struc.next_seed_set;
+
+        let final_depth = depth + 1 == de_vars.stop_after_depth;
+        de_struc.next_seed_set = if final_depth { DashSet::default() }
+        else { DashSet::with_capacity(past_seed_set.len() * DEPTH_EXPLORER_DEPTH_GROW_FACTOR_GUESS) };
 
 
-        if !final_depth && de_struc.seed_sets.get(depth).is_none() {
-            de_struc.seed_sets.push(DashSet::with_capacity(de_struc.seed_sets[depth - 1].len() * DEPTH_EXPLORER_DEPTH_GROW_FACTOR_GUESS));
+        // --- Main Processing Loop ---
+        let new_encountered;
+        {
+            let neal_case_map = variables.neal_case_map.read().unwrap();
+            let recipes_ing = variables.recipes_ing.read().unwrap();
+
+            new_encountered = past_seed_set
+                .par_iter()
+                .fold(
+                    EncounteredMap::default,
+                    |mut local_encountered, seed| {
+                        proccess_seed_logic(&seed, &de_struc, &mut local_encountered, depth, final_depth, &neal_case_map, &recipes_ing);
+                        local_encountered
+                    }
+                )
+                .reduce(
+                    EncounteredMap::default,
+                    merge_encountered_maps
+                );
         }
 
-        let seeds = de_struc.seed_sets
-            .get(depth - 1)
-            .expect("depth larger than seed_set");
-
-
-
-        // --- Parallel Processing with Fold/Reduce ---
-        let depth_results_map = seeds
-            .into_par_iter()
-            .fold(
-                // Initial value factory: Each thread gets an empty local encountered map
-                || EncounteredMap::default(),
-                |mut local_encountered_map, seed| {
-                    proccess_seed_logic(
-                        seed,
-                        depth,
-                        &de_struc,
-                        final_depth,
-                        &mut local_encountered_map,     // Pass local write map
-                    );
-                    local_encountered_map // Return the updated local encountered map
-                }
-            )
-            // Reduce operation: Combine local encountered maps using the merge helper
-            .reduce(
-                || EncounteredMap::default(),
-                merge_local_encountered_maps
-            );
-        // --- End Fold/Reduce ---
-
-        // --- Merge and Update ---
-        let current_main_arc = de_struc.main_encountered.load_full();
-        let new_main_map_data = merge_local_encountered_maps((*current_main_arc).clone(), depth_results_map);
-        de_struc.main_encountered.store(Arc::new(new_main_map_data));
-        
+        // -- Sequential Merge --
+        let old_encountered = Arc::try_unwrap(de_struc.encountered).unwrap();
+        de_struc.encountered = Arc::new(merge_encountered_maps(old_encountered, new_encountered));
         
         
         if variables.to_request_recipes.is_empty() {
+            depth += 1;
+            de_struc.next_seed_set.shrink_to_fit();
+
             if !de_vars.disable_depth_logs {
                 println!("Depth {} complete!  Time: {},  Elements: {},  Seeds: {} -> {}",
-                    (depth + 1).to_string().yellow(),
+                    depth.to_string().yellow(),
                     format!("{:?}", de_struc.start_time.elapsed()).yellow(),
-                    (de_struc.main_encountered.load().len()).to_string().yellow(),
-                    (de_struc.seed_sets[depth - 1].len()).to_string().yellow(),
-                    (de_struc.seed_sets.get(depth).map_or(0, |x| x.len())).to_string().yellow(),
+                    de_struc.encountered.len().to_string().yellow(),
+                    past_seed_set.len().to_string().yellow(),
+                    de_struc.next_seed_set.len().to_string().yellow(),
                 );
             }
-
-            // clear past seed set
-            de_struc.seed_sets[depth - 1].clear();
-            de_struc.seed_sets[depth - 1].shrink_to_fit();
-            // shrink upcoming one to fit
-            if !final_depth { de_struc.seed_sets[depth].shrink_to_fit(); }
-
-            depth += 1;
         }
         else {
             println!("Depth {} paused. Requesting {} new recipes...", depth + 1, variables.to_request_recipes.len());
-            let mut cloned_element_base_arc = (*de_struc.element_base_cache.load_full()).clone();
-            cloned_element_base_arc.clear();
-            de_struc.element_base_cache.store(Arc::new(cloned_element_base_arc));
+            Arc::get_mut(&mut de_struc.element_base_cache).unwrap().clear();
+            de_struc.next_seed_set = past_seed_set;
             process_all_to_request_recipes().await;
             de_struc.num_to_str_len = get_num_to_str_len();
         }
     }
 
-    let final_arc = de_struc.main_encountered.load_full();
-    Arc::try_unwrap(final_arc)
-        .unwrap_or_else(|arc| (*arc).clone()) // Clone if other Arcs somehow still exist
+    Arc::try_unwrap(de_struc.encountered).unwrap()
 }
 
 
@@ -320,16 +307,14 @@ pub async fn depth_explorer_start(de_vars: &DepthExplorerVars) -> EncounteredMap
 
 
 fn proccess_seed_logic(
-        seed: dashmap::setref::multiple::RefMulti<'_, Seed>,
-        depth: usize, de_struc: &DepthExplorerPrivateStructures,
+        seed: &Seed,
+        de_struc: &DepthExplorerPrivateStructures,
+        local_encountered: &mut EncounteredMap,
+        depth: usize,
         final_depth: bool,
-        local_encountered_map: &mut EncounteredMap
+        neal_case_map: &Vec<u32>,
+        recipes_ing: &FxHashMap<(Element, Element), Element>,
     ) {
-
-
-    let variables = VARIABLES.get().expect("VARIABLES not initialized");
-    let neal_case_map = variables.neal_case_map.read().expect("neal_case_map read lock");
-    let shared_read_encountered_map = de_struc.main_encountered.load();
 
 
     // all seed-seed and seed-base combinations
@@ -341,7 +326,7 @@ fn proccess_seed_logic(
    // clear before use
    all_results.clear();
 
-    all_combination_results(&seed, &mut all_results, de_struc, true);
+    all_combination_results(seed, &mut all_results, de_struc, recipes_ing, true);
 
     // for some reason its faster without deduplication...
     // all_results.sort_unstable();
@@ -351,7 +336,7 @@ fn proccess_seed_logic(
 
     if final_depth {
         for &result in all_results.iter() {
-            add_to_local_encountered(result, &seed, local_encountered_map, &shared_read_encountered_map);
+            add_to_local_encountered(result, seed, local_encountered, &de_struc.encountered);
         }
     }
 
@@ -365,43 +350,43 @@ fn proccess_seed_logic(
 
         // if seed doesn't have too many depth1s already (crazy formula i know)
         if 3*(count_depth1s + 1) - 2*(depth as i32) <= 4 {
-            // extend seeds with depth1 elements
-            let next_seed_set = &de_struc.seed_sets[depth]; // Get DashSet reference
 
+            // extend seed with depth1 elements
             for d1 in de_struc.depth1.iter() {
                 if !seed.contains(d1) {
                     let mut new_seed = seed.clone();
                     let insertion_point = new_seed.binary_search(d1).unwrap_or_else(|idx| idx);
                     new_seed.insert(insertion_point, *d1);
 
-                    next_seed_set.insert(new_seed);
+                    de_struc.next_seed_set.insert(new_seed);
                 }
             }
         }
 
 
         for &result in all_results.iter() {
-            add_to_local_encountered(result, &seed, local_encountered_map, &shared_read_encountered_map);
+            add_to_local_encountered(result, seed, local_encountered, &de_struc.encountered);
 
             if de_struc.num_to_str_len[result as usize] > 30 { continue; }
         
 
             // eliminate seeds with too many depth1s
-            // this was really difficult to come up with, but it does not eliminate all useless seeds, there is definitely improvement here, by checking unused recipes
+            // this was really difficult to come up with.
+            // it definitely does not eliminate all useless seeds, but its the best i can do without storing recipes inside each seed
             // (count_depth1s - (2 * (depth + 1 - count_depth1s)) <= 2)
             // = (3*count_depth1s - 2*depth <= 4)
 
-            // count_depth1s + if depth1.contains(&result) {1} else {0}) = total depth1s in the full seed.
-            let new_result = *neal_case_map.get(result as usize).expect("result not in neal_case_map");
+            // (count_depth1s + if depth1.contains(&result) {1} else {0}) = total depth1s in the full seed.
+            let result_ic = neal_case_map[result as usize];
 
-            if 3*(count_depth1s + (if de_struc.depth1.contains(&new_result) {1} else {0})) - 2*(depth as i32) <= 4
-                && !seed.contains(&new_result) {
+            if 3*(count_depth1s + (if de_struc.depth1.contains(&result_ic) {1} else {0})) - 2*(depth as i32) <= 4
+                && !seed.contains(&result_ic) {
                 
                 let mut new_seed = seed.clone();
-                let insertion_point = new_seed.binary_search(&new_result).unwrap_or_else(|idx| idx);
-                new_seed.insert(insertion_point, new_result);
+                let insertion_point = new_seed.binary_search(&result_ic).unwrap_or_else(|idx| idx);
+                new_seed.insert(insertion_point, result_ic);
                 
-                de_struc.seed_sets[depth].insert(new_seed);
+                de_struc.next_seed_set.insert(new_seed);
             }
         }                
     }
@@ -437,30 +422,31 @@ fn proccess_seed_logic(
 
 
 
-fn all_combination_results(input_seed: &[Element], results_vec: &mut Vec<Element>, de_struc: &DepthExplorerPrivateStructures, use_cache: bool) {
-    let variables = VARIABLES.get().expect("VARIABLES not initialized");
-    let recipes_ing = variables.recipes_ing.read().expect("recipes_ing not initialized");
-
-    let base_lineage_depth1 = &de_struc.base_lineage_depth1;
-    let element_base_cache = &de_struc.element_base_cache.load();
-
+fn all_combination_results(
+    input_seed: &[Element],
+    results_vec: &mut Vec<Element>,
+    de_struc: &DepthExplorerPrivateStructures,
+    recipes_ing: &FxHashMap<(Element, Element), Element>,
+    use_cache: bool
+) {
     for (i, &ing1) in input_seed.iter().enumerate() {
         // all seed-seed combinations
         for &ing2 in input_seed.iter().take(i + 1) {
             let comb = sort_recipe_tuple((ing1, ing2));
             if let Some(&result) = recipes_ing.get(&comb) {
-                if result != NOTHING_ID && !base_lineage_depth1.contains(&result) {
+                if result != NOTHING_ID && !de_struc.base_lineage_depth1.contains(&result) {
                     results_vec.push(result);
                 }
             }
             else { 
                 // comb does not exist, add it to the requests
+                let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized");
                 variables.to_request_recipes.insert(comb);
             }
         }
 
         if use_cache {
-            let ing1_with_base_cache = element_base_cache[ing1 as usize].as_ref().unwrap_or_else(|| panic!("{} not in cache", num_to_str_fn(ing1)));
+            let ing1_with_base_cache = de_struc.element_base_cache[ing1 as usize].as_ref().unwrap_or_else(|| panic!("{} not in cache", num_to_str_fn(ing1)));
             results_vec.extend(ing1_with_base_cache);
         }
     }
@@ -474,26 +460,24 @@ fn all_combination_results(input_seed: &[Element], results_vec: &mut Vec<Element
 
 
 
-fn cache_all_element_base_results(de_struc: &DepthExplorerPrivateStructures, depth: usize) {
+fn cache_all_element_base_results(de_struc: &mut DepthExplorerPrivateStructures, depth: usize) {
     // let start_time = Instant::now();
 
-    let mut update_element_base_cache: ElementBaseCacheMap = (*de_struc.element_base_cache.load_full()).clone();
-    let encountered = de_struc.main_encountered.load();
-
-    let variables = VARIABLES.get().expect("VARIABLES not initialized");
+    let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized");
     let recipes_ing = variables.recipes_ing.read().expect("recipes_ing not initialized");
     let neal_case_map = variables.neal_case_map.read().unwrap();
 
 
     // resize element_base_cache vec to the max ID
-    update_element_base_cache.resize(neal_case_map.len(), None);
+    let mut_element_base_cache = Arc::get_mut(&mut de_struc.element_base_cache).unwrap();
+    mut_element_base_cache.resize(neal_case_map.len(), None);
 
 
-    for (&element, seeds) in encountered.iter() {
+    for (&element, seeds) in de_struc.encountered.iter() {
         if de_struc.num_to_str_len[element as usize] > 30 || seeds.first().unwrap().len() >= depth { continue; }
         let neal_element = neal_case_map[element as usize];
 
-        if update_element_base_cache[neal_element as usize].is_none() {
+        if mut_element_base_cache[neal_element as usize].is_none() {
             // cache results
             let mut cache_results = Vec::new();
 
@@ -510,11 +494,9 @@ fn cache_all_element_base_results(de_struc: &DepthExplorerPrivateStructures, dep
                 }
             }
 
-            update_element_base_cache[neal_element as usize] = Some(cache_results);
+            mut_element_base_cache[neal_element as usize] = Some(cache_results);
         }
     }
-
-    de_struc.element_base_cache.store(Arc::new(update_element_base_cache));
 
     // println!("finished caching element - base: {:?}", start_time.elapsed());
 }
@@ -593,9 +575,12 @@ fn add_to_local_encountered(element: Element, seed: &Seed, local_map: &mut Encou
 
 
 
-fn merge_local_encountered_maps( mut main_map: EncounteredMap, local_map: EncounteredMap) -> EncounteredMap {
+fn merge_encountered_maps(mut main_map: EncounteredMap, mut merge_map: EncounteredMap) -> EncounteredMap {
+    if merge_map.len() > main_map.len() {
+        (main_map, merge_map) = (merge_map, main_map);
+    }
 
-    for (element, local_seeds) in local_map {
+    for (element, local_seeds) in merge_map {
         match main_map.entry(element) {
             hash_map::Entry::Occupied(mut entry) => {
                 let main_seeds = entry.get_mut();
@@ -730,7 +715,7 @@ pub fn generate_lineages_file(de_vars: &DepthExplorerVars, encountered: Encounte
     // required for this function:
     let start_time = Instant::now();
 
-    let variables = VARIABLES.get().expect("VARIABLES not initialized");
+    let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized");
     let recipes_ing = variables.recipes_ing.read().unwrap();
     let neal_case_map = variables.neal_case_map.read().unwrap();
     let mut real_recipes_result: FxHashMap<Element, Vec<(Element, Element, Option<Element>)>> =FxHashMap::with_capacity_and_hasher(

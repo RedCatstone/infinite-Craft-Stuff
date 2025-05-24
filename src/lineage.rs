@@ -391,7 +391,7 @@ pub async fn improve_lineage_depth_explorer(input_lineage: Lineage, stop_after_d
             };
 
             let encountered = depth_explorer_split_start(&de_vars).await;
-            let variables = VARIABLES.get().expect("VARIABLES not initialized");
+            let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized");
             let neal_case_map = variables.neal_case_map.read().unwrap();
 
             for (element, seeds) in encountered.into_iter() {

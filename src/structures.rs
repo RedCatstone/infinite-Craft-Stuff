@@ -3,17 +3,18 @@ use std::time::Instant;
 use dashmap::DashSet;
 use rustc_hash::FxHashMap;
 use std::cmp::Reverse;
-use std::panic;
-use std::sync::{Arc, Mutex, OnceLock, RwLock};
+use std::{io, panic};
+use std::sync::{Arc, OnceLock, RwLock};
 use tokio::time::{self, Duration};
 
 use crate::lineage::LineageStep;
+use crate::recipe_loader;
 use crate::recipe_requestor::process_all_to_request_recipes;
 
 
 
 
-pub static VARIABLES: OnceLock<Variables> = OnceLock::new();
+pub static GLOBAL_VARS: OnceLock<GlobalVars> = OnceLock::new();
 pub const NOTHING_ID: Element = 0;
 pub const BASE_ELEMENTS: &'static [&'static str] = &["Water" /* id: 1 */, "Fire" /* id: 2 */, "Earth" /* id: 3 */, "Wind" /* id: 4 */];
 pub const BASE_IDS: std::ops::RangeInclusive<Element> = 1..=(BASE_ELEMENTS.len() as u32);
@@ -28,7 +29,7 @@ pub fn is_base_element(element: Element) -> bool {
 
 
 #[derive(Debug, Default)]
-pub struct Variables {
+pub struct GlobalVars {
     pub num_to_str: RwLock<Vec<String>>,
     pub neal_case_map: RwLock<Vec<u32>>,
     pub recipes_ing: RwLock<FxHashMap<(u32, u32), u32>>,
@@ -82,7 +83,7 @@ pub fn start_case_unicode(input: &str) -> String {
 
 
 pub fn num_to_str_fn(num: u32) -> String {
-    let variables = VARIABLES.get().expect("VARIABLES not initialized");
+    let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized");
     variables.num_to_str.read().unwrap()
         .get(num as usize)
         .expect("Index out of bounds for NUM_TO_STR")
@@ -91,7 +92,7 @@ pub fn num_to_str_fn(num: u32) -> String {
 
 
 pub fn str_to_num_fn(str: &str) -> u32 {
-    let variables = VARIABLES.get().expect("VARIABLES not initialized");
+    let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized");
     variables.num_to_str.read().unwrap()
         .iter()
         .position(|x| x == &str)
@@ -105,12 +106,12 @@ pub fn str_to_num_fn(str: &str) -> u32 {
 
 
 
-pub struct AutoSaver {
+pub struct AutoLoadAndSaver {
     save_logic: Arc<dyn Fn() + Send + Sync + 'static>,
     interval_task: tokio::task::JoinHandle<()>,
 }
 
-impl AutoSaver {
+impl AutoLoadAndSaver {
     pub fn save_now(&self) {
         (self.save_logic)();
     }
@@ -118,54 +119,48 @@ impl AutoSaver {
         self.interval_task.abort();
     }
 }
-impl Drop for AutoSaver {
+impl Drop for AutoLoadAndSaver {
     fn drop(&mut self) {
-        self.interval_task.abort();
+        self.save_now();
+        self.abort();
     }
 }
 
 
-pub fn auto_save_recipes(interval: Duration, save_fn: impl Fn() + Send + Sync + 'static + panic::RefUnwindSafe) -> AutoSaver {
-    let recipe_count_mutex = Arc::new(Mutex::new({
-        let variables = VARIABLES.get().expect("VARIABLES not initialized");
-        let recipes_ing = variables.recipes_ing.read().unwrap();
-        recipes_ing.len()
-    }));
-    
+pub fn auto_load_and_save_recipes(interval: Duration, file_name: &str, format: recipe_loader::RecipeFileFormat) -> AutoLoadAndSaver {
+    recipe_loader::load(file_name, format)
+        .map_err(|err: io::Error| match err.kind() {
+            io::ErrorKind::NotFound => eprintln!("[WARNING] Failed to open recipe file '{}': {} Continuing without loading.", file_name, err),
+            _ => panic!("could not load recipes from {}: {}", file_name, err)
+        })
+        .ok();
 
+    let owned_file_name = file_name.to_string();
     let arc_save_fn =  Arc::new(move || {
-        let bigger;
-        {
-            let variables = VARIABLES.get().expect("VARIABLES not initialized");
-            let recipes_ing = variables.recipes_ing.read().unwrap();
-            let mut recipe_count_guard = recipe_count_mutex.lock().expect("lock poisoned");
-            bigger = *recipe_count_guard < recipes_ing.len(); 
-            *recipe_count_guard = recipes_ing.len();
-        }
+        let owned_file_name_2 = owned_file_name.clone();
+        let result = panic::catch_unwind(move || {
+            // Execute the potentially panicking function
+            recipe_loader::save(&owned_file_name_2, format).unwrap();
+        });
 
-        if bigger { save_fn(); }
+        if let Err(panic_payload) = result {
+            let msg = panic_payload.downcast_ref::<&str>().copied()
+               .or_else(|| panic_payload.downcast_ref::<String>().map(|s| s.as_str()))
+               .unwrap_or("Panic occurred with unknown payload type");
+    
+            // Log the error instead of crashing
+            eprintln!("[WARNING] Auto-save function panicked: {}", msg);
+        }
     });
 
-    AutoSaver {
+    AutoLoadAndSaver {
         save_logic: arc_save_fn.clone(),
         interval_task: tokio::spawn(async move {
             let mut interval = time::interval(interval);
+
             loop {
                 interval.tick().await;
-
-                let arc_save_fn_clone = arc_save_fn.clone();
-                let result = panic::catch_unwind(move || {
-                    // Execute the potentially panicking function
-                    arc_save_fn_clone();
-                });
-                if let Err(panic_payload) = result {
-                    let msg = panic_payload.downcast_ref::<&str>().copied()
-                       .or_else(|| panic_payload.downcast_ref::<String>().map(|s| s.as_str()))
-                       .unwrap_or("Panic occurred with unknown payload type");
-    
-                    // Log the error instead of crashing
-                    eprintln!("Auto-save function panicked: {}", msg);
-               }
+                arc_save_fn.clone()();
             }
         }),
     }
@@ -232,7 +227,7 @@ pub fn variables_add_recipe(first_str: String, second_str: String, result_str: S
     let s = variables_add_element_str(second_str, str_to_num);
     let r = variables_add_element_str(result_str, str_to_num);
 
-    let variables = VARIABLES.get().expect("VARIABLES not initialized");
+    let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized");
     let mut recipes_ing = variables.recipes_ing.write().unwrap();
 
     recipes_ing.insert((f, s), r);
@@ -246,7 +241,7 @@ pub fn variables_add_element_str(element_str: String, str_to_num: &mut FxHashMap
             num
         }
         None => {
-            let variables = VARIABLES.get().expect("VARIABLES not initialized");
+            let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized");
             let id;
             {
                 let mut num_to_str = variables.num_to_str.write().unwrap();
@@ -274,7 +269,7 @@ pub fn variables_add_element_str(element_str: String, str_to_num: &mut FxHashMap
 
 
 pub fn get_str_to_num_map() -> FxHashMap<String, u32> {
-    let variables = VARIABLES.get().expect("VARIABLES not initialized");
+    let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized");
     let num_to_str = variables.num_to_str.read().unwrap();
     num_to_str
         .iter()
@@ -287,7 +282,7 @@ pub fn get_str_to_num_map() -> FxHashMap<String, u32> {
 
 
 pub fn get_num_to_str_len() -> Vec<usize> {
-    let variables = VARIABLES.get().expect("VARIABLES not initialized");
+    let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized");
     let num_to_str = variables.num_to_str.read().unwrap();
 
     num_to_str
@@ -303,7 +298,7 @@ pub fn get_num_to_str_len() -> Vec<usize> {
 
 pub fn get_recipes_result_map() -> RecipesResultICMap {
     let start_time = Instant::now();
-    let variables = VARIABLES.get().expect("VARIABLES not initialized");
+    let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized");
 
     let mut recipes_result_ic_map = Vec::new();
     recipes_result_ic_map.resize(variables.num_to_str.read().unwrap().len(), Vec::new());
@@ -328,7 +323,7 @@ pub fn get_recipes_result_map() -> RecipesResultICMap {
 
 pub fn get_recipes_uses_map() -> RecipesUsesICMap {
     let start_time = Instant::now();
-    let variables = VARIABLES.get().expect("VARIABLES not initialized");
+    let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized");
 
     let mut recipes_uses_map = Vec::new();
     recipes_uses_map.resize(variables.num_to_str.read().unwrap().len(), Vec::new());
@@ -354,7 +349,7 @@ pub fn get_recipes_uses_map() -> RecipesUsesICMap {
 
 pub fn get_element_heuristic_map(recipes_uses_map: &RecipesUsesICMap) -> ElementHeuristicMap {
     let start_time = Instant::now();
-    let variables = VARIABLES.get().expect("VARIABLES not initialized");
+    let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized");
 
     let mut heuristic_map = Vec::new();
     heuristic_map.resize(variables.num_to_str.read().unwrap().len(), u64::MAX);
@@ -411,7 +406,7 @@ pub fn update_heuristic_map(heuristic_map: &mut ElementHeuristicMap, start_eleme
 
 
 pub async fn rerequest_all_nothing_recipes() {
-    let variables = VARIABLES.get().expect("VARIABLES not initialized");
+    let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized");
 
     for (recipe, r) in variables.recipes_ing.read().unwrap().iter() {
         if *r == NOTHING_ID {

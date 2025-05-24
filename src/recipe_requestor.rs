@@ -112,7 +112,7 @@ pub async fn combine(first: &str, second: &str) -> Option<CombineResponse> {
 
 
 pub async fn process_all_to_request_recipes() {
-    let variables = VARIABLES.get().expect("VARIABLES not initialized");
+    let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized");
     let mut str_to_num = get_str_to_num_map();
 
     let request_stats_arc = Arc::new(Mutex::new(RequestStats {

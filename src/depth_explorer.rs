@@ -14,7 +14,7 @@ use rayon::prelude::*;
 use tinyvec::ArrayVec;  // can't move to heap
 use colored::Colorize;
 
-use crate::{lineage::*, DEPTH_EXPLORER_DEPTH_GROW_FACTOR_GUESS, DEPTH_EXPLORER_MAX_SEED_LENGTH};
+use crate::{DEPTH_EXPLORER_DEPTH_GROW_FACTOR_GUESS, DEPTH_EXPLORER_MAX_SEED_LENGTH, LINEAGES_FILE_COOL_JSON_MODE, lineage::*};
 use crate::structures::*;
 use crate::recipe_requestor::process_all_to_request_recipes;
 
@@ -195,9 +195,14 @@ pub async fn depth_explorer_start(de_vars: &DepthExplorerVars) -> EncounteredMap
 
 
     // --- Depth 1 ---
-    {
+    loop {
         let mut depth1 = Vec::new();
         all_combination_results(&de_struc.base_lineage_vec, &mut depth1, &de_struc, &variables.recipes_ing.read().unwrap(), false);
+        if !variables.to_request_recipes.is_empty() {
+            process_all_to_request_recipes().await;
+            de_struc.num_to_str_len = get_num_to_str_len();
+            continue;
+        }
     
         let empty_seed = Seed::default();
         let empty_encountered_arc = Arc::new(EncounteredMap::default());
@@ -220,6 +225,7 @@ pub async fn depth_explorer_start(de_vars: &DepthExplorerVars) -> EncounteredMap
             seed.push(x);
             seed
         }).collect();
+        break;
     }
     
 
@@ -258,10 +264,8 @@ pub async fn depth_explorer_start(de_vars: &DepthExplorerVars) -> EncounteredMap
                         local_encountered
                     }
                 )
-                .reduce(
-                    EncounteredMap::default,
-                    merge_encountered_maps
-                );
+                .reduce_with(merge_encountered_maps)
+                .unwrap_or_else(EncounteredMap::default);
         }
 
         // -- Sequential Merge --
@@ -633,8 +637,9 @@ pub fn get_encountered_entry(
     real_recipes_result: &FxHashMap<Element, Vec<(Element, Element, Option<Element>)>>
 ) -> String {
 
-    let mut message = String::with_capacity(seeds.len() * seeds[0].len() * 7);    
-    write!(message, "{} - {}:", seeds[0].len() + 1, num_to_str_fn(element)).unwrap();
+    let mut message = String::with_capacity(seeds.len() * seeds[0].len() * 7);
+    if LINEAGES_FILE_COOL_JSON_MODE { write!(message, "{}: [", serde_json::to_string(&num_to_str_fn(element)).unwrap()).unwrap(); }
+    else { write!(message, "{} - {}:", seeds[0].len() + 1, num_to_str_fn(element)).unwrap(); }
 
     for (i, seed) in seeds.iter().enumerate() {        
 
@@ -692,14 +697,18 @@ pub fn get_encountered_entry(
         ]);
 
 
-        let lineage_string = format_lineage_no_goals(lineage);
+        let lineage_string = if LINEAGES_FILE_COOL_JSON_MODE { format_lineage_json_no_goals(lineage) }
+        else { format_lineage_no_goals(lineage) };
 
         if i != 0 {
-            write!(message, " ...").unwrap();
+            if LINEAGES_FILE_COOL_JSON_MODE { write!(message, ",").unwrap(); }
+            else { write!(message, " ...").unwrap(); }
         }
-        writeln!(message, "{}", lineage_string).unwrap();
+        if LINEAGES_FILE_COOL_JSON_MODE { write!(message, "{}", lineage_string).unwrap(); }
+        else { writeln!(message, "{}", lineage_string).unwrap(); }
     };
-    write!(message, "\n\n").unwrap();
+    if LINEAGES_FILE_COOL_JSON_MODE { write!(message, "]").unwrap(); }
+    else { write!(message, "\n\n").unwrap(); }
 
     message.shrink_to_fit();
     message
@@ -740,13 +749,18 @@ pub fn generate_lineages_file(de_vars: &DepthExplorerVars, encountered: Encounte
 
 
     let base_lineage_vec: Vec<u32> = BASE_IDS.chain(de_vars.lineage_elements.iter().copied()).collect();
+    let base_lineage_string_vec: Vec<String> = base_lineage_vec.iter().map(|x| num_to_str_fn(*x)).collect();
     let initial_crafted: FxHashSet<Element> = base_lineage_vec.iter().copied().collect();
 
 
     let start_time = Instant::now();
 
     let folder_name = "Lineages Files";
-    let file_name = format!("{} Seed - {} Steps.txt", &num_to_str_fn(*base_lineage_vec.last().unwrap()), de_vars.stop_after_depth);
+    let file_name = format!("{} Seed - {} Steps.{}",
+        &num_to_str_fn(*base_lineage_vec.last().unwrap()),
+        de_vars.stop_after_depth,
+        if LINEAGES_FILE_COOL_JSON_MODE {"json"} else {"txt"}
+    );
 
     let folder_path = PathBuf::from(folder_name);
     fs::create_dir_all(&folder_path)?;
@@ -757,59 +771,80 @@ pub fn generate_lineages_file(de_vars: &DepthExplorerVars, encountered: Encounte
     let mut writer = BufWriter::new(file);
 
     // --- Parallel Processing ---
-    let keyed_entries: Vec<(usize, u32, String)> = encountered
+    let mut keyed_entries: Vec<(usize, u32, String)> = encountered
         .par_iter()
         .map(|(&element, seeds)| {
 
-            let bucket_key = seeds.first().map_or(0, |first_seed| first_seed.len() + 1);
+            let seed_len = seeds.first().unwrap().len();
             let formatted_string = get_encountered_entry(element, seeds, &initial_crafted, &real_recipes_result);
-            (bucket_key, element, formatted_string)
+            (seed_len, element, formatted_string)
         })
         .collect();
 
+    keyed_entries.par_sort_unstable_by_key(|(seed_len, element, ..)| (*seed_len, num_to_str_fn(*element)));
 
 
-    // Iterate sequentially through the collected pairs and push into buckets.
-    let mut final_buckets: Vec<Vec<(u32, String)>> = vec![Vec::new(); de_vars.stop_after_depth];
-    for (key, element, formatted_string) in keyed_entries {
-        final_buckets[key - 1].push((element, formatted_string));
+    let mut elements_per_depth_count = vec![0; de_vars.stop_after_depth];
+    for (seed_len, ..) in keyed_entries.iter() {
+        elements_per_depth_count[*seed_len] += 1;
     }
+
+
+
 
 
     // --- Writing ---
-    writeln!(writer, "{}  // {}\n\n\n", "TODO...", base_lineage_vec.len() - 4)?;
+    if LINEAGES_FILE_COOL_JSON_MODE {
+        writeln!(writer, "{{")?;
+        writeln!(writer, "\"elements_ran\": {},\n", serde_json::to_string(&base_lineage_string_vec).unwrap())?;
 
-    for (i, bucket) in final_buckets.iter().enumerate() {
-        writeln!(writer, "{} Steps - {} Elements", i + 1, bucket.len())?;
+        writeln!(writer, "\"element_count_stats\": {{").unwrap();
+        for (i, count) in elements_per_depth_count.into_iter().enumerate() {
+            writeln!(writer, "    \"{}\": {{ \"elements_this_depth\": {} }},", i + 1, count)?;
+        }
+        writeln!(writer, "    \"total_elements\": {}", encountered.len())?;
+        writeln!(writer, "}},\n\n\n").unwrap();
+
+        writeln!(writer, "\"elements\": {{").unwrap();
+        let mut iter = keyed_entries.iter().peekable();
+        while let Some((_, _, entry_string)) = iter.next() {
+            writer.write_all(entry_string.as_bytes())?;
+            if iter.peek().is_some() { write!(writer, ",\n\n").unwrap();  }
+            else { write!(writer, "\n\n").unwrap();  }
+        }
+        writeln!(writer, "}}").unwrap();
+
+
+        
+        write!(writer, "}}")?;
     }
-    writeln!(writer, "Total Elements: {}\n\n\n\n", encountered.len())?;
+    else {
+        writeln!(writer, "{}  // {}\n\n\n", "TODO...", base_lineage_vec.len() - 4)?;
+
+        for (i, count) in elements_per_depth_count.into_iter().enumerate() {
+            writeln!(writer, "{} Steps - {} Elements", i + 1, count)?;
+        }
+        writeln!(writer, "Total Elements: {}\n\n\n\n", encountered.len())?;
 
 
 
-    for bucket in final_buckets.iter() {
-        for (_element, entry_string) in bucket.iter() {
+        for (_, _, entry_string) in keyed_entries.iter() {
             writer.write_all(entry_string.as_bytes())?;
         }
+        // --- JSON Generation ---
+        let json_map: FxHashMap<String, usize> = keyed_entries
+            .into_iter()
+            .map(|(seed_len, element, _formatted_string)| {
+                (num_to_str_fn(element), seed_len + 1)
+            })
+            .collect();
+
+        let json_string = serde_json::to_string_pretty(&json_map).expect("JSON seriliaziation failed...");
+
+        writer.write_all(b"\n")?;
+        writer.write_all(json_string.as_bytes())?;
+        writer.write_all(b"\n")?; 
     }
-
-
-
-    // --- JSON Generation ---
-    let json_map: FxHashMap<String, usize> = final_buckets
-        .iter()
-        .enumerate()
-        .flat_map(|(depth, bucket)| {
-             bucket
-                .iter()
-                .map(move |(element, _entry_string)| { (num_to_str_fn(*element), depth) })
-        })
-        .collect();
-
-    let json_string = serde_json::to_string_pretty(&json_map).expect("JSON seriliaziation failed...");
-
-    writer.write_all(b"\n")?;
-    writer.write_all(json_string.as_bytes())?;
-    writer.write_all(b"\n")?; 
 
 
 

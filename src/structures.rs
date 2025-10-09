@@ -16,7 +16,7 @@ use crate::recipe_requestor::process_all_to_request_recipes;
 
 pub static GLOBAL_VARS: OnceLock<GlobalVars> = OnceLock::new();
 pub const NOTHING_ID: Element = 0;
-pub const BASE_ELEMENTS: &'static [&'static str] = &["Water" /* id: 1 */, "Fire" /* id: 2 */, "Earth" /* id: 3 */, "Wind" /* id: 4 */];
+pub const BASE_ELEMENTS: &'static [&'static str] = &["Water" /* id: 1 */, "Fire" /* id: 2 */, "Earth" /* id: 3 */, "Wind" /* id: 4 */];     // these are modifyable
 pub const BASE_IDS: std::ops::RangeInclusive<Element> = 1..=(BASE_ELEMENTS.len() as u32);
 
 pub fn is_base_element(element: Element) -> bool {
@@ -36,6 +36,8 @@ pub struct GlobalVars {
 
     pub to_request_recipes: DashSet<(u32, u32)>,
 }
+
+
 
 
 pub type Element = u32;
@@ -157,6 +159,7 @@ pub fn auto_load_and_save_recipes(interval: Duration, file_name: &str, format: r
         save_logic: arc_save_fn.clone(),
         interval_task: tokio::spawn(async move {
             let mut interval = time::interval(interval);
+            interval.tick().await;
 
             loop {
                 interval.tick().await;

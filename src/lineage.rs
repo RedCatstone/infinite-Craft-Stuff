@@ -83,6 +83,30 @@ pub fn format_lineage_no_goals(lineage: Vec<[u32; 3]>) -> String {
     output
 }
 
+pub fn format_lineage_json_no_goals(lineage: Vec<[u32; 3]>) -> String {
+    let mut output = String::with_capacity(lineage.len() * 21);
+    write!(output, "[").unwrap();
+    
+    let mut iter = lineage.iter().peekable();
+    while let Some(&[f, s, r]) = iter.next() {
+        write!(output,
+            "\n [{}, {}, {}]",
+            serde_json::to_string(&num_to_str_fn(f)).unwrap(),
+            serde_json::to_string(&num_to_str_fn(s)).unwrap(),
+            serde_json::to_string(&num_to_str_fn(r)).unwrap(),
+        ).unwrap();
+
+        if iter.peek().is_some() {
+            write!(output, ",").unwrap();
+        }
+    }
+
+    write!(output, "\n]").unwrap();
+
+    output.shrink_to_fit();
+    output
+}
+
 
 
 
@@ -362,7 +386,7 @@ pub fn generate_lineage_multiple_methods(
 
 
 
-pub async fn improve_lineage_depth_explorer(input_lineage: Lineage, stop_after_depth: usize, max_longer_than_shortest: usize) -> AltLineages {
+pub async fn improve_lineage_depth_explorer(input_lineage: Lineage, recipes_result_map: &RecipesResultICMap, stop_after_depth: usize, max_longer_than_shortest: usize) -> AltLineages {
     let mut lineage_elements: Vec<Element> = input_lineage.steps.iter().map(|[_, _, x]| *x).collect();
     // if its only 1 goal remove it from the lineage_elements
     if input_lineage.goals.len() == 1 {
@@ -373,12 +397,16 @@ pub async fn improve_lineage_depth_explorer(input_lineage: Lineage, stop_after_d
         }
     }
 
-    let recipes_result_map = get_recipes_result_map();
     let mut alt_lineages = AltLineages::new(max_longer_than_shortest);
     alt_lineages.add_lineage(input_lineage);
 
     while let Some(lineage) = alt_lineages.to_process.pop() {
-        let initial_crafted: FxHashSet<Element> = BASE_IDS.chain(lineage_elements.iter().copied()).collect();
+        let initial_crafted: FxHashSet<Element>;
+        {
+            let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized");
+            let neal_case_map = variables.neal_case_map.read().unwrap();
+            initial_crafted = BASE_IDS.chain(lineage_elements.iter().map(|&x| neal_case_map[x as usize])).collect();
+        }
 
         let mut shorter_found = false;
 
@@ -399,8 +427,8 @@ pub async fn improve_lineage_depth_explorer(input_lineage: Lineage, stop_after_d
                     let mut seed_and_element = seed;
                     seed_and_element.push(neal_case_map[element as usize]);
 
-                    let seed_lineage = generate_lineage_from_results(seed, initial_crafted.clone(), &recipes_result_map);
-                    println!("{:?}", debug_lineage_step_vec(&seed_lineage));
+                    let seed_lineage = generate_lineage_from_results(seed_and_element, initial_crafted.clone(), &recipes_result_map);
+                    // println!("{:?} {:?}", debug_element_vec(&seed_and_element), debug_lineage_step_vec(&seed_lineage));
                     let lineage_shorter = remove_unneccessary(&lineage, &seed_lineage, &recipes_result_map);
 
                     if alt_lineages.add_lineage(lineage_shorter.clone()) {
@@ -425,7 +453,7 @@ pub async fn improve_lineage_depth_explorer(input_lineage: Lineage, stop_after_d
 
 
 pub fn generate_lineage_from_results(seed: Seed, initial_crafted: FxHashSet<Element>, recipes_result_map: &RecipesResultICMap) -> Vec<LineageStep> {
-    let mut lineage: Vec<LineageStep> = Vec::with_capacity(seed.len() + 1);
+    let mut lineage: Vec<LineageStep> = Vec::with_capacity(seed.len());
     let mut to_craft: Vec<Element> = seed.iter().copied().collect();
     let mut crafted: FxHashSet<Element> = initial_crafted.clone();
 

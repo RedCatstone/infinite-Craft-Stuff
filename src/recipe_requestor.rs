@@ -13,7 +13,7 @@ use crate::structures::*;
 
 
 const REQUEST_SERVER_URL: &str = "http://localhost:3000";
-const COMBINE_RETRIES: u64 = 10;
+const COMBINE_RETRIES: u64 = 50;
 const COMBINE_TIMEOUT: u64 = 5 * 60;   // 5 minute timeout to local server
 pub const MAX_CONCURRENT_REQUESTS: usize = 150;
 const COMBINE_INTERVAL_MESSAGE_SECS: u64 = 30;

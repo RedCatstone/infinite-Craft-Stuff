@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 use std::sync::RwLock;
-use std::io::{self, BufWriter, BufReader, Write, Read};
-use std::fs::File;
-use rustc_hash::FxHashMap;
+use std::io::{self, BufWriter, BufReader, Write, Read, BufRead};
+use std::fs::{self, File};
+use rustc_hash::{FxHashMap, FxHashSet};
 use rayon::prelude::*;
 
 use libdeflater::{CompressionLvl, Compressor, Decompressor};
@@ -488,12 +488,18 @@ fn merge_new_variables_with_existing(new_num_to_str: &mut Vec<String>, new_str_t
 
         let transformed_recipes: Vec<((Element, Element), Element)> = new_recipes_ing
             .par_iter()
-            .map(|(&(first, second), &result)| {
+            .filter_map(|(&(first, second), &result)| {
                 let existing_first = newnum_to_existingnum[first as usize].expect("Missing existing ID for first ingredient");
                 let existing_second = newnum_to_existingnum[second as usize].expect("Missing existing ID for second ingredient");
                 let existing_result = newnum_to_existingnum[result as usize].expect("Missing existing ID for result");
 
-                (sort_recipe_tuple((existing_first, existing_second)), existing_result)
+                let recipe = sort_recipe_tuple((existing_first, existing_second));
+                // if new recipe is not NOTHING it always gets added
+                // if new recipe is NOTHING it only gets added if the recipe didn't exist at all
+                if existing_result != NOTHING_ID || existing_recipes_ing.get(&recipe).is_none() {
+                    Some((recipe, existing_result))
+                }
+                else { None }
             })
             .collect();
 
@@ -516,4 +522,143 @@ pub fn verify_recipe_stuff() {
     assert_eq!(*recipes_ing.get(&sort_recipe_tuple((str_to_num_fn("Fire"), str_to_num_fn("Water")))).expect("'Water + Fire' is not in recipes_ing"), str_to_num_fn("Steam"));
     assert_eq!(str_to_num_fn("Nothing"), 0);  // nothing needs to have id 0
     assert_eq!(num_to_str.len(), neal_case_map.len());  // if these don't match something went wrong...
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn retain_only_recipes_from_end_of_lineages_file() {
+    let json_content = fs::read_to_string("D:/InfiniteCraft/Codes/rust/Lineages Files/lel.json").unwrap();
+    let mut data: FxHashMap<String, usize> = serde_json::from_str(&json_content).unwrap();
+    data.retain(|_, depth| *depth < 9);
+
+    let str_to_num = get_str_to_num_map();
+    let mut elements_to_use: FxHashSet<Element> = data.into_keys().map(|x| str_to_num.get(&start_case_unicode(&x)).unwrap().clone()).collect();
+    drop(str_to_num);
+    elements_to_use.extend(BASE_IDS.into_iter());
+    elements_to_use.extend(string_lineage_results(r#"
+
+Earth + Water = Plant
+Earth + Plant = Tree
+Tree + Water = River
+Earth + River = Delta
+River + Tree = Paper
+Paper + Tree = Book
+Book + Delta = Alphabet
+Alphabet + Alphabet = Word
+Word + Word = Sentence
+Sentence + Wind = Phrase
+Book + Phrase = Quote
+Alphabet + Quote = Punctuation
+
+            "#));
+
+    println!("elements to use {}", elements_to_use.len());
+    {
+        let variables = GLOBAL_VARS.get().unwrap();
+        let mut recipes_ing = variables.recipes_ing.write().unwrap();
+        println!("before recipe retain: {}", recipes_ing.len());
+        recipes_ing.retain(|(f, s), _| elements_to_use.contains(f) && elements_to_use.contains(s));
+        println!("after recipe retain: {}", recipes_ing.len());
+    }
+}
+
+
+
+
+
+
+pub fn subtract_recipes_from_recipe_files(file_name_1: &str, file_name_2: &str, final_name: &str) {
+    load(file_name_2, RecipeFileFormat::JSONRecipesNum).unwrap();
+    let variables = GLOBAL_VARS.get().unwrap();
+    let mut old_recipes_ing = variables.recipes_ing.write().unwrap();
+    let old_recipes_ing_copy = old_recipes_ing.clone();
+    old_recipes_ing.clear();
+    assert_eq!(old_recipes_ing.len(), 0);
+    drop(old_recipes_ing);
+    println!("{} has {} recipes.", file_name_2, old_recipes_ing_copy.len());
+    
+
+    load(file_name_1, RecipeFileFormat::JSONRecipesNum).unwrap();
+    let mut recipes_ing = variables.recipes_ing.write().unwrap();
+    println!("{} has {} recipes.", file_name_1, recipes_ing.len());
+
+    recipes_ing.retain(|recipe, _| !old_recipes_ing_copy.contains_key(recipe));
+    println!("final: {} has {} recipes.", final_name, recipes_ing.len());
+    drop(recipes_ing);
+
+    
+    save(final_name, RecipeFileFormat::JSONRecipesNum).expect("could not auto save...");
+}
+
+
+
+
+
+
+
+
+
+
+
+pub fn load_recipes_from_lineages_file(file_name: &str) -> io::Result<()> {
+    println!("Loading lineages file: {}", file_name);
+    let start_time = Instant::now();
+
+    let file_path = format!("{}/{}", RECIPE_FILES_FOLDER, file_name);
+    let file = File::open(&file_path)?;
+    let reader = BufReader::new(file);
+
+    let mut num_to_str: Vec<String> = Vec::new();
+    let mut str_to_num: FxHashMap<String, u32> = FxHashMap::default();
+    let mut recipes_ing: FxHashMap<(u32, u32), u32> = FxHashMap::default();
+
+    // Helper closure to get or create an ID for an element string.
+    let mut get_id = |elem: &str| {
+        let trimmed_elem = elem.trim();
+        if let Some(&id) = str_to_num.get(trimmed_elem) {
+            id
+        } else {
+            let id = num_to_str.len() as u32;
+            num_to_str.push(trimmed_elem.to_string());
+            str_to_num.insert(trimmed_elem.to_string(), id);
+            id
+        }
+    };
+
+    // Process each line in the file.
+    for line_result in reader.lines() {
+        let line = line_result?;
+        // Split the line into "ing1 + ing2" and "result" parts
+        if let Some((ingredients_part, result_part)) = line.split_once(" = ") {
+            // Split the ingredients part into "ing1" and "ing2"
+            if let Some((first_part, second_part)) = ingredients_part.split_once(" + ") {
+                let first_id = get_id(first_part);
+                let second_id = get_id(second_part);
+                let result_id = get_id(result_part);
+
+                let recipe = sort_recipe_tuple((first_id, second_id));
+                recipes_ing.insert(recipe, result_id);
+            }
+        }
+    }
+
+    println!("  - Lineage file parsing complete: {:?}", start_time.elapsed());
+    
+    // Merge the newly loaded data into the main application state.
+    merge_new_variables_with_existing(&mut num_to_str, &mut str_to_num, recipes_ing);
+
+    println!("  - Merging complete! ({:?})", start_time.elapsed());
+    
+    Ok(())
 }

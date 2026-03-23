@@ -14,9 +14,9 @@ use rayon::prelude::*;
 use tinyvec::ArrayVec;  // can't move to heap
 use colored::Colorize;
 
-use crate::{DEPTH_EXPLORER_DEPTH_GROW_FACTOR_GUESS, DEPTH_EXPLORER_MAX_SEED_LENGTH, LINEAGES_FILE_COOL_JSON_MODE, lineage::*};
+use crate::{DEPTH_EXPLORER_DEPTH_GROW_FACTOR_GUESS, DEPTH_EXPLORER_JUST_MARK_UNKNOWN_NO_REQUESTS_NO_ENCOUNTERED, DEPTH_EXPLORER_MAX_SEED_LENGTH, LINEAGES_FILE_COOL_JSON_MODE, lineage::*};
 use crate::structures::*;
-use crate::recipe_requestor::process_all_to_request_recipes;
+use crate::recipe_requestor::{process_all_to_request_recipes};
 
 
 
@@ -45,6 +45,7 @@ pub struct DepthExplorerVars {
     pub stop_after_depth: usize,
     pub exclude_depth1_elements: Vec<Element>,
     pub split_start: usize,
+    pub split_start_msg: String,
     pub disable_depth_logs: bool,
 }
 
@@ -73,8 +74,6 @@ struct DepthExplorerPrivateStructures {
 #[async_recursion]
 pub async fn depth_explorer_split_start(de_vars: &DepthExplorerVars) -> EncounteredMap {
     if de_vars.split_start == 0 { return depth_explorer_start(&de_vars).await; }
-
-
     let start_time = Instant::now();
 
     // calculate depth 1
@@ -84,43 +83,50 @@ pub async fn depth_explorer_split_start(de_vars: &DepthExplorerVars) -> Encounte
 
     // iterate over every 1-step element
     let total_to_process = initial_split_encountered.len();
+    let mut process_count = 0;
 
-    let process_element = async |element: Element, excluded_depth1_elements: Vec<u32>| {
-        println!("{} Split Depth Explorer - {}/{}: {} - Time: {}",
-            de_vars.split_start.to_string().purple(),
-            (excluded_depth1_elements.len() + 1).to_string().purple(),
-            total_to_process.to_string().purple(),
-            num_to_str_fn(element).purple(),
-            format!("{:?}", start_time.elapsed()).yellow(),
-        );
-
+    let mut process_element = async |element: Element, excluded_depth1_elements: Vec<u32>| {
         // create new de_vars starting from every 1-step
         let mut new_de_vars = de_vars.clone();
         new_de_vars.lineage_elements.push(element);
         new_de_vars.stop_after_depth -= 1;
         new_de_vars.split_start -= 1;
+        new_de_vars.split_start_msg += &format!("{}/{} {} > ",
+            ({ process_count += 1; process_count }).to_string().purple(),
+            total_to_process.to_string().purple(),
+            num_to_str_fn(element).purple()
+        );
         new_de_vars.exclude_depth1_elements = excluded_depth1_elements;
         new_de_vars.disable_depth_logs = true;
 
-        let new_encountered = if new_de_vars.split_start == 0
+        println!("{}Time: {}",
+            new_de_vars.split_start_msg,
+            format!("{:?}", start_time.elapsed()).yellow(),
+        );
+
+        let mut new_encountered = if new_de_vars.split_start == 0
         { depth_explorer_start(&new_de_vars).await }
         else { depth_explorer_split_start(&new_de_vars).await };
 
-        let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized");
-        let element_ic = variables.neal_case_map.read().unwrap()[element as usize];
+        if !DEPTH_EXPLORER_JUST_MARK_UNKNOWN_NO_REQUESTS_NO_ENCOUNTERED {
+            let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized");
+            let element_ic = variables.neal_case_map.read().unwrap()[element as usize];
 
-        let new_extended_encountered = extend_encountered_seeds(new_encountered, element_ic);
-        new_extended_encountered
+            new_encountered = extend_encountered_seeds(new_encountered, element_ic);
+        }
+        new_encountered
     };
 
     
     // sequential processing
     let mut collected_encountereds = initial_split_encountered.clone();
-    let mut excluded_depth1s = Vec::new();
-    for element in initial_split_encountered.into_keys() {
-        let element_encountered = process_element(element, excluded_depth1s.clone()).await;
-        collected_encountereds = merge_encountered_maps(collected_encountereds, element_encountered);
-        excluded_depth1s.push(element);
+
+    for element in initial_split_encountered.into_keys().collect::<Vec<Element>>().into_iter()/* .rev() */ {
+        let element_encountered = process_element(element, initial_split_de_vars.exclude_depth1_elements.clone()).await;
+        if !DEPTH_EXPLORER_JUST_MARK_UNKNOWN_NO_REQUESTS_NO_ENCOUNTERED {
+            collected_encountereds = merge_encountered_maps(collected_encountereds, element_encountered);
+        }
+        initial_split_de_vars.exclude_depth1_elements.push(element);
     }
 
 
@@ -134,6 +140,13 @@ pub async fn depth_explorer_split_start(de_vars: &DepthExplorerVars) -> Encounte
     }
     collected_encountereds
 }
+
+
+
+
+
+
+
 
 
 
@@ -199,7 +212,8 @@ pub async fn depth_explorer_start(de_vars: &DepthExplorerVars) -> EncounteredMap
         let mut depth1 = Vec::new();
         all_combination_results(&de_struc.base_lineage_vec, &mut depth1, &de_struc, &variables.recipes_ing.read().unwrap(), false);
         if !variables.to_request_recipes.is_empty() {
-            process_all_to_request_recipes().await;
+            if DEPTH_EXPLORER_JUST_MARK_UNKNOWN_NO_REQUESTS_NO_ENCOUNTERED { mark_all_to_request_recipes_unknown(); }
+            else { process_all_to_request_recipes().await; }
             de_struc.num_to_str_len = get_num_to_str_len();
             continue;
         }
@@ -291,7 +305,11 @@ pub async fn depth_explorer_start(de_vars: &DepthExplorerVars) -> EncounteredMap
             println!("Depth {} paused. Requesting {} new recipes...", depth + 1, variables.to_request_recipes.len());
             Arc::get_mut(&mut de_struc.element_base_cache).unwrap().clear();
             de_struc.next_seed_set = past_seed_set;
-            process_all_to_request_recipes().await;
+            if DEPTH_EXPLORER_JUST_MARK_UNKNOWN_NO_REQUESTS_NO_ENCOUNTERED {
+                mark_all_to_request_recipes_unknown();
+                break;
+            }
+            else { process_all_to_request_recipes().await; }
             de_struc.num_to_str_len = get_num_to_str_len();
         }
     }
@@ -339,8 +357,10 @@ fn proccess_seed_logic(
 
 
     if final_depth {
-        for &result in all_results.iter() {
-            add_to_local_encountered(result, seed, local_encountered, &de_struc.encountered);
+        if !DEPTH_EXPLORER_JUST_MARK_UNKNOWN_NO_REQUESTS_NO_ENCOUNTERED {
+            for &result in all_results.iter() {
+                add_to_local_encountered(result, seed, local_encountered, &de_struc.encountered);
+            }
         }
     }
 
@@ -800,9 +820,9 @@ pub fn generate_lineages_file(de_vars: &DepthExplorerVars, encountered: Encounte
 
         writeln!(writer, "\"element_count_stats\": {{").unwrap();
         for (i, count) in elements_per_depth_count.into_iter().enumerate() {
-            writeln!(writer, "    \"{}\": {{ \"elements_this_depth\": {} }},", i + 1, count)?;
+            writeln!(writer, "    \"depth_{}\": {},", i + 1, count)?;
         }
-        writeln!(writer, "    \"total_elements\": {}", encountered.len())?;
+        writeln!(writer, "    \"total\": {}", encountered.len())?;
         writeln!(writer, "}},\n\n\n").unwrap();
 
         writeln!(writer, "\"elements\": {{").unwrap();

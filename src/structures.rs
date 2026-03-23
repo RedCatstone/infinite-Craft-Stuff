@@ -1,11 +1,17 @@
 use std::collections::BinaryHeap;
+use std::fs::File;
+use std::io::BufWriter;
 use std::time::Instant;
 use dashmap::DashSet;
-use rustc_hash::FxHashMap;
+use rayon::iter::IntoParallelRefIterator;
+use rayon::iter::ParallelIterator;
+use rayon::slice::ParallelSliceMut;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::cmp::Reverse;
 use std::{io, panic};
 use std::sync::{Arc, OnceLock, RwLock};
 use tokio::time::{self, Duration};
+use std::io::Write;
 
 use crate::lineage::LineageStep;
 use crate::recipe_loader;
@@ -16,8 +22,10 @@ use crate::recipe_requestor::process_all_to_request_recipes;
 
 pub static GLOBAL_VARS: OnceLock<GlobalVars> = OnceLock::new();
 pub const NOTHING_ID: Element = 0;
-pub const BASE_ELEMENTS: &'static [&'static str] = &["Water" /* id: 1 */, "Fire" /* id: 2 */, "Earth" /* id: 3 */, "Wind" /* id: 4 */];     // these are modifyable
+pub const BASE_ELEMENTS: &[&str] = &["Water" /* id: 1 */, "Fire" /* id: 2 */, "Earth" /* id: 3 */, "Wind" /* id: 4 */];     // these are modifyable
 pub const BASE_IDS: std::ops::RangeInclusive<Element> = 1..=(BASE_ELEMENTS.len() as u32);
+
+pub const UNKNOWN_STR: &str = "=unknown=";
 
 pub fn is_base_element(element: Element) -> bool {
     BASE_IDS.contains(&element)
@@ -101,6 +109,9 @@ pub fn str_to_num_fn(str: &str) -> u32 {
         .expect("Element does not exist")
         as u32
 }
+
+
+
 
 
 
@@ -417,4 +428,96 @@ pub async fn rerequest_all_nothing_recipes() {
         }
     }
     process_all_to_request_recipes().await;
+}
+
+
+pub async fn request_all_unknown_recipes() {
+    let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized");
+
+    let unknown_id = str_to_num_fn(UNKNOWN_STR);
+    for (recipe, r) in variables.recipes_ing.read().unwrap().iter() {
+        if *r == unknown_id {
+            variables.to_request_recipes.insert(*recipe);
+        }
+    }
+    process_all_to_request_recipes().await;
+}
+
+
+pub fn mark_all_to_request_recipes_unknown() {
+    let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized");
+    let mut str_to_num = get_str_to_num_map();
+    
+    for entry in variables.to_request_recipes.iter() {
+        let comb = *entry.key();
+        let first_str;
+        let second_str;
+        {
+            let num_to_str = variables.num_to_str.read().unwrap();
+            first_str = num_to_str[comb.0 as usize].clone();
+            second_str = num_to_str[comb.1 as usize].clone();
+        }
+
+        variables_add_recipe(first_str, second_str, UNKNOWN_STR.to_string(), &mut str_to_num);
+    }
+    
+    println!("Marked {} recipes as '{UNKNOWN_STR}'", variables.to_request_recipes.len());
+    variables.to_request_recipes.clear();
+}
+
+
+
+
+pub fn find_and_write_dead_elements(output_file_path: &str) -> io::Result<()> {
+    println!("Finding dead elements...");
+    let start_time = std::time::Instant::now();
+
+    let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized");
+    let recipes_ing = variables.recipes_ing.read().unwrap();
+
+    // 1. In a single parallel pass, identify "live" ingredients and all ingredients.
+    let (live_elements, used_ingredients): (FxHashSet<Element>, FxHashSet<Element>) = recipes_ing
+        .par_iter()
+        .fold(
+            || (FxHashSet::default(), FxHashSet::default()),
+            |(mut live, mut used), (&(f, s), &r)| {
+                used.insert(f);
+                used.insert(s);
+                if r != NOTHING_ID {
+                    live.insert(f);
+                    live.insert(s);
+                }
+                (live, used)
+            },
+        )
+        .reduce(
+            || (FxHashSet::default(), FxHashSet::default()),
+            |(mut live_a, mut used_a), (live_b, used_b)| {
+                live_a.extend(live_b);
+                used_a.extend(used_b);
+                (live_a, used_a)
+            },
+        );
+
+    // 2. The dead elements are those used but not live.
+    let mut dead_element_names: Vec<String> = used_ingredients
+        .par_iter()
+        .filter(|elem| !live_elements.contains(elem))
+        .map(|&elem| num_to_str_fn(elem))
+        .collect();
+
+    println!("Found {} dead elements in {:?}.", dead_element_names.len(), start_time.elapsed());
+
+    // 3. Sort and write the results to the file.
+    println!("Writing dead elements to '{}'...", output_file_path);
+    dead_element_names.par_sort_unstable(); // Parallel sort for speed
+    
+    let file = File::create(output_file_path)?;
+    let mut writer = BufWriter::new(file);
+    for name in dead_element_names {
+        writeln!(writer, "{}", name)?;
+    }
+    println!("Finished writing.");
+
+    Ok(())
 }

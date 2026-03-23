@@ -22,7 +22,6 @@ const COMBINE_INTERVAL_MESSAGE_SECS: u64 = 30;
 static CLIENT: OnceLock<Client> = OnceLock::new();
 
 
-
 #[derive(Debug, Clone)]
 pub struct RequestStats {
     pub outgoing_requests: u32,
@@ -99,11 +98,6 @@ pub async fn combine(first: &str, second: &str) -> Option<CombineResponse> {
 
     None
 }
-
-
-
-
-
 
 
 

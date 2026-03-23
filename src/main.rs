@@ -16,8 +16,9 @@ use crate::depth_explorer::*;
 
 
 const LINEAGES_FILE_COOL_JSON_MODE: bool = true;
-const RECIPE_FILES_FOLDER: &'static str = "Recipe Files";
-const DEPTH_EXPLORER_MAX_SEED_LENGTH: usize = 9;
+const RECIPE_FILES_FOLDER: &str = "../Recipe Files";
+const DEPTH_EXPLORER_MAX_SEED_LENGTH: usize = 13;
+const DEPTH_EXPLORER_JUST_MARK_UNKNOWN_NO_REQUESTS_NO_ENCOUNTERED: bool = true;
 
 
 const DEPTH_EXPLORER_DEPTH_GROW_FACTOR_GUESS: usize = 15;
@@ -39,20 +40,13 @@ async fn main() {
     // -- Auto Save --
     // when this _auto_save goes out of scope, it saves 1 final time
     // let _auto_save = auto_load_and_save_recipes(
-    //     Duration::from_secs(30 * 60),
-    //     "depth_explorer_recipes.json",
-    //     recipe_loader::RecipeFileFormat::JSONRecipesNum
-    // );
-
-    let _auto_save = auto_load_and_save_recipes(
-        Duration::from_secs(5 * 60),
-        "from_base.json",
-        recipe_loader::RecipeFileFormat::JSONRecipesNum
-    );
-
-    test_depth_explorer().await;
-
-
+        //     Duration::from_secs(30 * 60),
+        //     "from_base_depth13_unknowns.json",
+        //     recipe_loader::RecipeFileFormat::JSONRecipesNum
+        // );
+        
+    recipe_loader::load("alphabet 9.json", recipe_loader::RecipeFileFormat::JSONRecipesNum).unwrap();
+    recipe_loader::save("test_ic_bug.ic", recipe_loader::RecipeFileFormat::ICSaveFile).unwrap();
 }
 
 
@@ -70,17 +64,19 @@ async fn test_depth_explorer() {
 
     let de_vars = DepthExplorerVars {
         stop_after_depth: DEPTH_EXPLORER_MAX_SEED_LENGTH,  // modify the global variable, so the compiler knows how big stuff is gonna be -> SPEEEEED
-        split_start: 0,
+        split_start: 6,
         lineage_elements: string_lineage_results(r#"
 
 
 
 
             "#),
+        exclude_depth1_elements: vec![],
         ..Default::default()
     };
 
     let encountered = depth_explorer_split_start(&de_vars).await;
+    recipe_loader::save("from_base_depth13_unknowns.json", recipe_loader::RecipeFileFormat::JSONRecipesNum).unwrap();
     generate_lineages_file(&de_vars, encountered).expect("could not generate lineages file...");
 }
 

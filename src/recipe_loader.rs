@@ -8,7 +8,7 @@ use rayon::prelude::*;
 
 use libdeflater::{CompressionLvl, Compressor, Decompressor};
 
-use crate::{structures::*, RECIPE_FILES_FOLDER};
+use crate::{LINEAGES_FILE_COOL_JSON_MODE, RECIPE_FILES_FOLDER, structures::*};
 
 
 
@@ -319,22 +319,26 @@ fn load_recipes_gzip(file: &mut File) -> io::Result<()> {
 fn save_recipes_gzip(file_path: &str) -> io::Result<()> {
     let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized.");
     let num_to_str = variables.num_to_str.read().unwrap();
+    let recipes_ing = variables.recipes_ing.read().unwrap();
 
     
     let recipes_result_time = Instant::now();
-    let recipes_result = get_recipes_result_map();
+    let mut exact_recipes_result: Vec<Vec<(u32, u32)>> = vec![Vec::new(); num_to_str.len()];
+    for (&(f, s), &r) in recipes_ing.iter() {
+        exact_recipes_result[r as usize].push((f, s));
+    }
     println!("  - made recipes_result: {:?}", recipes_result_time.elapsed());
 
     let build_items_vec_time = Instant::now();
-    let mut items: Vec<RecipesGzipItemData> = Vec::with_capacity(num_to_str.len());
+    let mut items = Vec::with_capacity(num_to_str.len());
     for (id, text) in num_to_str.iter().enumerate() {
         items.push(RecipesGzipItemData {
             id: id as u32,
             text: text.clone(),
-            recipes: recipes_result[id].clone(),
+            recipes: exact_recipes_result[id].clone(),
         });
     }
-    drop(recipes_result);
+    drop(exact_recipes_result);
     println!("  - built items vector: {:?}", build_items_vec_time.elapsed());
 
     let now_ms = SystemTime::now()
@@ -533,44 +537,37 @@ pub fn verify_recipe_stuff() {
 
 
 
+#[derive(Deserialize, Debug)]
+struct CoolJsonLineagesFile {
+    elements: FxHashMap<String, Vec<Vec<Vec<String>>>>,
+}
 
 
-
-
-pub fn retain_only_recipes_from_end_of_lineages_file() {
-    let json_content = fs::read_to_string("D:/InfiniteCraft/Codes/rust/Lineages Files/lel.json").unwrap();
-    let mut data: FxHashMap<String, usize> = serde_json::from_str(&json_content).unwrap();
-    data.retain(|_, depth| *depth < 9);
+pub fn retain_only_recipes_from_end_of_lineages_file(path: String, extra_elements_to_use: &[Element], less_than_depth: usize) {
+    // element name -> depth
+    // "D:/InfiniteCraft/Codes/rust/Lineages Files/lel.json"
+    let json_content = fs::read_to_string(path).unwrap();
+    let mut data: FxHashMap<String, usize> = if LINEAGES_FILE_COOL_JSON_MODE {
+        let parsed_data: CoolJsonLineagesFile = serde_json::from_str(&json_content).unwrap();
+        parsed_data.elements.into_iter().map(|(element_name, lineages)| (element_name, lineages.len())).collect()
+    }
+    else {
+        serde_json::from_str(&json_content).unwrap()
+    };
+    data.retain(|_, lineages_len| *lineages_len < less_than_depth);
 
     let str_to_num = get_str_to_num_map();
     let mut elements_to_use: FxHashSet<Element> = data.into_keys().map(|x| str_to_num.get(&start_case_unicode(&x)).unwrap().clone()).collect();
     drop(str_to_num);
-    elements_to_use.extend(BASE_IDS.into_iter());
-    elements_to_use.extend(string_lineage_results(r#"
-
-Earth + Water = Plant
-Earth + Plant = Tree
-Tree + Water = River
-Earth + River = Delta
-River + Tree = Paper
-Paper + Tree = Book
-Book + Delta = Alphabet
-Alphabet + Alphabet = Word
-Word + Word = Sentence
-Sentence + Wind = Phrase
-Book + Phrase = Quote
-Alphabet + Quote = Punctuation
-
-            "#));
+    elements_to_use.extend(BASE_IDS.into_iter().chain(extra_elements_to_use.iter().cloned()));
 
     println!("elements to use {}", elements_to_use.len());
-    {
-        let variables = GLOBAL_VARS.get().unwrap();
-        let mut recipes_ing = variables.recipes_ing.write().unwrap();
-        println!("before recipe retain: {}", recipes_ing.len());
-        recipes_ing.retain(|(f, s), _| elements_to_use.contains(f) && elements_to_use.contains(s));
-        println!("after recipe retain: {}", recipes_ing.len());
-    }
+
+    let variables = GLOBAL_VARS.get().unwrap();
+    let mut recipes_ing = variables.recipes_ing.write().unwrap();
+    println!("before recipe retain: {}", recipes_ing.len());
+    recipes_ing.retain(|(f, s), _| elements_to_use.contains(f) && elements_to_use.contains(s));
+    println!("after recipe retain: {}", recipes_ing.len());
 }
 
 

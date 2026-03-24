@@ -5,10 +5,7 @@ mod lineage;
 mod depth_explorer;
 mod recipe_requestor;
 
-use std::time::Duration;
-
 use crate::structures::*;
-use crate::lineage::*;
 use crate::depth_explorer::*;
 
 
@@ -17,8 +14,8 @@ use crate::depth_explorer::*;
 
 const LINEAGES_FILE_COOL_JSON_MODE: bool = true;
 const RECIPE_FILES_FOLDER: &str = "../Recipe Files";
-const DEPTH_EXPLORER_MAX_SEED_LENGTH: usize = 13;
-const DEPTH_EXPLORER_JUST_MARK_UNKNOWN_NO_REQUESTS_NO_ENCOUNTERED: bool = true;
+const DEPTH_EXPLORER_MAX_SEED_LENGTH: usize = 6;
+const DEPTH_EXPLORER_JUST_MARK_UNKNOWN_NO_REQUESTS_NO_ENCOUNTERED: bool = false;
 
 
 const DEPTH_EXPLORER_DEPTH_GROW_FACTOR_GUESS: usize = 15;
@@ -44,9 +41,11 @@ async fn main() {
         //     "from_base_depth13_unknowns.json",
         //     recipe_loader::RecipeFileFormat::JSONRecipesNum
         // );
+
+    let mut state = RecipesState::new();
         
-    recipe_loader::load("alphabet 9.json", recipe_loader::RecipeFileFormat::JSONRecipesNum).unwrap();
-    recipe_loader::save("test_ic_bug.ic", recipe_loader::RecipeFileFormat::ICSaveFile).unwrap();
+    state.load("punc 8.json", recipe_loader::RecipeFileFormat::JSONRecipesNum).unwrap();
+    test_depth_explorer(&mut state).await;
 }
 
 
@@ -58,58 +57,59 @@ async fn main() {
 
 
 
-async fn test_depth_explorer() {
+async fn test_depth_explorer(state: &mut RecipesState) {
 
     // rerequest_all_nothing_recipes().await;
 
     let de_vars = DepthExplorerVars {
         stop_after_depth: DEPTH_EXPLORER_MAX_SEED_LENGTH,  // modify the global variable, so the compiler knows how big stuff is gonna be -> SPEEEEED
-        split_start: 6,
-        lineage_elements: string_lineage_results(r#"
+        split_start: 1,
+        lineage_elements: state.string_lineage_results(r#"
 
-
-
+Earth + Water = Plant
+Earth + Plant = Tree
+Tree + Water = River
+River + Tree = Paper
+Paper + Tree = Book
+Earth + River = Delta
+Book + Delta = Alphabet
+Alphabet + Alphabet = Word
+Word + Word = Sentence
+Sentence + Wind = Phrase
+Book + Phrase = Quote
+Alphabet + Quote = Punctuation
 
             "#),
         exclude_depth1_elements: vec![],
         ..Default::default()
     };
 
-    let encountered = depth_explorer_split_start(&de_vars).await;
-    recipe_loader::save("from_base_depth13_unknowns.json", recipe_loader::RecipeFileFormat::JSONRecipesNum).unwrap();
-    generate_lineages_file(&de_vars, encountered).expect("could not generate lineages file...");
+    let encountered = state.depth_explorer_split_start(&de_vars).await;
+    // state.save("from_base_depth13_unknowns.json", recipe_loader::RecipeFileFormat::JSONRecipesNum).unwrap();
+    state.generate_lineages_file(&de_vars, encountered).expect("could not generate lineages file...");
 }
 
 
 
 
-async fn test_caps() {
-    {
-        let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized...");
-        let recipes_ing = variables.recipes_ing.read().expect("recipes_ing not initialized...");
+async fn test_caps(state: &mut RecipesState) {
+    let recipe_tup = sort_recipe_tuple((state.str_to_num_fn("Rocket"), state.str_to_num_fn("Cloud")));
+    let result_num = *state.recipes_ing.get(&recipe_tup)
+        .expect("'Cloud + Rocket' is not in recipes_ing");
 
-        let result_num = recipes_ing.get(&sort_recipe_tuple((str_to_num_fn("Rocket"), str_to_num_fn("Cloud")))).expect("'Cloud + Rocket' is not in recipes_ing");
-
-        println!("result: {}", num_to_str_fn(*result_num));
-        
-        let to_request = sort_recipe_tuple((str_to_num_fn("Rocket"), str_to_num_fn("Cloud")));
-        variables.to_request_recipes.insert(to_request);
-    }
+    println!("result: {result_num} {}", state.num_to_str_fn(result_num));
+    
+    state.to_request_recipes.insert(recipe_tup);
     
 
-    println!("{:?}", recipe_requestor::process_all_to_request_recipes().await);
+    println!("{:?}", state.process_all_to_request_recipes().await);
 
-    {
-        let variables = GLOBAL_VARS.get().expect("VARIABLES not initialized...");
-        let recipes_ing = variables.recipes_ing.read().expect("recipes_ing not initialized...");
 
-        let result_num = recipes_ing.get(&sort_recipe_tuple((str_to_num_fn("Rocket"), str_to_num_fn("Cloud")))).expect("'Cloud + Rocket' is not in recipes_ing");
+    let recipe_tup = sort_recipe_tuple((state.str_to_num_fn("Rocket"), state.str_to_num_fn("Cloud")));
+    let result_num = *state.recipes_ing.get(&recipe_tup)
+        .expect("'Cloud + Rocket' is not in recipes_ing");
 
-        println!("result: {}", num_to_str_fn(*result_num));
-        
-        let to_request = sort_recipe_tuple((str_to_num_fn("Rocket"), str_to_num_fn("Cloud")));
-        variables.to_request_recipes.insert(to_request);
-    }
+    println!("result: {result_num} {}", state.num_to_str_fn(result_num));
 }
 
 
@@ -121,27 +121,27 @@ async fn test_caps() {
 
 
 
-async fn test_lineage_stuff () {
+async fn test_lineage_stuff(state: &mut RecipesState) {
     // --- LINEAGE GENERATION STUFF ---
 
     // recipe_loader::load("depth_explorer_recipes.json", recipe_loader::RecipeFileFormat::JSONRecipesNum).unwrap();
-    let _auto_save = auto_load_and_save_recipes(
-        Duration::from_secs(30 * 60),
-        "depth_explorer_recipes.json",
-        recipe_loader::RecipeFileFormat::JSONRecipesNum
-    );
+    // let _auto_save = auto_load_and_save_recipes(
+    //     Duration::from_secs(30 * 60),
+    //     "depth_explorer_recipes.json",
+    //     recipe_loader::RecipeFileFormat::JSONRecipesNum
+    // );
 
-    let recipes_result_map = get_recipes_result_map();
-    let recipes_uses_map = get_recipes_uses_map();
-    let mut heuristic_map = get_element_heuristic_map(&recipes_uses_map);
+    let recipes_result_map = state.get_recipes_result_map();
+    let recipes_uses_map = state.get_recipes_uses_map();
+    let mut heuristic_map = state.get_element_heuristic_map(&recipes_uses_map);
 
-    generate_lineage_multiple_methods(&["Unova Cap Pikachu"], &mut heuristic_map, &recipes_result_map, &recipes_uses_map, true);
+    state.generate_lineage_multiple_methods(&["Unova Cap Pikachu"], &mut heuristic_map, &recipes_result_map, &recipes_uses_map, true);
 
 
-    let punc_alts = generate_lineage_multiple_methods(&["Punctuation", "Alphabet", "Delta"], &mut heuristic_map, &recipes_result_map, &recipes_uses_map, false);
-    punc_alts.print_lineages_ordered();
+    let punc_alts = state.generate_lineage_multiple_methods(&["Punctuation", "Alphabet", "Delta"], &mut heuristic_map, &recipes_result_map, &recipes_uses_map, false);
+    punc_alts.print_lineages_ordered(state);
 
-    let ass_lineage = string_lineage_to_lineage(r#"
+    let ass_lineage = state.string_lineage_to_lineage(r#"
 Earth + Water = Plant
 Earth + Plant = Tree
 Tree + Water = River
@@ -199,8 +199,8 @@ Semicolon + Semicolon = Colon
 "prepend :3" + Prepend Hashtag = Prepend Hashtag :3
  "#);
 
-    let improved_lineage = improve_lineage_depth_explorer(ass_lineage, &recipes_result_map, 1, 0).await;
-    improved_lineage.print_lineages_ordered();
+    let improved_lineage = state.improve_lineage_depth_explorer(ass_lineage, &recipes_result_map, 1, 0).await;
+    improved_lineage.print_lineages_ordered(state);
 }
 
 
@@ -211,18 +211,18 @@ Semicolon + Semicolon = Colon
 
 
 
-async fn do_punc_8() {
+async fn do_punc_8(state: &mut RecipesState) {
     // when this _auto_save goes out of scope, it saves 1 final time
-    let _auto_save = auto_load_and_save_recipes(
-        Duration::from_secs(30 * 60),
-        "punc 8.json",
-        recipe_loader::RecipeFileFormat::JSONRecipesNum
-    );
+    // let _auto_save = auto_load_and_save_recipes(
+    //     Duration::from_secs(30 * 60),
+    //     "punc 8.json",
+    //     recipe_loader::RecipeFileFormat::JSONRecipesNum
+    // );
 
     let de_vars = DepthExplorerVars {
         stop_after_depth: DEPTH_EXPLORER_MAX_SEED_LENGTH,  // modify the global variable, so the compiler knows how big stuff is gonna be -> SPEEEEED
         split_start: 2,
-        lineage_elements: string_lineage_results(r#"
+        lineage_elements: state.string_lineage_results(r#"
 
 Earth + Water = Plant
 Earth + Plant = Tree
@@ -241,24 +241,24 @@ Alphabet + Quote = Punctuation
         ..Default::default()
     };
 
-    let encountered = depth_explorer_split_start(&de_vars).await;
-    generate_lineages_file(&de_vars, encountered).unwrap();
+    let encountered = state.depth_explorer_split_start(&de_vars).await;
+    state.generate_lineages_file(&de_vars, encountered).unwrap();
 }
 
 
 
-async fn do_alphabet_9() {
+async fn do_alphabet_9(state: &mut RecipesState) {
     // when this _auto_save goes out of scope, it saves 1 final time
-    let _auto_save = auto_load_and_save_recipes(
-        Duration::from_secs(30 * 60),
-        "alphabet 9.json",
-        recipe_loader::RecipeFileFormat::JSONRecipesNum
-    );
+    // let _auto_save = auto_load_and_save_recipes(
+    //     Duration::from_secs(30 * 60),
+    //     "alphabet 9.json",
+    //     recipe_loader::RecipeFileFormat::JSONRecipesNum
+    // );
 
     let de_vars = DepthExplorerVars {
         stop_after_depth: DEPTH_EXPLORER_MAX_SEED_LENGTH,  // modify the global variable, so the compiler knows how big stuff is gonna be -> SPEEEEED
         split_start: 2,
-        lineage_elements: string_lineage_results(r#"
+        lineage_elements: state.string_lineage_results(r#"
 
 Earth + Water = Plant
 Earth + Plant = Tree
@@ -272,6 +272,6 @@ Book + Delta = Alphabet
         ..Default::default()
     };
 
-    let encountered = depth_explorer_split_start(&de_vars).await;
-    generate_lineages_file(&de_vars, encountered).unwrap();
+    let encountered = state.depth_explorer_split_start(&de_vars).await;
+    state.generate_lineages_file(&de_vars, encountered).unwrap();
 }

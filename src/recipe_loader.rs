@@ -53,6 +53,8 @@ struct CoolJsonLineagesFile {
 
 
 impl RecipesState {
+    /// loads a recipe file in of the 3 formats.
+    /// the base-folder is the RECIPE_FILES_FOLDER (at the top of main.rs)
     pub fn load(&mut self, file_name: &str, format: RecipeFileFormat) -> io::Result<()> {
         println!("Loading {} ({:?})", file_name, format);
         let start_time = Instant::now();
@@ -73,7 +75,9 @@ impl RecipesState {
         response
     }
 
-
+    
+    /// saves a recipe file in of the 3 formats.
+    /// the base-folder is the RECIPE_FILES_FOLDER (at the top of main.rs)
     pub fn save(&self, file_name: &str, format: RecipeFileFormat) -> io::Result<()> {
         println!("Saving {} ({:?})", file_name, format);
         let start_time = Instant::now();
@@ -377,6 +381,7 @@ impl RecipesState {
 
 
     /// Saves all missing recipes (to_request_recipes) to a file in the format: `ing1=ing2=`
+    /// the base-folder is the RECIPE_FILES_FOLDER (at the top of main.rs)
     pub fn save_requests_to_file(&self, filename: &str) -> std::io::Result<()> {
         let extended_path = format!("{}/{}", RECIPE_FILES_FOLDER, filename);
         let file = File::create(extended_path)?;
@@ -399,11 +404,49 @@ impl RecipesState {
     }
 
 
-    /// Loads recipes from a file. 
-    /// Format: `ing1=ing2=` -> adds to requests
-    /// Format: `ing1=ing2=result` -> adds to known recipes
-    pub fn load_requests_from_file(&mut self, filepath: &str) -> std::io::Result<()> {
-        let file = File::open(filepath)?;
+    /// Stream reads requests from `in_file`, fills in known non-Nothing results, and writes to `out_file`.
+    /// the base-folder is the RECIPE_FILES_FOLDER (at the top of main.rs)
+    pub fn fill_known_requests_stream(&self, in_filename: &str, out_filename: &str) -> std::io::Result<()> {
+        let str_to_num = self.get_str_to_num_map();
+
+        let reader = BufReader::new(File::open(format!("{}/{}", RECIPE_FILES_FOLDER, in_filename))?);
+        let mut writer = BufWriter::new(File::create(format!("{}/{}", RECIPE_FILES_FOLDER, out_filename))?);
+
+        let mut changed = 0;
+        let mut unchanged = 0;
+
+        for line in reader.lines() {
+            let line = line?;
+            let parts: Vec<&str> = line.split('=').collect();
+
+            // this code is really satisfying with all the &&s
+            if let [ing1_str, ing2_str, result_str] = parts.as_slice()
+                && result_str.trim().is_empty()
+                && let (Some(&id1), Some(&id2)) = (str_to_num.get(*ing1_str), str_to_num.get(*ing2_str))
+                && let Some(&res_id) = self.recipes_ing.get(&sort_recipe_tuple((id1, id2)))
+                && res_id != NOTHING_ID {
+                    // we know the new result!
+                    writeln!(writer, "{ing1_str}={ing2_str}={}", self.num_to_str_fn(res_id))?;
+                    changed += 1;
+                }
+            else {
+                // if it already had a result, or we don't know it, write it exactly as it was
+                writeln!(writer, "{}", line)?;
+                unchanged += 1;
+            }
+        }
+        
+        println!("Finished filling recipes from {in_filename} into {out_filename}. (filled in {changed} recipes, left {unchanged} lines unchanged)");
+        Ok(())
+    }
+
+
+
+    /// `ing1=ing2=` -> adds to requests
+    /// `ing1=ing2=result` -> adds to known recipes_ing
+    /// the base-folder is the RECIPE_FILES_FOLDER (at the top of main.rs)
+    pub fn load_requests_from_file(&mut self, filename: &str) -> std::io::Result<()> {
+        let file = File::open(format!("{}/{}", RECIPE_FILES_FOLDER, filename))?;
         let reader = BufReader::new(file);
 
         // Build a quick lookup map to avoid O(N) array scans when looking up element strings
@@ -441,7 +484,7 @@ impl RecipesState {
 
         println!(
             "Loaded {} known recipes and {} pending requests from {}",
-            loaded_recipes, loaded_requests, filepath
+            loaded_recipes, loaded_requests, filename
         );
 
         Ok(())

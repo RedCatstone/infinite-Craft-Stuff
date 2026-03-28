@@ -6,59 +6,63 @@ mod depth_explorer;
 mod recipe_requestor;
 mod layer_explorer;
 
-use std::time::Instant;
+use std::io;
 
+use crate::depth_explorer::DepthExplorerVars;
 use crate::layer_explorer::LayerExplorer;
-use crate::structures::*;
-use crate::depth_explorer::*;
+use crate::recipe_loader::RecipeFileFormat;
+use crate::structures::{Element, RecipesState, sort_recipe_tuple};
 
 
 
 
-
+/// just leave this to true
 const LINEAGES_FILE_COOL_JSON_MODE: bool = true;
-const RECIPE_FILES_FOLDER: &str = "../Recipe Files";
-const DEPTH_EXPLORER_MAX_SEED_LENGTH: usize = 10;
+
+/// where all files are located that this code will access.
+/// this is relative to Cargo.toml file.
+/// you can also use a full path instead of a relative one
+const RECIPE_FILES_FOLDER: &str = "Recipe Files";
+
+/// to make the code faster it uses constant sized ArrayVecs, meaning that they
+/// can't grow longer than this number:
+const DEPTH_EXPLORER_MAX_STEPS: usize = 10;
+
+/// only for ancient code
 const DEPTH_EXPLORER_JUST_MARK_UNKNOWN_NO_REQUESTS_NO_ENCOUNTERED: bool = false;
-
-
+/// only for ancient code
 const DEPTH_EXPLORER_DEPTH_GROW_FACTOR_GUESS: usize = 15;
 
 
 
 
 
-#[tokio::main]
-async fn main() {
+fn main() -> io::Result<()> {
 
     // --- LOAD RECIPES ---
-    // there are 3 formats. if you load multiple recipe files, it merges them
-    // recipe_loader::load("depth_explorer_recipes.json", recipe_loader::RecipeFileFormat::JSONRecipesNum).unwrap();
+    // there are 3 formats. if you load multiple recipe files, it simply merges them
+    
+    // -- my own formats --
+    // RecipeFileFormat::JSONOldDepthExplorerRecipes - ancient format from my first version (`ing1=ing2=result`): 
+    // RecipeFileFormat::JSONRecipesNum - (has a numId_to_str array at the top, and then recipes listed with their ids)
 
-    // -- Analyzer / Savefile Format --
-    // recipe_loader::save("full_db.ic", recipe_loader::RecipeFileFormat::ICSaveFile).unwrap();
+    // -- .ic format --
+    // RecipeFileFormat::ICSaveFile
+    // state.load("full_db.ic", recipe_loader::RecipeFileFormat::ICSaveFile).unwrap();
 
-    // -- Auto Save --
-    // when this _auto_save goes out of scope, it saves 1 final time
-    // let _auto_save = auto_load_and_save_recipes(
-        //     Duration::from_secs(30 * 60),
-        //     "from_base_depth13_unknowns.json",
-        //     recipe_loader::RecipeFileFormat::JSONRecipesNum
-        // );
+    // you can comment this panic out
+    panic!("please look at src/main.rs and change what you need! (you can comment this panic out over there)");
 
     let mut state = RecipesState::new();
-        
-    state.load("from_base_but_more.json", recipe_loader::RecipeFileFormat::JSONRecipesNum).unwrap();
+    state.load("depth_explorer_recipes.json", RecipeFileFormat::JSONRecipesNum)?;
+    state.load("alphabet 9.json", RecipeFileFormat::JSONRecipesNum)?;
+    state.load("punc 8.json", RecipeFileFormat::JSONRecipesNum)?;
+    state.load("more than Punc 8.json", RecipeFileFormat::JSONRecipesNum)?;
+    // load more files if you want...
 
-    let lineage_elems: Vec<Element> = BASE_IDS.collect();
-    let max_steps = 13;
-    
-    let start_time = Instant::now();
-    let encountered = LayerExplorer::start(&state, &lineage_elems, max_steps, true);
+    state.fill_known_requests_stream("13_missing_recipes.txt", "13_missing_recipes_filled.txt")?;
 
-    println!("encountered ({}, {:?})\nto_request: {}", encountered.len(), start_time.elapsed(), state.to_request_recipes.len());
-    state.save_requests_to_file("13step_recipes.txt").unwrap();
-    state.generate_lineages_file(&lineage_elems, max_steps, encountered.elements).unwrap();
+    Ok(())
 }
 
 
@@ -70,12 +74,44 @@ async fn main() {
 
 
 
+
+
+
+
+pub fn calc_depth_13() {
+    let mut state = RecipesState::new();
+    state.load("from_base_but_more.json", RecipeFileFormat::JSONRecipesNum).unwrap();
+
+    let lineage_elems: Vec<Element> = state.string_lineage_results(r#"
+        Water
+        Fire
+        Wind
+        Earth
+    "#);
+    let max_steps = 13;
+    
+    let encountered = LayerExplorer::start(&state, &lineage_elems, max_steps, true);
+
+    state.save_requests_to_file("13step_recipes.txt").unwrap();
+    state.generate_lineages_file(&lineage_elems, max_steps, encountered.elements).unwrap();
+}
+
+
+
+
+
+
+
+// --- OLD CODE ---
+// everything below this point is using the old depth explorer
+
+
 async fn test_depth_explorer(state: &mut RecipesState) {
 
     // rerequest_all_nothing_recipes().await;
 
     let de_vars = DepthExplorerVars {
-        stop_after_depth: DEPTH_EXPLORER_MAX_SEED_LENGTH,  // modify the global variable, so the compiler knows how big stuff is gonna be -> SPEEEEED
+        stop_after_depth: DEPTH_EXPLORER_MAX_STEPS,  // modify the global variable, so the compiler knows how big stuff is gonna be -> SPEEEEED
         split_start: 2,
         lineage_elements: state.string_lineage_results(r#"
 
@@ -221,7 +257,7 @@ async fn do_punc_8(state: &mut RecipesState) {
     // );
 
     let de_vars = DepthExplorerVars {
-        stop_after_depth: DEPTH_EXPLORER_MAX_SEED_LENGTH,  // modify the global variable, so the compiler knows how big stuff is gonna be -> SPEEEEED
+        stop_after_depth: DEPTH_EXPLORER_MAX_STEPS,  // modify the global variable, so the compiler knows how big stuff is gonna be -> SPEEEEED
         split_start: 2,
         lineage_elements: state.string_lineage_results(r#"
 
@@ -257,7 +293,7 @@ async fn do_alphabet_9(state: &mut RecipesState) {
     // );
 
     let de_vars = DepthExplorerVars {
-        stop_after_depth: DEPTH_EXPLORER_MAX_SEED_LENGTH,  // modify the global variable, so the compiler knows how big stuff is gonna be -> SPEEEEED
+        stop_after_depth: DEPTH_EXPLORER_MAX_STEPS,  // modify the global variable, so the compiler knows how big stuff is gonna be -> SPEEEEED
         split_start: 2,
         lineage_elements: state.string_lineage_results(r#"
 

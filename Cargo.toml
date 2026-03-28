@@ -1,14 +1,14 @@
 [package]
-name = "rust"
+name = "infinite-craft-shenanigance"
 version = "0.1.0"
 edition = "2024"
 
 
 [profile.release]
 debug = false
-lto = "fat"
-codegen-units = 1
-opt-level = 3    # Max optimization level (default for release). 0=none, 1=basic, 2=some, 3=all, s=size, z=size+more
+# lto = "fat"
+# codegen-units = 1
+opt-level = 2    # Max optimization level (default for release). 0=none, 1=basic, 2=some, 3=all, s=size, z=size+more
 # overflow-checks = true
 
 

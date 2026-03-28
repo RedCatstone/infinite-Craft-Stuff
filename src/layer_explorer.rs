@@ -1,10 +1,10 @@
-use std::collections::hash_map;
+use std::{collections::hash_map, time::Instant};
 
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use rustc_hash::FxHashMap;
 use tinyvec::ArrayVec;
 
-use crate::structures::{Element, NOTHING_ID, RecipesState, sort_recipe_tuple};
+use crate::{DEPTH_EXPLORER_MAX_STEPS, structures::{Element, NOTHING_ID, RecipesState, sort_recipe_tuple}};
 
 
 /// This Algorithm generates all n-step elements starting from some base_elements.
@@ -51,8 +51,6 @@ pub struct LayerExplorer<'a> {
     temp_results: Vec<Element>,
 }
 
-const LAYER_STEPS: usize = 13;
-
 #[derive(Clone)]
 pub struct LayerData {
     subset_iter: SubsetIter,
@@ -62,6 +60,8 @@ pub struct LayerData {
 
 impl LayerExplorer<'_> {
     pub fn start(recipes: &RecipesState, base_elements: &[Element], max_steps: usize, multi_thread: bool) -> EncounteredElements {
+        let start_time = Instant::now();
+
         let neal_base_elements: Vec<Element> = base_elements.iter()
             .map(|&x| recipes.neal_case_map[x as usize])
             .collect();
@@ -95,7 +95,7 @@ impl LayerExplorer<'_> {
             }
         }
 
-        if !multi_thread {
+        let final_encountered = if !multi_thread {
             le.enter_main_loop();
             le.encountered
         } else {
@@ -119,7 +119,16 @@ impl LayerExplorer<'_> {
                 )
                 .reduce_with(|a, b| a.merge_with(b))
                 .unwrap_or_else(|| le.encountered.clone())
-        }
+        };
+
+        
+        println!("Finished Layer Explorer! ({:?}) - base_elements: {:?} - Elements in {max_steps}-step: {} - to_request: {}",
+            start_time.elapsed(),
+            recipes.debug_element_vec(base_elements),
+            final_encountered.len(),
+            recipes.to_request_recipes.len()
+        );
+        final_encountered
     }
 
 
@@ -244,13 +253,13 @@ impl SubsetIter {
     }
 
     #[inline(always)]
-    fn current_subset(&self) -> ArrayVec<[Element; LAYER_STEPS.div_ceil(2)]> {
+    fn current_subset(&self) -> ArrayVec<[Element; DEPTH_EXPLORER_MAX_STEPS.div_ceil(2)]> {
         self.curr_indices.iter().map(|&i| self.elements[i]).collect()
     }
 }
 
 impl Iterator for SubsetIter {
-    type Item = ArrayVec<[Element; LAYER_STEPS.div_ceil(2)]>;
+    type Item = ArrayVec<[Element; DEPTH_EXPLORER_MAX_STEPS.div_ceil(2)]>;
 
     fn next(&mut self) -> Option<Self::Item> {
         // Check if it exceeded the maximum allowed length

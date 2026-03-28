@@ -15,7 +15,7 @@ use rayon::prelude::*;
 use tinyvec::ArrayVec;  // can't move to heap
 use colored::Colorize;
 
-use crate::{DEPTH_EXPLORER_DEPTH_GROW_FACTOR_GUESS, DEPTH_EXPLORER_JUST_MARK_UNKNOWN_NO_REQUESTS_NO_ENCOUNTERED, DEPTH_EXPLORER_MAX_SEED_LENGTH, LINEAGES_FILE_COOL_JSON_MODE};
+use crate::{DEPTH_EXPLORER_DEPTH_GROW_FACTOR_GUESS, DEPTH_EXPLORER_JUST_MARK_UNKNOWN_NO_REQUESTS_NO_ENCOUNTERED, DEPTH_EXPLORER_MAX_STEPS, LINEAGES_FILE_COOL_JSON_MODE};
 use crate::structures::*;
 
 
@@ -29,7 +29,7 @@ pub trait IsSeed: Send + Sync {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub struct Seed {
-    pub elems: ArrayVec<[Element; DEPTH_EXPLORER_MAX_SEED_LENGTH - 1]>
+    pub elems: ArrayVec<[Element; DEPTH_EXPLORER_MAX_STEPS - 1]>
 }
 impl Seed {
     pub fn add_element(&mut self, element: Element) {

@@ -56,7 +56,7 @@ impl RecipesState {
     /// loads a recipe file in of the 3 formats.
     /// the base-folder is the RECIPE_FILES_FOLDER (at the top of main.rs)
     pub fn load(&mut self, file_name: &str, format: RecipeFileFormat) -> io::Result<()> {
-        println!("Loading {} ({:?})", file_name, format);
+        println!("Loading {} - {:?} - Before Elements: {}, Recipes: {}", file_name, format, self.num_to_str.len(), self.recipes_ing.len());
         let start_time = Instant::now();
 
         let file_path = format!("{}/{}", RECIPE_FILES_FOLDER, file_name);
@@ -70,7 +70,7 @@ impl RecipesState {
 
         match response {
             Err(e) => panic!("  - FAILED TO LOAD... ({:?}): {}", start_time.elapsed(), e),
-            Ok(_) => println!("  - Complete! ({:?})", start_time.elapsed()),
+            Ok(_) => println!("  - Complete! - {:?} - After Elements: {}, Recipes: {}", start_time.elapsed(), self.num_to_str.len(), self.recipes_ing.len()),
         }
         response
     }
@@ -79,7 +79,7 @@ impl RecipesState {
     /// saves a recipe file in of the 3 formats.
     /// the base-folder is the RECIPE_FILES_FOLDER (at the top of main.rs)
     pub fn save(&self, file_name: &str, format: RecipeFileFormat) -> io::Result<()> {
-        println!("Saving {} ({:?})", file_name, format);
+        println!("Saving {} - {:?} - Elements: {}, Recipes: {}", file_name, format, self.num_to_str.len(), self.recipes_ing.len());
         let start_time = Instant::now();
 
         let file_path = &format!("{}/{}", RECIPE_FILES_FOLDER, file_name);
@@ -380,114 +380,71 @@ impl RecipesState {
 
 
 
-    /// Saves all missing recipes (to_request_recipes) to a file in the format: `ing1=ing2=`
-    /// the base-folder is the RECIPE_FILES_FOLDER (at the top of main.rs)
-    pub fn save_requests_to_file(&self, filename: &str) -> std::io::Result<()> {
-        let extended_path = format!("{}/{}", RECIPE_FILES_FOLDER, filename);
-        let file = File::create(extended_path)?;
-        let mut writer = BufWriter::new(file);
 
-        let mut count = 0;
+    /// extracts the to_request_recipes and marks them as UNKNOWN_STR
+    pub fn extract_to_request(&self) -> RecipesState {
+        let mut new_state = RecipesState::new();
+        let mut str_to_num = FxHashMap::default();
+        
+        // Add UNKNOWN_STR to the new state
+        let unknown_id = new_state.variables_add_element_str(UNKNOWN_STR, &mut str_to_num);
+        let start_time = Instant::now();
+
         for entry in self.to_request_recipes.iter() {
             let (id1, id2) = *entry;
 
-            // Write ing1=ing2= (with empty result)
-            writeln!(writer, "{}={}=",
-                self.num_to_str[id1 as usize],
-                self.num_to_str[id2 as usize]
-            )?;
-            count += 1;
-        }
-
-        println!("Saved {} requests to {}", count, filename);
-        Ok(())
-    }
-
-
-    /// Stream reads requests from `in_file`, fills in known non-Nothing results, and writes to `out_file`.
-    /// the base-folder is the RECIPE_FILES_FOLDER (at the top of main.rs)
-    pub fn fill_known_requests_stream(&self, in_filename: &str, out_filename: &str) -> std::io::Result<()> {
-        let str_to_num = self.get_str_to_num_map();
-
-        let reader = BufReader::new(File::open(format!("{}/{}", RECIPE_FILES_FOLDER, in_filename))?);
-        let mut writer = BufWriter::new(File::create(format!("{}/{}", RECIPE_FILES_FOLDER, out_filename))?);
-
-        let mut changed = 0;
-        let mut unchanged = 0;
-
-        for line in reader.lines() {
-            let line = line?;
-            let parts: Vec<&str> = line.split('=').collect();
-
-            // this code is really satisfying with all the &&s
-            if let [ing1_str, ing2_str, result_str] = parts.as_slice()
-                && result_str.trim().is_empty()
-                && let (Some(&id1), Some(&id2)) = (str_to_num.get(*ing1_str), str_to_num.get(*ing2_str))
-                && let Some(&res_id) = self.recipes_ing.get(&sort_recipe_tuple((id1, id2)))
-                && res_id != NOTHING_ID {
-                    // we know the new result!
-                    writeln!(writer, "{ing1_str}={ing2_str}={}", self.num_to_str_fn(res_id))?;
-                    changed += 1;
-                }
-            else {
-                // if it already had a result, or we don't know it, write it exactly as it was
-                writeln!(writer, "{}", line)?;
-                unchanged += 1;
-            }
+            let new_id1 = new_state.variables_add_element_str(&self.num_to_str[id1 as usize], &mut str_to_num);
+            let new_id2 = new_state.variables_add_element_str(&self.num_to_str[id2 as usize], &mut str_to_num);
+            
+            new_state.recipes_ing.insert(sort_recipe_tuple((new_id1, new_id2)), unknown_id);
         }
         
-        println!("Finished filling recipes from {in_filename} into {out_filename}. (filled in {changed} recipes, left {unchanged} lines unchanged)");
-        Ok(())
+        println!("Extracted {} requests into new state. ({:?})", self.to_request_recipes.len(), start_time.elapsed());
+        new_state
     }
 
 
-
-    /// `ing1=ing2=` -> adds to requests
-    /// `ing1=ing2=result` -> adds to known recipes_ing
-    /// the base-folder is the RECIPE_FILES_FOLDER (at the top of main.rs)
-    pub fn load_requests_from_file(&mut self, filename: &str) -> std::io::Result<()> {
-        let file = File::open(format!("{}/{}", RECIPE_FILES_FOLDER, filename))?;
-        let reader = BufReader::new(file);
-
-        // Build a quick lookup map to avoid O(N) array scans when looking up element strings
+    /// Replaces recipes resulting in UNKNOWN_STR with actual results from `other_state`.
+    pub fn replace_unknowns_with(&mut self, other_state: &RecipesState) {
         let mut str_to_num = self.get_str_to_num_map();
+        let other_map = other_state.get_str_to_num_map();
+        
+        let unknown_id = match str_to_num.get(UNKNOWN_STR) {
+            Some(&id) => id,
+            None => {
+                println!("No unknowns exist to replace!");
+                return
+            }
+        };
 
-        let mut loaded_requests = 0;
-        let mut loaded_recipes = 0;
+        let mut updates = Vec::new();
+        let start_time = Instant::now();
 
-        for line in reader.lines() {
-            let line = line?;
-            let parts: Vec<&str> = line.split('=').map(|x| x.trim()).collect();
+        for (&(id1, id2), &res) in &self.recipes_ing {
+            if res == unknown_id || res == NOTHING_ID {
+                let name1 = &self.num_to_str[id1 as usize];
+                let name2 = &self.num_to_str[id2 as usize];
 
-            if let [ing1_str, ing2_str, result_str] = parts.as_slice() {
-
-                // Get or create IDs for the ingredients
-                let id1 = self.variables_add_element_str(ing1_str, &mut str_to_num);
-                let id2 = self.variables_add_element_str(ing2_str, &mut str_to_num);
-                let comb = sort_recipe_tuple((id1, id2));
-
-                if result_str.is_empty() {
-                    // Result is empty, put it back into the request queue
-                    self.to_request_recipes.insert(comb);
-                    loaded_requests += 1;
-                } else {
-                    // Result exists, register it as a known recipe!
-                    let result_id = self.variables_add_element_str(result_str, &mut str_to_num);
-                    self.recipes_ing.insert(comb, result_id);
-                    
-                    // If it was previously in our requests queue, remove it now that we know it
-                    self.to_request_recipes.remove(&comb);
-                    loaded_recipes += 1;
-                }
+                // Check if other_state knows about both ingredients and the recipe
+                if let (Some(&o_id1), Some(&o_id2)) = (other_map.get(name1), other_map.get(name2)) 
+                    && let Some(&o_res) = other_state.recipes_ing.get(&sort_recipe_tuple((o_id1, o_id2))) {
+                        let result_name = &other_state.num_to_str[o_res as usize];
+                        
+                        if result_name != UNKNOWN_STR {
+                            updates.push(((id1, id2), result_name.to_string()));
+                        }
+                    }
             }
         }
 
-        println!(
-            "Loaded {} known recipes and {} pending requests from {}",
-            loaded_recipes, loaded_requests, filename
-        );
-
-        Ok(())
+        let changed = updates.len();
+        // Apply the updates safely outside the iteration
+        for (comb, res_name) in updates {
+            let new_id = self.variables_add_element_str(&res_name, &mut str_to_num);
+            self.recipes_ing.insert(comb, new_id);
+        }
+        
+        println!("Filled in {} unknown recipes! ({:?})", changed, start_time.elapsed());
     }
 
 
@@ -518,6 +475,8 @@ impl RecipesState {
         new_str_to_num: &mut FxHashMap<String, u32>,
         new_recipes_ing: FxHashMap<(u32, u32), u32>
     ) {
+        println!("  - Merging new Elements: {}, Recipes: {}", new_num_to_str.len(), new_recipes_ing.len());
+
         let neal_case_time = Instant::now();
         let mut new_neal_case_map: Vec<u32> = Vec::with_capacity(new_num_to_str.len());
         let mut added: Vec<String> = Vec::new();
@@ -613,12 +572,11 @@ impl RecipesState {
 
 
     pub fn verify_recipe_stuff(&self) {
-        assert_eq!(
-            *self.recipes_ing.get(
-                &sort_recipe_tuple((self.str_to_num_fn("Fire"), self.str_to_num_fn("Water")))
-            ).expect("'Water + Fire' is not in recipes_ing"),
-            self.str_to_num_fn("Steam")
-        );
+        if self.recipes_ing.get(
+            &sort_recipe_tuple((self.str_to_num_fn("Fire"), self.str_to_num_fn("Water")))
+        ) != Some(&self.str_to_num_fn("Steam")) {
+            println!("Water + Fire = Steam is not in recipes_ing")
+        }
         assert_eq!(self.str_to_num_fn("Nothing"), 0);  // nothing needs to have id 0
         assert_eq!(self.num_to_str.len(), self.neal_case_map.len());  // if these don't match something went wrong...
     }

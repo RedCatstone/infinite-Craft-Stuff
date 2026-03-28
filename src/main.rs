@@ -51,7 +51,10 @@ fn main() -> io::Result<()> {
     // state.load("full_db.ic", recipe_loader::RecipeFileFormat::ICSaveFile).unwrap();
 
     // you can comment this panic out
-    panic!("please look at src/main.rs and change what you need! (you can comment this panic out over there)");
+    // panic!("please look at src/main.rs and change what you need! (you can comment this panic out over there)");
+
+    let mut uknowns = RecipesState::new();
+    uknowns.load("13_missing_recipes.ic", RecipeFileFormat::ICSaveFile)?;
 
     let mut state = RecipesState::new();
     state.load("depth_explorer_recipes.json", RecipeFileFormat::JSONRecipesNum)?;
@@ -60,7 +63,8 @@ fn main() -> io::Result<()> {
     state.load("more than Punc 8.json", RecipeFileFormat::JSONRecipesNum)?;
     // load more files if you want...
 
-    state.fill_known_requests_stream("13_missing_recipes.txt", "13_missing_recipes_filled.txt")?;
+    uknowns.replace_unknowns_with(&state);
+    uknowns.save("13_missing_recipes_filled.ic", RecipeFileFormat::ICSaveFile)?;
 
     Ok(())
 }
@@ -92,7 +96,7 @@ pub fn calc_depth_13() {
     
     let encountered = LayerExplorer::start(&state, &lineage_elems, max_steps, true);
 
-    state.save_requests_to_file("13step_recipes.txt").unwrap();
+    state.extract_to_request().save("13_missing_recipes.ic", RecipeFileFormat::ICSaveFile).unwrap();
     state.generate_lineages_file(&lineage_elems, max_steps, encountered.elements).unwrap();
 }
 

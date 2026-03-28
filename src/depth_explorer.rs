@@ -1,4 +1,5 @@
 use std::collections::hash_map;
+use std::hash::Hash;
 use std::sync::Arc;
 use std::time::Instant;
 use std::cmp;
@@ -19,11 +20,33 @@ use crate::structures::*;
 
 
 
+pub trait IsSeed: Send + Sync {
+    fn as_slice(&self) -> &[Element];
+    fn len(&self) -> usize {
+        self.as_slice().len()
+    }
+}
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+pub struct Seed {
+    pub elems: ArrayVec<[Element; DEPTH_EXPLORER_MAX_SEED_LENGTH - 1]>
+}
+impl Seed {
+    pub fn add_element(&mut self, element: Element) {
+        let insertion_point = self.elems.binary_search(&element).unwrap_or_else(|i| i);
+        self.elems.insert(insertion_point, element);
+    }
+    pub fn len(&self) -> usize { self.elems.len() }
+}
+impl IsSeed for Seed {
+    fn as_slice(&self) -> &[Element] { &self.elems }
+}
+impl IsSeed for Box<[Element]> {
+    fn as_slice(&self) -> &[Element] { self }
+}
 
-pub type Seed = ArrayVec<[u32; DEPTH_EXPLORER_MAX_SEED_LENGTH - 1]>;
-type EncounteredMap = FxHashMap<Element, Vec<Seed>>;
-type ElementBaseCacheMap = Vec<Option<Box<[Element]>>>;
+pub type EncounteredMap = FxHashMap<Element, Vec<Seed>>;
+pub type ElementBaseCacheMap = Vec<Option<Box<[Element]>>>;
 
 
 
@@ -197,8 +220,8 @@ impl RecipesState {
 
             de_struc.depth1 = depth1_ic.into_iter().filter(|x| !de_vars.exclude_depth1_elements.contains(x)).collect();
             de_struc.next_seed_set = de_struc.depth1.iter().map(|&x| {
-                let mut seed = Seed::new();
-                seed.push(x);
+                let mut seed = Seed::default();
+                seed.add_element(x);
                 seed
             }).collect();
             break;
@@ -296,7 +319,7 @@ impl RecipesState {
         // clear before use
         all_results.clear();
 
-        self.all_combination_results(seed, &mut all_results, de_struc, true);
+        self.all_combination_results(&seed.elems, &mut all_results, de_struc, true);
 
         // for some reason its faster without deduplication...
         // all_results.sort_unstable();
@@ -314,7 +337,7 @@ impl RecipesState {
         else {
             let mut count_depth1s: i32 = 0;
 
-            for result in seed.iter() {
+            for result in seed.elems.iter() {
                 if de_struc.depth1.contains(result) { count_depth1s += 1; }
             }
 
@@ -323,10 +346,9 @@ impl RecipesState {
 
                 // extend seed with depth1 elements
                 for d1 in de_struc.depth1.iter() {
-                    if !seed.contains(d1) {
-                        let mut new_seed = *seed;
-                        let insertion_point = new_seed.binary_search(d1).unwrap_or_else(|idx| idx);
-                        new_seed.insert(insertion_point, *d1);
+                    if !seed.elems.contains(d1) {
+                        let mut new_seed = seed.clone();
+                        new_seed.add_element(*d1);
 
                         de_struc.next_seed_set.insert(new_seed);
                     }
@@ -350,11 +372,10 @@ impl RecipesState {
                 let result_ic = self.neal_case_map[result as usize];
 
                 if 3*(count_depth1s + (if de_struc.depth1.contains(&result_ic) {1} else {0})) - 2*(de_struc.depth as i32) <= 4
-                    && !seed.contains(&result_ic) {
+                    && !seed.elems.contains(&result_ic) {
                     
-                    let mut new_seed = *seed;
-                    let insertion_point = new_seed.binary_search(&result_ic).unwrap_or_else(|idx| idx);
-                    new_seed.insert(insertion_point, result_ic);
+                    let mut new_seed = seed.clone();
+                    new_seed.add_element(result_ic);
                     
                     de_struc.next_seed_set.insert(new_seed);
                 }
@@ -475,10 +496,10 @@ impl RecipesState {
 
 
 
-    pub fn get_encountered_entry(
+    pub fn get_encountered_entry<S: IsSeed>(
         &self,
         element: Element,
-        seeds: &[Seed],
+        seeds: &[S],
         initial_crafted: &FxHashSet<Element>,
         real_recipes_result: &RealRecipesResult
     ) -> String {
@@ -490,7 +511,7 @@ impl RecipesState {
         for (i, seed) in seeds.iter().enumerate() {        
 
             let mut lineage: Vec<[Element; 3]> = Vec::with_capacity(seed.len() + 1);
-            let mut to_craft: Vec<Element> = seed.iter().copied().collect();
+            let mut to_craft: Vec<Element> = seed.as_slice().to_vec();
             let mut crafted: FxHashSet<Element> = initial_crafted.clone();
             let mut caps_map: FxHashMap<Element, Element> = FxHashMap::default();
 
@@ -562,7 +583,9 @@ impl RecipesState {
 
 
 
-    pub fn generate_lineages_file(&self, de_vars: &DepthExplorerVars, encountered: EncounteredMap) -> io::Result<()> {
+    pub fn generate_lineages_file<S: IsSeed>(
+        &self, lineage_elements: &[Element], max_depth: usize, encountered: FxHashMap<Element, Vec<S>>
+    ) -> io::Result<()> {
         // required for this function:
         let start_time = Instant::now();
 
@@ -587,7 +610,7 @@ impl RecipesState {
         println!("made recipes_result in {:?}", start_time.elapsed());
 
 
-        let base_lineage_vec: Vec<u32> = BASE_IDS.chain(de_vars.lineage_elements.iter().copied()).collect();
+        let base_lineage_vec: Vec<u32> = BASE_IDS.chain(lineage_elements.iter().copied()).collect();
         let base_lineage_string_vec: Vec<String> = base_lineage_vec.iter().map(|x| self.num_to_str_fn(*x)).collect();
         let initial_crafted: FxHashSet<Element> = base_lineage_vec.iter().copied().collect();
 
@@ -597,7 +620,7 @@ impl RecipesState {
         let folder_name = "Lineages Files";
         let file_name = format!("{} Seed - {} Steps.{}",
             &self.num_to_str_fn(*base_lineage_vec.last().unwrap()),
-            de_vars.stop_after_depth,
+            max_depth,
             if LINEAGES_FILE_COOL_JSON_MODE {"json"} else {"txt"}
         );
 
@@ -623,7 +646,7 @@ impl RecipesState {
         keyed_entries.par_sort_unstable_by_key(|(seed_len, element, ..)| (*seed_len, self.num_to_str_fn(*element)));
 
 
-        let mut elements_per_depth_count = vec![0; de_vars.stop_after_depth];
+        let mut elements_per_depth_count = vec![0; max_depth];
         for (seed_len, ..) in keyed_entries.iter() {
             elements_per_depth_count[*seed_len] += 1;
         }
@@ -729,12 +752,12 @@ fn add_to_local_encountered(element: Element, seed: &Seed, local_map: &mut Encou
                     cmp::Ordering::Less => {
                         // new seed is shorter, replace the list
                         existing_seeds.clear();
-                        existing_seeds.push(*seed);
+                        existing_seeds.push(seed.clone());
                     },
                     cmp::Ordering::Equal => {
                         // new seed is same length, add if not already present (linear scan ok for few ties)
                         if !existing_seeds.contains(seed) {
-                            existing_seeds.push(*seed);
+                            existing_seeds.push(seed.clone());
                         }
                     },
                     cmp::Ordering::Greater => {
@@ -744,7 +767,7 @@ fn add_to_local_encountered(element: Element, seed: &Seed, local_map: &mut Encou
             }
             hash_map::Entry::Vacant(entry) => {
                 // element is new for this thread
-                entry.insert(vec![*seed]);
+                entry.insert(vec![seed.clone()]);
             }
         }
     }
@@ -798,8 +821,7 @@ fn extend_encountered_seeds(mut encountered: EncounteredMap, add_element: Elemen
         .for_each(|(_, original_seeds)| {
             original_seeds.iter_mut()
                 .for_each(|original_seed| {
-                    let insertion_point = original_seed.binary_search(&add_element).unwrap_or_else(|idx| idx);
-                    original_seed.insert(insertion_point, add_element);
+                    original_seed.add_element(add_element);
                 });
         });
     encountered

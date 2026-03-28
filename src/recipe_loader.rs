@@ -376,6 +376,86 @@ impl RecipesState {
 
 
 
+    /// Saves all missing recipes (to_request_recipes) to a file in the format: `ing1=ing2=`
+    pub fn save_requests_to_file(&self, filename: &str) -> std::io::Result<()> {
+        let extended_path = format!("{}/{}", RECIPE_FILES_FOLDER, filename);
+        let file = File::create(extended_path)?;
+        let mut writer = BufWriter::new(file);
+
+        let mut count = 0;
+        for entry in self.to_request_recipes.iter() {
+            let (id1, id2) = *entry;
+
+            // Write ing1=ing2= (with empty result)
+            writeln!(writer, "{}={}=",
+                self.num_to_str[id1 as usize],
+                self.num_to_str[id2 as usize]
+            )?;
+            count += 1;
+        }
+
+        println!("Saved {} requests to {}", count, filename);
+        Ok(())
+    }
+
+
+    /// Loads recipes from a file. 
+    /// Format: `ing1=ing2=` -> adds to requests
+    /// Format: `ing1=ing2=result` -> adds to known recipes
+    pub fn load_requests_from_file(&mut self, filepath: &str) -> std::io::Result<()> {
+        let file = File::open(filepath)?;
+        let reader = BufReader::new(file);
+
+        // Build a quick lookup map to avoid O(N) array scans when looking up element strings
+        let mut str_to_num = self.get_str_to_num_map();
+
+        let mut loaded_requests = 0;
+        let mut loaded_recipes = 0;
+
+        for line in reader.lines() {
+            let line = line?;
+            let parts: Vec<&str> = line.split('=').map(|x| x.trim()).collect();
+
+            if let [ing1_str, ing2_str, result_str] = parts.as_slice() {
+
+                // Get or create IDs for the ingredients
+                let id1 = self.variables_add_element_str(ing1_str, &mut str_to_num);
+                let id2 = self.variables_add_element_str(ing2_str, &mut str_to_num);
+                let comb = sort_recipe_tuple((id1, id2));
+
+                if result_str.is_empty() {
+                    // Result is empty, put it back into the request queue
+                    self.to_request_recipes.insert(comb);
+                    loaded_requests += 1;
+                } else {
+                    // Result exists, register it as a known recipe!
+                    let result_id = self.variables_add_element_str(result_str, &mut str_to_num);
+                    self.recipes_ing.insert(comb, result_id);
+                    
+                    // If it was previously in our requests queue, remove it now that we know it
+                    self.to_request_recipes.remove(&comb);
+                    loaded_recipes += 1;
+                }
+            }
+        }
+
+        println!(
+            "Loaded {} known recipes and {} pending requests from {}",
+            loaded_recipes, loaded_requests, filepath
+        );
+
+        Ok(())
+    }
+
+
+
+
+
+
+
+
+
+
 
 
 

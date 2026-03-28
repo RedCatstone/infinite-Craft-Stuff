@@ -166,7 +166,7 @@ impl RecipesState {
             }
             match task_result {
                 Ok((first_str, second_str, result_str)) => {
-                    arc_state.write().unwrap().variables_add_recipe(first_str, second_str, result_str, &mut str_to_num);
+                    arc_state.write().unwrap().variables_add_recipe(&first_str, &second_str, &result_str, &mut str_to_num);
                 },
                 Err(join_err) => {
                     eprintln!("Task panicked or was cancelled: {}", join_err);

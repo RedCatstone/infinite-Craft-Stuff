@@ -35,7 +35,7 @@ pub struct RecipesState {
     pub neal_case_map: Vec<u32>,
     pub recipes_ing: FxHashMap<(u32, u32), u32>,
 
-    pub num_to_str_len: Vec<usize>,
+    pub num_to_str_len: Box<[usize]>,
 
     pub to_request_recipes: DashSet<(u32, u32)>,
 }
@@ -143,33 +143,33 @@ impl RecipesState {
             .collect()
     }
     
-    pub fn get_num_to_str_len(num_to_str: &[String]) -> Vec<usize> {    
+    pub fn get_num_to_str_len(num_to_str: &[String]) -> Box<[usize]> {    
         num_to_str.iter()
             .map(|x| x.len())
             .collect()
     }
 
-    pub fn variables_add_recipe(&mut self, first_str: String, second_str: String, result_str: String, str_to_num: &mut FxHashMap<String, u32>) {
+    pub fn variables_add_recipe(&mut self, first_str: &str, second_str: &str, result_str: &str, str_to_num: &mut FxHashMap<String, u32>) {
         let f = self.variables_add_element_str(first_str, str_to_num);
         let s = self.variables_add_element_str(second_str, str_to_num);
         let r = self.variables_add_element_str(result_str, str_to_num);
         self.recipes_ing.insert((f, s), r);
     }
     
-    pub fn variables_add_element_str(&mut self, element_str: String, str_to_num: &mut FxHashMap<String, u32>) -> Element {
-        match str_to_num.get(&element_str) {
+    pub fn variables_add_element_str(&mut self, element_str: &str, str_to_num: &mut FxHashMap<String, u32>) -> Element {
+        match str_to_num.get(element_str) {
             Some(&num) => {
                 num
             }
             None => {
                 let id = self.num_to_str.len() as u32;
-                self.num_to_str.push(element_str.clone());
-                str_to_num.insert(element_str.clone(), id);
+                self.num_to_str.push(element_str.to_string());
+                str_to_num.insert(element_str.to_string(), id);
 
                 self.neal_case_map.push(0);  // immidiately push to reserve a spot
     
-                let neal_str = start_case_unicode(&element_str.clone());
-                let neal_id = self.variables_add_element_str(neal_str, str_to_num);
+                let neal_str = start_case_unicode(element_str);
+                let neal_id = self.variables_add_element_str(&neal_str, str_to_num);
                 
                 self.neal_case_map[id as usize] = neal_id;
     
@@ -209,10 +209,10 @@ impl RecipesState {
         println!("Marking {} recipes as '{UNKNOWN_STR}'...", to_request_recipes.len());
         
         for (f, s) in to_request_recipes.into_iter() {
-            let first_str = self.num_to_str[f as usize].clone();
-            let second_str = self.num_to_str[s as usize].clone();
+            let first_str = &self.num_to_str[f as usize].clone();
+            let second_str = &self.num_to_str[s as usize].clone();
     
-            self.variables_add_recipe(first_str, second_str, UNKNOWN_STR.to_string(), &mut str_to_num);
+            self.variables_add_recipe(first_str, second_str, UNKNOWN_STR, &mut str_to_num);
         }
     }
 
@@ -291,7 +291,7 @@ impl RecipesState {
                 }
             })
             .filter(|trimmed| !trimmed.is_empty())
-            .map(|elem| self.variables_add_element_str(start_case_unicode(elem), &mut str_to_num))
+            .map(|elem| self.variables_add_element_str(&start_case_unicode(elem), &mut str_to_num))
             .collect()
     }
     

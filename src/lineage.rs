@@ -136,9 +136,9 @@ impl RecipesState {
                 let (first, second) = first_second.split_once(" + ").unwrap_or_else(|| panic!("no ' + ' found: {}", line));
                 if second.contains(" + ") { panic!("ambiguos ' + ': {}", line); }
 
-                let mut f = self.variables_add_element_str(first.trim().to_string(), &mut str_to_num);
-                let mut s = self.variables_add_element_str(second.trim().to_string(), &mut str_to_num);
-                let r = self.variables_add_element_str(result.trim().to_string(), &mut str_to_num);
+                let mut f = self.variables_add_element_str(first.trim(), &mut str_to_num);
+                let mut s = self.variables_add_element_str(second.trim(), &mut str_to_num);
+                let r = self.variables_add_element_str(result.trim(), &mut str_to_num);
                 (f, s) = sort_recipe_tuple((f, s));
 
                 [f, s, r]
@@ -348,7 +348,7 @@ impl RecipesState {
                 for (element, seeds) in encountered.into_iter() {
                     for seed in seeds.into_iter() {
                         let mut seed_and_element = seed;
-                        seed_and_element.push(self.neal_case_map[element as usize]);
+                        seed_and_element.elems.push(self.neal_case_map[element as usize]);
     
                         let seed_lineage = self.generate_lineage_from_results(seed_and_element, initial_crafted.clone(), recipes_result_map);
                         // println!("{:?} {:?}", debug_element_vec(&seed_and_element), debug_lineage_step_vec(&seed_lineage));
@@ -377,7 +377,7 @@ impl RecipesState {
     
     pub fn generate_lineage_from_results(&self, seed: Seed, initial_crafted: FxHashSet<Element>, recipes_result_map: &RecipesResultICMap) -> Vec<LineageStep> {
         let mut lineage: Vec<LineageStep> = Vec::with_capacity(seed.len());
-        let mut to_craft: Vec<Element> = seed.iter().copied().collect();
+        let mut to_craft: Vec<Element> = seed.elems.iter().copied().collect();
         let mut crafted: FxHashSet<Element> = initial_crafted.clone();
     
         while !to_craft.is_empty() {

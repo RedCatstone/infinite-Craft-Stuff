@@ -4,7 +4,11 @@ mod recipe_loader;
 mod lineage;
 mod depth_explorer;
 mod recipe_requestor;
+mod layer_explorer;
 
+use std::time::Instant;
+
+use crate::layer_explorer::LayerExplorer;
 use crate::structures::*;
 use crate::depth_explorer::*;
 
@@ -14,7 +18,7 @@ use crate::depth_explorer::*;
 
 const LINEAGES_FILE_COOL_JSON_MODE: bool = true;
 const RECIPE_FILES_FOLDER: &str = "../Recipe Files";
-const DEPTH_EXPLORER_MAX_SEED_LENGTH: usize = 6;
+const DEPTH_EXPLORER_MAX_SEED_LENGTH: usize = 10;
 const DEPTH_EXPLORER_JUST_MARK_UNKNOWN_NO_REQUESTS_NO_ENCOUNTERED: bool = false;
 
 
@@ -44,8 +48,17 @@ async fn main() {
 
     let mut state = RecipesState::new();
         
-    state.load("punc 8.json", recipe_loader::RecipeFileFormat::JSONRecipesNum).unwrap();
-    test_depth_explorer(&mut state).await;
+    state.load("from_base_but_more.json", recipe_loader::RecipeFileFormat::JSONRecipesNum).unwrap();
+
+    let lineage_elems: Vec<Element> = BASE_IDS.collect();
+    let max_steps = 13;
+    
+    let start_time = Instant::now();
+    let encountered = LayerExplorer::start(&state, &lineage_elems, max_steps, true);
+
+    println!("encountered ({}, {:?})\nto_request: {}", encountered.len(), start_time.elapsed(), state.to_request_recipes.len());
+    state.save_requests_to_file("13step_recipes.txt").unwrap();
+    state.generate_lineages_file(&lineage_elems, max_steps, encountered.elements).unwrap();
 }
 
 
@@ -63,21 +76,9 @@ async fn test_depth_explorer(state: &mut RecipesState) {
 
     let de_vars = DepthExplorerVars {
         stop_after_depth: DEPTH_EXPLORER_MAX_SEED_LENGTH,  // modify the global variable, so the compiler knows how big stuff is gonna be -> SPEEEEED
-        split_start: 1,
+        split_start: 2,
         lineage_elements: state.string_lineage_results(r#"
 
-Earth + Water = Plant
-Earth + Plant = Tree
-Tree + Water = River
-River + Tree = Paper
-Paper + Tree = Book
-Earth + River = Delta
-Book + Delta = Alphabet
-Alphabet + Alphabet = Word
-Word + Word = Sentence
-Sentence + Wind = Phrase
-Book + Phrase = Quote
-Alphabet + Quote = Punctuation
 
             "#),
         exclude_depth1_elements: vec![],
@@ -86,7 +87,7 @@ Alphabet + Quote = Punctuation
 
     let encountered = state.depth_explorer_split_start(&de_vars).await;
     // state.save("from_base_depth13_unknowns.json", recipe_loader::RecipeFileFormat::JSONRecipesNum).unwrap();
-    state.generate_lineages_file(&de_vars, encountered).expect("could not generate lineages file...");
+    state.generate_lineages_file(&de_vars.lineage_elements,  de_vars.stop_after_depth, encountered).expect("could not generate lineages file...");
 }
 
 
@@ -242,7 +243,7 @@ Alphabet + Quote = Punctuation
     };
 
     let encountered = state.depth_explorer_split_start(&de_vars).await;
-    state.generate_lineages_file(&de_vars, encountered).unwrap();
+    state.generate_lineages_file(&de_vars.lineage_elements, de_vars.stop_after_depth, encountered).unwrap();
 }
 
 
@@ -273,5 +274,5 @@ Book + Delta = Alphabet
     };
 
     let encountered = state.depth_explorer_split_start(&de_vars).await;
-    state.generate_lineages_file(&de_vars, encountered).unwrap();
+    state.generate_lineages_file(&de_vars.lineage_elements, de_vars.stop_after_depth, encountered).unwrap();
 }

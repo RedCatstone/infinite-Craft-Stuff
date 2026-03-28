@@ -51,11 +51,20 @@ fn main() -> io::Result<()> {
     // state.load("full_db.ic", recipe_loader::RecipeFileFormat::ICSaveFile).unwrap();
 
     // you can comment this panic out
-    // panic!("please look at src/main.rs and change what you need! (you can comment this panic out over there)");
+    panic!("please look at src/main.rs and change what you need! (you can comment this panic out over there)");
 
-    let mut uknowns = RecipesState::new();
-    uknowns.load("13_missing_recipes.ic", RecipeFileFormat::ICSaveFile)?;
+    fill_in_recipes()
+}
 
+
+fn fill_in_recipes() -> io::Result<()> {
+    // this is the recipe file that contains all of the `=UNKNOWN=` recipes.
+    // it should be in the Recipe Files Folder, next to src/.
+    let mut unknowns = RecipesState::new();
+    unknowns.load("13_missing_recipes.ic", RecipeFileFormat::ICSaveFile)?;
+
+    // these are all the files you want to fill it with. (also in Recipe Files folder, next to src/.)
+    // you can simply change the loads here
     let mut state = RecipesState::new();
     state.load("depth_explorer_recipes.json", RecipeFileFormat::JSONRecipesNum)?;
     state.load("alphabet 9.json", RecipeFileFormat::JSONRecipesNum)?;
@@ -63,8 +72,10 @@ fn main() -> io::Result<()> {
     state.load("more than Punc 8.json", RecipeFileFormat::JSONRecipesNum)?;
     // load more files if you want...
 
-    uknowns.replace_unknowns_with(&state);
-    uknowns.save("13_missing_recipes_filled.ic", RecipeFileFormat::ICSaveFile)?;
+    // this does the actual replacing of `=UNKNOWN=` recipes with the new recipes.
+    // you can just leave this unchanged.
+    unknowns.replace_unknowns_with(&state);
+    unknowns.save("13_missing_recipes_filled.ic", RecipeFileFormat::ICSaveFile)?;
 
     Ok(())
 }

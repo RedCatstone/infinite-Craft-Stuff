@@ -16,10 +16,10 @@ use crate::lineage::LineageStep;
 
 
 pub const NOTHING_ID: Element = 0;
-pub const BASE_ELEMENTS: &[&str] = &["Water" /* id: 1 */, "Fire" /* id: 2 */, "Earth" /* id: 3 */, "Wind" /* id: 4 */];     // these are modifyable
+pub const UNKNOWN_ID: Element = 1;
+pub const BASE_ELEMENTS: &[&str] = &["Water" /* id: 1 */, "Fire" /* id: 2 */, "Earth" /* id: 3 */, "Wind" /* id: 4 */];
 pub const BASE_IDS: std::ops::RangeInclusive<Element> = 1..=(BASE_ELEMENTS.len() as u32);
 
-pub const UNKNOWN_STR: &str = "=unknown=";
 
 pub fn is_base_element(element: Element) -> bool {
     BASE_IDS.contains(&element)
@@ -41,11 +41,11 @@ pub struct RecipesState {
 }
 impl RecipesState {
     pub fn new() -> Self {
-        let num_to_str: Vec<String> = std::iter::once("Nothing").chain(BASE_ELEMENTS.iter().copied()).map(|x| x.to_string()).collect();
+        let num_to_str: Vec<String> = ["Nothing", "=unknown="].into_iter().chain(BASE_ELEMENTS.iter().copied()).map(|x| x.to_string()).collect();
         Self {
             num_to_str_len: Self::get_num_to_str_len(&num_to_str),
             num_to_str,
-            neal_case_map: (0..=BASE_ELEMENTS.len() as Element).collect(),
+            neal_case_map: [NOTHING_ID, UNKNOWN_ID].into_iter().chain(BASE_IDS).collect(),
             recipes_ing: FxHashMap::default(),
             to_request_recipes: DashSet::new()
         }
@@ -192,9 +192,8 @@ impl RecipesState {
     
     
     pub async fn request_all_unknown_recipes(&mut self) {
-        let unknown_id = self.str_to_num_fn(UNKNOWN_STR);
         for (recipe, r) in &self.recipes_ing {
-            if *r == unknown_id {
+            if *r == UNKNOWN_ID {
                 self.to_request_recipes.insert(*recipe);
             }
         }
@@ -206,13 +205,13 @@ impl RecipesState {
         let mut str_to_num = self.get_str_to_num_map();
         
         let to_request_recipes = std::mem::take(&mut self.to_request_recipes);
-        println!("Marking {} recipes as '{UNKNOWN_STR}'...", to_request_recipes.len());
+        println!("Marking {} recipes as '{UNKNOWN_ID}'...", to_request_recipes.len());
         
         for (f, s) in to_request_recipes.into_iter() {
             let first_str = &self.num_to_str[f as usize].clone();
             let second_str = &self.num_to_str[s as usize].clone();
     
-            self.variables_add_recipe(first_str, second_str, UNKNOWN_STR, &mut str_to_num);
+            self.variables_add_recipe(first_str, second_str, &self.num_to_str_fn(UNKNOWN_ID), &mut str_to_num);
         }
     }
 

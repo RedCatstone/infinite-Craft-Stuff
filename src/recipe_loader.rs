@@ -386,8 +386,6 @@ impl RecipesState {
         let mut new_state = RecipesState::new();
         let mut str_to_num = FxHashMap::default();
         
-        // Add UNKNOWN_STR to the new state
-        let unknown_id = new_state.variables_add_element_str(UNKNOWN_STR, &mut str_to_num);
         let start_time = Instant::now();
 
         for entry in self.to_request_recipes.iter() {
@@ -396,7 +394,7 @@ impl RecipesState {
             let new_id1 = new_state.variables_add_element_str(&self.num_to_str[id1 as usize], &mut str_to_num);
             let new_id2 = new_state.variables_add_element_str(&self.num_to_str[id2 as usize], &mut str_to_num);
             
-            new_state.recipes_ing.insert(sort_recipe_tuple((new_id1, new_id2)), unknown_id);
+            new_state.recipes_ing.insert(sort_recipe_tuple((new_id1, new_id2)), UNKNOWN_ID);
         }
         
         println!("Extracted {} requests into new state. ({:?})", self.to_request_recipes.len(), start_time.elapsed());
@@ -405,23 +403,15 @@ impl RecipesState {
 
 
     /// Replaces recipes resulting in UNKNOWN_STR with actual results from `other_state`.
-    pub fn replace_unknowns_with(&mut self, other_state: &RecipesState) {
+    pub fn fill_unknowns_with(&mut self, other_state: &RecipesState) {
         let mut str_to_num = self.get_str_to_num_map();
         let other_map = other_state.get_str_to_num_map();
-        
-        let unknown_id = match str_to_num.get(UNKNOWN_STR) {
-            Some(&id) => id,
-            None => {
-                println!("No unknowns exist to replace!");
-                return
-            }
-        };
 
         let mut updates = Vec::new();
         let start_time = Instant::now();
 
         for (&(id1, id2), &res) in &self.recipes_ing {
-            if res == unknown_id || res == NOTHING_ID {
+            if res == UNKNOWN_ID || res == NOTHING_ID {
                 let name1 = &self.num_to_str[id1 as usize];
                 let name2 = &self.num_to_str[id2 as usize];
 
@@ -430,7 +420,7 @@ impl RecipesState {
                     && let Some(&o_res) = other_state.recipes_ing.get(&sort_recipe_tuple((o_id1, o_id2))) {
                         let result_name = &other_state.num_to_str[o_res as usize];
                         
-                        if result_name != UNKNOWN_STR {
+                        if o_res != UNKNOWN_ID {
                             updates.push(((id1, id2), result_name.to_string()));
                         }
                     }
@@ -552,7 +542,7 @@ impl RecipesState {
                 let recipe = sort_recipe_tuple((existing_first, existing_second));
                 // if new recipe is not NOTHING it always gets added
                 // if new recipe is NOTHING it only gets added if the recipe didn't exist at all
-                if existing_result != NOTHING_ID || !self.recipes_ing.contains_key(&recipe) {
+                if (existing_result != NOTHING_ID && existing_result != UNKNOWN_ID) || !self.recipes_ing.contains_key(&recipe) {
                     Some((recipe, existing_result))
                 }
                 else { None }

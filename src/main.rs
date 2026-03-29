@@ -11,7 +11,7 @@ use std::io;
 use crate::depth_explorer::DepthExplorerVars;
 use crate::layer_explorer::LayerExplorer;
 use crate::recipe_loader::RecipeFileFormat;
-use crate::structures::{Element, RecipesState, sort_recipe_tuple};
+use crate::structures::{Element, RecipesState, UNKNOWN_ID, sort_recipe_tuple};
 
 
 
@@ -58,23 +58,23 @@ fn main() -> io::Result<()> {
 
 
 fn fill_in_recipes() -> io::Result<()> {
-    // this is the recipe file that contains all of the `=UNKNOWN=` recipes.
-    // it should be in the Recipe Files Folder, next to src/.
-    let mut unknowns = RecipesState::new();
-    unknowns.load("13_missing_recipes.ic", RecipeFileFormat::ICSaveFile)?;
-
-    // these are all the files you want to fill it with. (also in Recipe Files folder, next to src/.)
+    // these are all the files you want to fill it with. (should be in Recipe Files folder, next to src/.)
     // you can simply change the loads here
     let mut state = RecipesState::new();
     state.load("depth_explorer_recipes.json", RecipeFileFormat::JSONRecipesNum)?;
     state.load("alphabet 9.json", RecipeFileFormat::JSONRecipesNum)?;
     state.load("punc 8.json", RecipeFileFormat::JSONRecipesNum)?;
     state.load("more than Punc 8.json", RecipeFileFormat::JSONRecipesNum)?;
-    // load more files if you want...
+    // ...
+    
+    // this is the recipe file that contains all of the `=UNKNOWN=` recipes.
+    // also should be in the Recipe Files Folder, next to src/.
+    let mut unknowns = RecipesState::new();
+    unknowns.load("13_missing_recipes.ic", RecipeFileFormat::ICSaveFile)?;
+    unknowns.fill_unknowns_with(&state);
 
-    // this does the actual replacing of `=UNKNOWN=` recipes with the new recipes.
-    // you can just leave this unchanged.
-    unknowns.replace_unknowns_with(&state);
+    // now we will save a file with only the new filled in recipes!
+    unknowns.recipes_ing.retain(|_, result| *result != UNKNOWN_ID);
     unknowns.save("13_missing_recipes_filled.ic", RecipeFileFormat::ICSaveFile)?;
 
     Ok(())

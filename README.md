@@ -9,7 +9,7 @@ This includes 3 things:
 1. install rust
 2. clone the repository
 ```
-git clone https://github.com/RedCatstone/infinite-Craft-Stuff/tree/master
+git clone -b master --single-branch https://github.com/RedCatstone/infinite-Craft-Stuff.git
 cd rust
 ```
 3. this does not have a fancy ui, so you will have to modify main.rs to do pretty much anything

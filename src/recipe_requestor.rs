@@ -1,3 +1,4 @@
+use num_format::ToFormattedString;
 use serde::Deserialize;
 
 use std::{sync::{Arc, Mutex, OnceLock}, time::Instant};
@@ -196,8 +197,8 @@ impl RecipesState {
 fn interval_message(rs: &RequestStats) {
     println!("{} Requests: {}/{},  Time: {},  Current Outgoing: {},  Rps: {}",
         rs.name,
-        rs.responded_requests.to_string().green(),
-        (rs.to_request).to_string().green(),
+        rs.responded_requests.to_formatted_string(&num_format::Locale::en).green(),
+        (rs.to_request).to_formatted_string(&num_format::Locale::en).green(),
 
         format!("{:?}", rs.start_time.elapsed()).green(),
 

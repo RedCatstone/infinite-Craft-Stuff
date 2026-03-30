@@ -1,12 +1,11 @@
-use reqwest::Client;
 use serde::Deserialize;
 
-use std::{sync::{Arc, Mutex, OnceLock, RwLock}, time::Instant};
-use futures::stream::{FuturesUnordered, StreamExt};
-use tokio::{sync::Semaphore, task, time::Duration};
+use std::{sync::{Arc, Mutex, OnceLock}, time::Instant};
+use futures::stream::StreamExt;
+use tokio::{task, time::Duration};
 use colored::Colorize;
 
-use crate::structures::*;
+use crate::structures::RecipesState;
 
 
 
@@ -14,23 +13,27 @@ use crate::structures::*;
 
 const REQUEST_SERVER_URL: &str = "http://localhost:3000";
 const COMBINE_RETRIES: u64 = 50;
-const COMBINE_TIMEOUT: u64 = 5 * 60;   // 5 minute timeout to local server
-pub const MAX_CONCURRENT_REQUESTS: usize = 150;
-const COMBINE_INTERVAL_MESSAGE_SECS: u64 = 30;
+
+/// the timeout from rust to the local:3000 server
+const COMBINE_TIMEOUT: Duration = Duration::from_mins(5);
+
+/// amount of outgoing requests at each time from rust to the local:3000 server
+/// set to 150 by default to make sure that its a constant stream of requests. (you can modify it to something larger)
+const MAX_CONCURRENT_REQUESTS: usize = 150;
+const COMBINE_INTERVAL_MESSAGE_SECS: Duration = Duration::from_mins(1);
 
 
-static CLIENT: OnceLock<Client> = OnceLock::new();
+static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
 
 
 #[derive(Debug, Clone)]
 pub struct RequestStats {
-    pub outgoing_requests: u32,
-    pub responded_requests: u32,
-    pub to_request: u32,
+    pub outgoing_requests: usize,
+    pub responded_requests: usize,
+    pub to_request: usize,
     pub start_time: Instant,
+    pub name: String,
 }
-
-
 
 
 
@@ -55,25 +58,25 @@ pub async fn combine(first: &str, second: &str) -> Option<CombineResponse> {
 
 
     let client = CLIENT.get_or_init(|| {
-        match Client::builder()
-            .timeout(Duration::from_secs(COMBINE_TIMEOUT))
-            .build() {
+        match reqwest::Client::builder().timeout(COMBINE_TIMEOUT).build() {
             Ok(c) => c,
-            Err(e) => { panic!("Rust: Failed to build HTTP client: {}", e); },
+            Err(e) => { panic!("Failed to build HTTP client: {e}"); },
         }
     });
 
-
-    for _retries in 0..COMBINE_RETRIES {
-
+    let mut attempt = 0;
+    while attempt < COMBINE_RETRIES {
         // println!("Rust: Sending request to server: {}", request_url);
         let response = match client.get(&request_url).send().await {
             Ok(res) => { res },
             Err(e) => {
-                println!("Error {}", e);
+                eprintln!("Error (NOT saving this as 'Nothing') {e}");
                 continue;
             }
         };
+
+        // only count the attempt if it actually successfully communicated with the local:3000 server.
+        attempt += 1;
 
         let status = response.status();
         let response_text = response.text().await.expect("could not get response.text()"); // Get body text
@@ -83,16 +86,14 @@ pub async fn combine(first: &str, second: &str) -> Option<CombineResponse> {
             // Try parsing as the success response
             match serde_json::from_str::<CombineResponse>(&response_text) {
                 Ok(data) => {
-                    return Some(CombineResponse { result: data.result, emoji: data.emoji, is_new: data.is_new });
+                    return Some(data);
                 }
                 Err(e) => {
-                    println!("Rust: Failed to parse SUCCESS JSON: {}. Body was: {}", e, response_text);
-                    continue;
+                    eprintln!("Rust: Failed to parse SUCCESS JSON: {e}. JSON TEXT: {response_text}");
                 },
             }
         } else {
-            // println!("Rust: Request failed: {:?}", status);
-            continue;
+            // eprintln!("Rust: Request failed: {status}");
         }
     }
 
@@ -105,80 +106,86 @@ pub async fn combine(first: &str, second: &str) -> Option<CombineResponse> {
 
 
 impl RecipesState {
-    pub async fn process_all_to_request_recipes(&mut self) {
-        let mut str_to_num = self.get_str_to_num_map();
-
+    pub async fn process_all_to_request_recipes(&mut self, name: &str) {
         let request_stats_arc = Arc::new(Mutex::new(RequestStats {
-            to_request: self.to_request_recipes.len() as u32,
+            to_request: self.to_request_recipes.len(),
             outgoing_requests: 0,
             responded_requests: 0,
             start_time: Instant::now(),
+            name: name.to_string()
         }));
 
-
-        let semaphore = Arc::new(Semaphore::new(MAX_CONCURRENT_REQUESTS));
-        let mut futures = FuturesUnordered::new();
-
-        let to_request_recipes = std::mem::take(&mut self.to_request_recipes);
-        let arc_state = Arc::new(RwLock::new(std::mem::replace(self, RecipesState::new())));
-
-
-        let rs_clone_for_interval = request_stats_arc.clone();
+        let rs_clone = Arc::clone(&request_stats_arc);
         let interval_task = tokio::spawn(async move {
-            let mut interval_timer = tokio::time::interval(Duration::from_secs(COMBINE_INTERVAL_MESSAGE_SECS));
+            let mut interval_timer = tokio::time::interval(COMBINE_INTERVAL_MESSAGE_SECS);
             loop {
                 interval_timer.tick().await;
-                let rs_data = rs_clone_for_interval.lock().expect("Interval lock poisoned").clone();
-                interval_message(rs_data);
+                interval_message(&rs_clone.lock().expect("Interval lock poisoned"));
             }
         });
+        
+        let to_request_recipes = std::mem::take(&mut self.to_request_recipes);
+        let num_to_str_clone_arc = Arc::new(self.num_to_str.clone());
 
+        let mut stream = futures::stream::iter(to_request_recipes)
+            .map(|(f, s)| {
+                let rs_clone = Arc::clone(&request_stats_arc);
+                let num_to_str_clone = Arc::clone(&num_to_str_clone_arc);
 
-        for (f, s) in to_request_recipes {
-            let sem_clone = Arc::clone(&semaphore);
-            let rs_clone_for_task = request_stats_arc.clone();
-            let state_clone_for_task = arc_state.clone();
+                task::spawn(async move {
+                    rs_clone.lock().expect("Outgoing lock poisoned").outgoing_requests += 1;
+    
+                    let first_str = num_to_str_clone[f as usize].clone();
+                    let second_str = num_to_str_clone[s as usize].clone();
+                    let result_str = combine(&first_str, &second_str).await
+                        .map_or_else(|| String::from("Nothing"), |res| res.result);
+    
+                    (first_str, second_str, result_str)
+                })
+            })
+            // this makes sure that not all tasks are spawned at once, it is limited
+            .buffer_unordered(MAX_CONCURRENT_REQUESTS);
 
-            futures.push(task::spawn(async move {
-                // Wait for a permit *before* doing work or accessing shared data
-                let _permit = sem_clone.acquire_owned().await.expect("Semaphore acquisition failed");
+        
+        let mut str_to_num = self.get_str_to_num_map();
 
-                let (first_str, second_str) = {
-                    let read = state_clone_for_task.read().unwrap();
-                    (read.num_to_str[f as usize].clone(), read.num_to_str[s as usize].clone())
-                };
+        loop {
+        tokio::select! {
+            // BRANCH 1: a request to local:3000 finished
+            result = stream.next() => {
+                if let Some(task_result) = result {
+                    match task_result {
+                        Ok((first_str, second_str, result_str)) => {
+                            self.variables_add_recipe(&first_str, &second_str, &result_str, &mut str_to_num);
+                        },
+                        Err(join_err) => {
+                            eprintln!("Task panicked or was cancelled: {join_err}");
+                        },
+                    }
+                    request_stats_arc.lock().expect("rs lock poisoned").responded_requests += 1;
+                
+                    self.recipes_updated_total += 1;
+                    if let Some(auto_save) = &self.auto_save
+                    && self.recipes_updated_total % auto_save.every_changed_recipes + 1 == 0 {
+                        self.auto_save();
+                    }
+                } else {
+                    // `futures.next()` returned None, meaning all requests are done.
+                    break;
+                }
+            }
 
-                rs_clone_for_task.lock().expect("Outgoing lock poisoned").outgoing_requests += 1;
-
-                let result_str = combine(&first_str, &second_str).await
-                    .map_or_else(|| String::from("Nothing"), |res| res.result);
-
-                (first_str, second_str, result_str)
-            }));
+            // BRANCH 2: user pressed ctrl+c
+            _ = tokio::signal::ctrl_c() => {
+                println!("\n[!] Ctrl+C detected! Canceling remaining requests... (it should hopefully autosave in main now.)");
+                return;
+            }
+        }
         }
 
-
-
-        while let Some(task_result) = futures.next().await {
-            {
-                let mut rs = request_stats_arc.lock().expect("rs lock poisoned");
-                rs.responded_requests += 1;
-            }
-            match task_result {
-                Ok((first_str, second_str, result_str)) => {
-                    arc_state.write().unwrap().variables_add_recipe(&first_str, &second_str, &result_str, &mut str_to_num);
-                },
-                Err(join_err) => {
-                    eprintln!("Task panicked or was cancelled: {}", join_err);
-                },
-            }
-        }
-
-        let rs = request_stats_arc.lock().expect("Final lock poisoned").clone();
-        interval_message(rs);
+        let rs = request_stats_arc.lock().expect("Final lock poisoned");
+        interval_message(&rs);
         interval_task.abort();
-
-        *self = Arc::try_unwrap(arc_state).unwrap().into_inner().unwrap();
     }
 }
 
@@ -186,8 +193,9 @@ impl RecipesState {
 
 
 
-fn interval_message(rs: RequestStats) {
-    println!("Requests: {}/{},  Time: {},  Current Outgoing: {},  Rps: {}",
+fn interval_message(rs: &RequestStats) {
+    println!("{} Requests: {}/{},  Time: {},  Current Outgoing: {},  Rps: {}",
+        rs.name,
         rs.responded_requests.to_string().green(),
         (rs.to_request).to_string().green(),
 

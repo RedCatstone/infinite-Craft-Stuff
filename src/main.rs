@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+
 mod structures;
 mod recipe_loader;
 mod lineage;
@@ -10,7 +11,7 @@ use std::io;
 
 use crate::depth_explorer::DepthExplorerVars;
 use crate::layer_explorer::LayerExplorer;
-use crate::recipe_loader::RecipeFileFormat;
+use crate::recipe_loader::RecipesFile;
 use crate::structures::{Element, RecipesState, UNKNOWN_ID, sort_recipe_tuple};
 
 
@@ -24,7 +25,7 @@ const LINEAGES_FILE_COOL_JSON_MODE: bool = true;
 /// you can also use a full path instead of a relative one
 const RECIPE_FILES_FOLDER: &str = "Recipe Files";
 
-/// to make the code faster it uses constant sized ArrayVecs, meaning that they
+/// to make the code faster it uses constant sized ``ArrayVecs``, meaning that they
 /// can't grow longer than this number:
 const DEPTH_EXPLORER_MAX_STEPS: usize = 10;
 
@@ -35,10 +36,8 @@ const DEPTH_EXPLORER_DEPTH_GROW_FACTOR_GUESS: usize = 15;
 
 
 
-
-
-fn main() -> io::Result<()> {
-
+#[tokio::main]
+async fn main() {
     // --- LOAD RECIPES ---
     // there are 3 formats. if you load multiple recipe files, it simply merges them
     
@@ -53,29 +52,33 @@ fn main() -> io::Result<()> {
     // you can comment this panic out
     panic!("please look at src/main.rs and change what you need! (you can comment this panic out over there)");
 
-    fill_in_recipes()
+
+    fill_in_recipes().unwrap();
+    // test_layer_explorer().await;
+    // requests_go_brr("13_missing_recipes_batch0.ic", RecipesFile::ICSaveFile).await;
 }
 
 
 fn fill_in_recipes() -> io::Result<()> {
     // these are all the files you want to fill it with. (should be in Recipe Files folder, next to src/.)
     // you can simply change the loads here
-    let mut state = RecipesState::new();
-    state.load("depth_explorer_recipes.json", RecipeFileFormat::JSONRecipesNum)?;
-    state.load("alphabet 9.json", RecipeFileFormat::JSONRecipesNum)?;
-    state.load("punc 8.json", RecipeFileFormat::JSONRecipesNum)?;
-    state.load("more than Punc 8.json", RecipeFileFormat::JSONRecipesNum)?;
+    let mut state = RecipesState::without_autosave();
+    state.load("depth_explorer_recipes.json", RecipesFile::JSONRecipesNum)?;
+    state.load("alphabet 9.json", RecipesFile::JSONRecipesNum)?;
+    state.load("punc 8.json", RecipesFile::JSONRecipesNum)?;
+    state.load("more than Punc 8.json", RecipesFile::JSONRecipesNum)?;
+    state.load("scorpia fill.ic", RecipesFile::ICSaveFile)?;
     // ...
     
     // this is the recipe file that contains all of the `=UNKNOWN=` recipes.
     // also should be in the Recipe Files Folder, next to src/.
-    let mut unknowns = RecipesState::new();
-    unknowns.load("13_missing_recipes.ic", RecipeFileFormat::ICSaveFile)?;
+    let mut unknowns = RecipesState::without_autosave();
+    unknowns.load("13_missing_recipes.ic", RecipesFile::ICSaveFile)?;
     unknowns.fill_unknowns_with(&state);
 
     // now we will save a file with only the new filled in recipes!
-    unknowns.recipes_ing.retain(|_, result| *result != UNKNOWN_ID);
-    unknowns.save("13_missing_recipes_filled.ic", RecipeFileFormat::ICSaveFile)?;
+    unknowns.remove_recipes_resulting_in(&[UNKNOWN_ID]);
+    unknowns.save("13_missing_recipes_updated.ic", RecipesFile::ICSaveFile)?;
 
     Ok(())
 }
@@ -94,21 +97,52 @@ fn fill_in_recipes() -> io::Result<()> {
 
 
 pub fn calc_depth_13() {
-    let mut state = RecipesState::new();
-    state.load("from_base_but_more.json", RecipeFileFormat::JSONRecipesNum).unwrap();
+    let mut state = RecipesState::without_autosave();
+    state.load("from_base 13.json", RecipesFile::JSONRecipesNum).unwrap();
 
-    let lineage_elems: Vec<Element> = state.string_lineage_results(r#"
-        Water
-        Fire
-        Wind
-        Earth
-    "#);
+    let lineage_elems: Vec<Element> = state.string_lineage_results(true, "");
     let max_steps = 13;
     
-    let encountered = LayerExplorer::start(&state, &lineage_elems, max_steps, true);
+    LayerExplorer::start(&state, &lineage_elems, max_steps, true, true);
 
-    state.extract_to_request().save("13_missing_recipes.ic", RecipeFileFormat::ICSaveFile).unwrap();
-    state.generate_lineages_file(&lineage_elems, max_steps, encountered.elements).unwrap();
+    state.extract_to_request().save("13_missing_recipes.ic", RecipesFile::ICSaveFile).unwrap();
+}
+
+
+
+pub async fn test_layer_explorer() {
+    let mut state = RecipesState::without_autosave();
+    state.load("from_base 11 (i think).json", RecipesFile::JSONRecipesNum).unwrap();
+
+    let lineage_elems: Vec<Element> = state.string_lineage_results(true, r#"
+        Earth + Wind = Dust
+        Water + Dust = Mud
+        Earth + Dust = Planet
+        Fire + Mud = Brick
+        Brick + Planet = Mars
+        Brick + Brick = Wall
+        Earth + Mars = Life
+        Earth + Life = Human
+        Mars + Life = Alien
+        Wall + Life = Prison
+        Alien + Human = Hybrid
+        Life + Prison = Sentence
+        Hybrid + Sentence = Hyphen
+    "#);
+    let max_steps = 3;
+    
+    LayerExplorer::start_step_by_step_with_requests(
+        &mut state, &lineage_elems, max_steps, true, true
+    ).await;
+}
+
+
+
+pub async fn requests_go_brr(file_name: &str, file_mode: RecipesFile) {
+    let mut state = RecipesState::with_autosave(file_name, file_mode, 10_000);
+    state.load(file_name, file_mode).unwrap();
+    state.request_all_unknown_recipes().await;
+    state.rerequest_all_nothing_recipes().await;
 }
 
 
@@ -128,7 +162,7 @@ async fn test_depth_explorer(state: &mut RecipesState) {
     let de_vars = DepthExplorerVars {
         stop_after_depth: DEPTH_EXPLORER_MAX_STEPS,  // modify the global variable, so the compiler knows how big stuff is gonna be -> SPEEEEED
         split_start: 2,
-        lineage_elements: state.string_lineage_results(r#"
+        lineage_elements: state.string_lineage_results(true, r#"
 
 
             "#),
@@ -138,14 +172,14 @@ async fn test_depth_explorer(state: &mut RecipesState) {
 
     let encountered = state.depth_explorer_split_start(&de_vars).await;
     // state.save("from_base_depth13_unknowns.json", recipe_loader::RecipeFileFormat::JSONRecipesNum).unwrap();
-    state.generate_lineages_file(&de_vars.lineage_elements,  de_vars.stop_after_depth, encountered).expect("could not generate lineages file...");
+    state.generate_lineages_file(&de_vars.lineage_elements,  de_vars.stop_after_depth, &encountered).expect("could not generate lineages file...");
 }
 
 
 
 
 async fn test_caps(state: &mut RecipesState) {
-    let recipe_tup = sort_recipe_tuple((state.str_to_num_fn("Rocket"), state.str_to_num_fn("Cloud")));
+    let recipe_tup = sort_recipe_tuple((state.str_to_num_fn("Rocket").unwrap(), state.str_to_num_fn("Cloud").unwrap()));
     let result_num = *state.recipes_ing.get(&recipe_tup)
         .expect("'Cloud + Rocket' is not in recipes_ing");
 
@@ -154,10 +188,10 @@ async fn test_caps(state: &mut RecipesState) {
     state.to_request_recipes.insert(recipe_tup);
     
 
-    println!("{:?}", state.process_all_to_request_recipes().await);
+    println!("{:?}", state.process_all_to_request_recipes("Test Caps").await);
 
 
-    let recipe_tup = sort_recipe_tuple((state.str_to_num_fn("Rocket"), state.str_to_num_fn("Cloud")));
+    let recipe_tup = sort_recipe_tuple((state.str_to_num_fn("Rocket").unwrap(), state.str_to_num_fn("Cloud").unwrap()));
     let result_num = *state.recipes_ing.get(&recipe_tup)
         .expect("'Cloud + Rocket' is not in recipes_ing");
 
@@ -274,7 +308,7 @@ async fn do_punc_8(state: &mut RecipesState) {
     let de_vars = DepthExplorerVars {
         stop_after_depth: DEPTH_EXPLORER_MAX_STEPS,  // modify the global variable, so the compiler knows how big stuff is gonna be -> SPEEEEED
         split_start: 2,
-        lineage_elements: state.string_lineage_results(r#"
+        lineage_elements: state.string_lineage_results(true, r#"
 
 Earth + Water = Plant
 Earth + Plant = Tree
@@ -294,7 +328,7 @@ Alphabet + Quote = Punctuation
     };
 
     let encountered = state.depth_explorer_split_start(&de_vars).await;
-    state.generate_lineages_file(&de_vars.lineage_elements, de_vars.stop_after_depth, encountered).unwrap();
+    state.generate_lineages_file(&de_vars.lineage_elements, de_vars.stop_after_depth, &encountered).unwrap();
 }
 
 
@@ -310,7 +344,7 @@ async fn do_alphabet_9(state: &mut RecipesState) {
     let de_vars = DepthExplorerVars {
         stop_after_depth: DEPTH_EXPLORER_MAX_STEPS,  // modify the global variable, so the compiler knows how big stuff is gonna be -> SPEEEEED
         split_start: 2,
-        lineage_elements: state.string_lineage_results(r#"
+        lineage_elements: state.string_lineage_results(true, r#"
 
 Earth + Water = Plant
 Earth + Plant = Tree
@@ -325,5 +359,5 @@ Book + Delta = Alphabet
     };
 
     let encountered = state.depth_explorer_split_start(&de_vars).await;
-    state.generate_lineages_file(&de_vars.lineage_elements, de_vars.stop_after_depth, encountered).unwrap();
+    state.generate_lineages_file(&de_vars.lineage_elements, de_vars.stop_after_depth, &encountered).unwrap();
 }

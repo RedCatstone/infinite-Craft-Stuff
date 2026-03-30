@@ -1,21 +1,21 @@
-use std::{collections::hash_map, time::Instant};
-
+use std::{collections::hash_map, fmt::Debug, time::Instant};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use rustc_hash::FxHashMap;
 use tinyvec::ArrayVec;
+use colored::Colorize;
 
 use crate::{DEPTH_EXPLORER_MAX_STEPS, structures::{Element, NOTHING_ID, RecipesState, sort_recipe_tuple}};
 
 
-/// This Algorithm generates all n-step elements starting from some base_elements.
+/// This Algorithm generates all n-step elements starting from some ``base_elements``.
 /// 
 /// # How it works:
 /// the way to make this kind of dfs algorithm fast is by trying to dedupe gamestates/seeds.
-/// previously i did this by using a ginourmous HashSet that collects all gamestates and eats insane amounts of RAM.
+/// previously i did this by using a ginourmous ``HashSet`` that collects all gamestates and eats insane amounts of RAM.
 /// 
 /// This algorithm does actually perfectly deduplicate gamestates, simply by being smart.\
-/// It crafts elements in Layers. Layer 0 is the base_element layer.\
-/// Layer 1 is all elements you can craft from just base elements. (excluding base_elements)\
+/// It crafts elements in Layers. Layer 0 is the ``base_element`` layer.\
+/// Layer 1 is all elements you can craft from just base elements. (excluding ``base_elements``)\
 /// Layer 2 is all elements you can craft from L0 and L1. (exlcuding elements you could have already crafted from L0)\
 /// Layer N is all elements you can craft from previous layers (excluding elements you could have already crafted in previous-1 layers)\
 /// and so on...
@@ -59,7 +59,35 @@ pub struct LayerData {
 
 
 impl LayerExplorer<'_> {
-    pub fn start(recipes: &RecipesState, base_elements: &[Element], max_steps: usize, multi_thread: bool) -> EncounteredElements {
+    pub async fn start_step_by_step_with_requests(
+        recipes: &mut RecipesState, base_elements: &[Element], max_steps: usize, multi_thread: bool, generate_lineages_file: bool
+    ) -> EncounteredElements {
+        let start_time = Instant::now();
+
+        for i in 1..=max_steps {
+            let encountered = Self::start(recipes, base_elements, i, multi_thread, false);
+            if generate_lineages_file {
+                recipes.generate_lineages_file(base_elements, max_steps, &encountered.elements)
+                    .unwrap_or_else(|e| eprintln!("could not generate Lineages File... {e}"));
+            }
+
+            println!("Finished processing {i}-step elements ({}). To-request: {}",
+                format!("{:?}", start_time.elapsed()).yellow(),
+                recipes.to_request_recipes.len()
+            );
+            if !recipes.to_request_recipes.is_empty() {
+                recipes.process_all_to_request_recipes(&format!("{i}-step")).await;
+            } else if i == max_steps {
+                // we can return early
+                return encountered;
+            }
+        }
+        Self::start(recipes, base_elements, max_steps, multi_thread, generate_lineages_file)
+    }
+
+    pub fn start(
+        recipes: &RecipesState, base_elements: &[Element], max_steps: usize, multi_thread: bool, generate_lineages_file: bool
+    ) -> EncounteredElements {
         let start_time = Instant::now();
 
         let neal_base_elements: Vec<Element> = base_elements.iter()
@@ -90,15 +118,12 @@ impl LayerExplorer<'_> {
         }
         // ban anything > 30 chars (dead elements)
         for (i, b) in le.banned_elems.iter_mut().enumerate() {
-            if recipes.num_to_str_len[i] > 30 {
+            if recipes.num_to_str[i].len() > 30 {
                 *b = true;
             }
         }
 
-        let final_encountered = if !multi_thread {
-            le.enter_main_loop();
-            le.encountered
-        } else {
+        let final_encountered = if multi_thread {
             le.all_results_and_push_new_layer();
 
             let last_layer = le.layers.last_mut().unwrap();
@@ -117,44 +142,47 @@ impl LayerExplorer<'_> {
                         thread_le.encountered
                     }
                 )
-                .reduce_with(|a, b| a.merge_with(b))
+                .reduce_with(EncounteredElements::merge_with)
                 .unwrap_or_else(|| le.encountered.clone())
+        } else {
+            le.enter_main_loop();
+            le.encountered
         };
 
         
-        println!("Finished Layer Explorer! ({:?}) - base_elements: {:?} - Elements in {max_steps}-step: {} - to_request: {}",
-            start_time.elapsed(),
-            recipes.debug_element_vec(base_elements),
-            final_encountered.len(),
-            recipes.to_request_recipes.len()
+        println!("Finished Layer Explorer! ({}) - Elements in {max_steps}-step: {} - to_request: {} - base_elements: {:?}",
+            format!("{:?}", start_time.elapsed()).yellow(),
+            final_encountered.len().to_string().purple(),
+            recipes.to_request_recipes.len().to_string().green(),
+            recipes.num_to_strs_fn(base_elements),
         );
+        if generate_lineages_file {
+            recipes.generate_lineages_file(base_elements, max_steps, &final_encountered.elements)
+                .unwrap_or_else(|e| eprintln!("could not generate Lineages File... {e}"));
+        }
         final_encountered
     }
 
 
 
-    pub fn enter_main_loop(&mut self) {
+    fn enter_main_loop(&mut self) {
         'main: loop {
             self.all_results_and_push_new_layer();
 
             // now advance the iter, if its done, remove the layer and repeat.
             while let Some(top_layer) = self.layers.last_mut() {
-                match top_layer.subset_iter.next() {
-                    Some(sub) => {
-                        // pop the old subset
-                        self.curr_steps.truncate(top_layer.start_idx);
-                        // and add the new one
-                        self.curr_steps.extend(sub);
-                        debug_assert!(self.curr_steps.len() < self.max_steps);
-                        continue 'main;
-                    }
-                    None => {
-                        // layer is done, pop it
-                        self.curr_steps.truncate(top_layer.start_idx);
+                // pop the old subset
+                self.curr_steps.truncate(top_layer.start_idx);
 
-                        for to_remove in self.layers.pop().unwrap().subset_iter.elements {
-                            self.banned_elems[to_remove as usize] = false;
-                        }
+                if let Some(sub) = top_layer.subset_iter.next() {
+                    // and add the new one
+                    self.curr_steps.extend(sub);
+                    debug_assert!(self.curr_steps.len() < self.max_steps);
+                    continue 'main;
+                } else {
+                    // layer is fully done, pop it and unban elements
+                    for to_remove in self.layers.pop().unwrap().subset_iter.elements {
+                        self.banned_elems[to_remove as usize] = false;
                     }
                 }
             }
@@ -166,7 +194,7 @@ impl LayerExplorer<'_> {
     }
 
 
-    pub fn all_results_and_push_new_layer(&mut self) {
+    fn all_results_and_push_new_layer(&mut self) {
         let top_layer = self.layers.last().unwrap();
         let seed = match self.layers.get(1) {
             Some(x) => &self.curr_steps[x.start_idx..],
@@ -199,7 +227,7 @@ impl LayerExplorer<'_> {
 
             // combine ing1 with all curr_steps which includes
             // all base_elements, all elements from past layers, and the current layer
-            // (only up to itself there for deduping)
+            // (only up to itself there for not processing the same recipes twice)
             for &ing2 in &self.curr_steps[..=top_layer.start_idx + i] {
                 let comb = sort_recipe_tuple((ing1, ing2));
                 if let Some(&result) = self.recipes.recipes_ing.get(&comb) {
@@ -245,7 +273,7 @@ pub struct SubsetIter {
 }
 
 impl SubsetIter {
-    /// `SubsetIter::new(vec![1, 2, 3], 2)`
+    /// `SubsetIter::new(vec![1, 2, 3], 3)`
     /// -> `[1], [2], [3], [4], [1, 2], [1, 3], [1, 4], [2, 3], [2, 4], [3, 4], [1, 2, 3], [1, 2, 4], [1, 3, 4], [2, 3, 4]`
     pub fn new(elements: Box<[Element]>, max_len: usize) -> Self {
         let max_len = max_len.min(elements.len());
@@ -290,6 +318,7 @@ impl Iterator for SubsetIter {
         }
     }
 }
+
 
 
 

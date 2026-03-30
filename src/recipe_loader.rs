@@ -1,19 +1,17 @@
 use serde::{Deserialize, Serialize};
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
-use std::io::{self, BufWriter, BufReader, Write, Read, BufRead};
-use std::fs::{self, File};
-use rustc_hash::{FxHashMap, FxHashSet};
+use std::{fs::File, io::{self, BufRead, BufReader, BufWriter, Read, Write}, time::{Instant, SystemTime, UNIX_EPOCH}};
+use rustc_hash::{FxBuildHasher, FxHashMap};
 use rayon::prelude::*;
 
 use libdeflater::{CompressionLvl, Compressor, Decompressor};
 
-use crate::{LINEAGES_FILE_COOL_JSON_MODE, RECIPE_FILES_FOLDER, structures::*};
+use crate::{RECIPE_FILES_FOLDER, structures::{RecipesState, sort_recipe_tuple, UNKNOWN_ID, NOTHING_ID, start_case_unicode, Element}};
 
 
 
 
 #[derive(Debug, Copy, Clone)]
-pub enum RecipeFileFormat {
+pub enum RecipesFile {
     ICSaveFile,
     JSONRecipesNum,
     JSONOldDepthExplorerRecipes
@@ -54,45 +52,45 @@ struct CoolJsonLineagesFile {
 
 impl RecipesState {
     /// loads a recipe file in of the 3 formats.
-    /// the base-folder is the RECIPE_FILES_FOLDER (at the top of main.rs)
-    pub fn load(&mut self, file_name: &str, format: RecipeFileFormat) -> io::Result<()> {
-        println!("Loading {} - {:?} - Before Elements: {}, Recipes: {}", file_name, format, self.num_to_str.len(), self.recipes_ing.len());
+    /// the base-folder is the ``RECIPE_FILES_FOLDER`` (at the top of main.rs)
+    pub fn load(&mut self, file_name: &str, format: RecipesFile) -> io::Result<()> {
+        println!("Loading {} - {:?} - Before ({})", file_name, format, self.pretty_element_and_recipe_count());
         let start_time = Instant::now();
 
-        let file_path = format!("{}/{}", RECIPE_FILES_FOLDER, file_name);
+        let file_path = format!("{RECIPE_FILES_FOLDER}/{file_name}");
         let file = &mut File::open(file_path)?;
 
         let response = match format {
-            RecipeFileFormat::ICSaveFile => self.load_recipes_gzip(file),
-            RecipeFileFormat::JSONRecipesNum => self.load_recipes_num(file),
-            RecipeFileFormat::JSONOldDepthExplorerRecipes => self.load_recipes_old_depth_explorer(file),
+            RecipesFile::ICSaveFile => self.load_recipes_gzip(file),
+            RecipesFile::JSONRecipesNum => self.load_recipes_num(file),
+            RecipesFile::JSONOldDepthExplorerRecipes => self.load_recipes_old_depth_explorer(file),
         };
 
         match response {
             Err(e) => panic!("  - FAILED TO LOAD... ({:?}): {}", start_time.elapsed(), e),
-            Ok(_) => println!("  - Complete! - {:?} - After Elements: {}, Recipes: {}", start_time.elapsed(), self.num_to_str.len(), self.recipes_ing.len()),
+            Ok(()) => println!("  - Complete! - {:?} - After ({})", start_time.elapsed(), self.pretty_element_and_recipe_count()),
         }
         response
     }
 
     
     /// saves a recipe file in of the 3 formats.
-    /// the base-folder is the RECIPE_FILES_FOLDER (at the top of main.rs)
-    pub fn save(&self, file_name: &str, format: RecipeFileFormat) -> io::Result<()> {
-        println!("Saving {} - {:?} - Elements: {}, Recipes: {}", file_name, format, self.num_to_str.len(), self.recipes_ing.len());
+    /// the base-folder is the `RECIPE_FILES_FOLDER` (at the top of main.rs)
+    pub fn save(&self, file_name: &str, format: RecipesFile) -> io::Result<()> {
+        println!("Saving {} - {:?} - ({})", file_name, format, self.pretty_element_and_recipe_count());
         let start_time = Instant::now();
 
-        let file_path = &format!("{}/{}", RECIPE_FILES_FOLDER, file_name);
+        let file_path = &format!("{RECIPE_FILES_FOLDER}/{file_name}");
 
         let response = match format {
-            RecipeFileFormat::ICSaveFile => self.save_recipes_gzip(file_path),
-            RecipeFileFormat::JSONRecipesNum => self.save_recipes_num(file_path),
-            RecipeFileFormat::JSONOldDepthExplorerRecipes => self.save_recipes_old_depth_explorer(file_path),
+            RecipesFile::ICSaveFile => self.save_recipes_gzip(file_path),
+            RecipesFile::JSONRecipesNum => self.save_recipes_num(file_path),
+            RecipesFile::JSONOldDepthExplorerRecipes => self.save_recipes_old_depth_explorer(file_path),
         };
 
         match response {
             Err(ref e) => println!("  - FAILED TO SAVE... ({:?}): {}", start_time.elapsed(), e),
-            Ok(_) => println!("  - Complete! ({:?})", start_time.elapsed()),
+            Ok(()) => println!("  - Complete! ({:?})", start_time.elapsed()),
         }
         response
     }
@@ -120,11 +118,10 @@ impl RecipesState {
             .map(|(i, s)| (s.clone(), i as u32))
             .collect();
 
+        let mut recipes_ing: FxHashMap<(u32, u32), u32> = FxHashMap::with_capacity_and_hasher(data.num_to_str.len(), FxBuildHasher);
 
-        let mut recipes_ing: FxHashMap<(u32, u32), u32> = FxHashMap::with_capacity_and_hasher(data.num_to_str.len(), Default::default());
-
-        for (first_ingredient, inner_map) in data.recipes.iter() {
-            for (second_ingredient, result) in inner_map.iter() {
+        for (first_ingredient, inner_map) in &data.recipes {
+            for (second_ingredient, result) in inner_map {
                 recipes_ing.insert(sort_recipe_tuple((*first_ingredient, *second_ingredient)), *result);
             }
         }
@@ -141,9 +138,9 @@ impl RecipesState {
 
     fn save_recipes_num(&self, file_path: &str) -> io::Result<()> {
         let recipe_process_time = Instant::now();
-        let mut recipes: FxHashMap<u32, FxHashMap<u32, u32>> = FxHashMap::with_capacity_and_hasher(self.num_to_str.len(), Default::default());
+        let mut recipes: FxHashMap<u32, FxHashMap<u32, u32>> = FxHashMap::with_capacity_and_hasher(self.num_to_str.len(), FxBuildHasher);
 
-        for (&recipe, &result) in self.recipes_ing.iter() {
+        for (&recipe, &result) in &self.recipes_ing {
             recipes.entry(recipe.0).or_default().insert(recipe.1, result);
         }
 
@@ -187,25 +184,22 @@ impl RecipesState {
 
         let mut num_to_str: Vec<String> = Vec::new();
         let mut str_to_num: FxHashMap<String, u32> = FxHashMap::default();
-        let mut recipes_ing: FxHashMap<(u32, u32), u32> = FxHashMap::with_capacity_and_hasher(recipes.len(), Default::default());
+        let mut recipes_ing: FxHashMap<(u32, u32), u32> = FxHashMap::with_capacity_and_hasher(recipes.len(), FxBuildHasher);
 
         let mut get_id = |elem: &str| {
-            match str_to_num.get(elem) {
-                Some(&x) => { x },
-                None => {
-                    let id = num_to_str.len() as u32;
-                    num_to_str.push(elem.to_string());
-                    str_to_num.insert(elem.to_string(), id);
-                    id
-                }
+            if let Some(&x) = str_to_num.get(elem) { x } else {
+                let id = num_to_str.len() as u32;
+                num_to_str.push(elem.to_string());
+                str_to_num.insert(elem.to_string(), id);
+                id
             }
         };
 
-        for (recipe_string, result) in recipes.into_iter() {
-            let (first, second) = recipe_string.split_once("=")
-                .ok_or(io::Error::new(io::ErrorKind::InvalidData, format!("Invalid Recipe, couldn't split by '=': {}", recipe_string)))?;
+        for (recipe_string, result) in &recipes {
+            let (first, second) = recipe_string.split_once('=')
+                .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, format!("Invalid Recipe, couldn't split by '=': {recipe_string}")))?;
             let comb = sort_recipe_tuple((get_id(first), get_id(second)));
-            recipes_ing.insert(comb, get_id(&result));
+            recipes_ing.insert(comb, get_id(result));
         }
 
         self.merge_new_variables_with_new(&mut num_to_str, &mut str_to_num, recipes_ing);
@@ -221,9 +215,9 @@ impl RecipesState {
     fn save_recipes_old_depth_explorer(&self, file_path: &str) -> io::Result<()> {
         let recipe_process_time = Instant::now();
 
-        let mut recipes: FxHashMap<String, String> = FxHashMap::with_capacity_and_hasher(self.recipes_ing.len(), Default::default());
+        let mut recipes: FxHashMap<String, String> = FxHashMap::with_capacity_and_hasher(self.recipes_ing.len(), FxBuildHasher);
 
-        for (&(f, s), &r) in self.recipes_ing.iter() {
+        for (&(f, s), &r) in &self.recipes_ing {
             let first = &self.num_to_str[f as usize];
             let second = &self.num_to_str[s as usize];
             let result = self.num_to_str[r as usize].clone();
@@ -277,7 +271,7 @@ impl RecipesState {
         let mut decompressor = Decompressor::new();
         let mut out_buf = vec![0u8; isize];
         let actual_size = decompressor.gzip_decompress(&gz_buffer, &mut out_buf)
-            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, format!("Decompression failed: {:?}", e)))?;
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, format!("Decompression failed: {e:?}")))?;
         out_buf.truncate(actual_size); // Adjust size if ISIZE was wrong
 
         // 4. Parse JSON
@@ -289,14 +283,14 @@ impl RecipesState {
         let mut str_to_num: FxHashMap<String, u32> = FxHashMap::default();
         let mut recipes_ing: FxHashMap<(u32, u32), u32> = FxHashMap::default();
 
-        for item in data.items.into_iter() {
+        for item in data.items {
             let id_usize = item.id as usize;
             if id_usize >= num_to_str.len() { num_to_str.resize(id_usize, String::new()); }
 
-            num_to_str[id_usize] = item.text.clone();
+            num_to_str[id_usize].clone_from(&item.text);
             str_to_num.insert(item.text, item.id);
 
-            for recipe in item.recipes.into_iter() {
+            for recipe in item.recipes {
                 recipes_ing.insert(recipe, item.id);
             }
         }
@@ -317,7 +311,7 @@ impl RecipesState {
     fn save_recipes_gzip(&self, file_path: &str) -> io::Result<()> {
         let recipes_result_time = Instant::now();
         let mut exact_recipes_result: Vec<Vec<(u32, u32)>> = vec![Vec::new(); self.num_to_str.len()];
-        for (&(f, s), &r) in self.recipes_ing.iter() {
+        for (&(f, s), &r) in &self.recipes_ing {
             exact_recipes_result[r as usize].push((f, s));
         }
         println!("  - made recipes_result: {:?}", recipes_result_time.elapsed());
@@ -363,7 +357,7 @@ impl RecipesState {
         let mut compressed_buffer = vec![0u8; compressor.gzip_compress_bound(uncompressed_data.len())];
 
         let actual_compressed_size = compressor.gzip_compress(&uncompressed_data, &mut compressed_buffer)
-            .map_err(|e| io::Error::other(format!("libdeflate compression failed: {:?}", e)))?;
+            .map_err(|e| io::Error::other(format!("libdeflate compression failed: {e}")))?;
 
         compressed_buffer.resize(actual_compressed_size, 0);
         writer.write_all(&compressed_buffer)?;
@@ -381,9 +375,9 @@ impl RecipesState {
 
 
 
-    /// extracts the to_request_recipes and marks them as UNKNOWN_STR
-    pub fn extract_to_request(&self) -> RecipesState {
-        let mut new_state = RecipesState::new();
+    /// extracts the `to_request_recipes` and marks them as `UNKNOWN_STR`
+    pub fn extract_to_request(&self) -> Self {
+        let mut new_state = Self::without_autosave();
         let mut str_to_num = FxHashMap::default();
         
         let start_time = Instant::now();
@@ -402,8 +396,8 @@ impl RecipesState {
     }
 
 
-    /// Replaces recipes resulting in UNKNOWN_STR with actual results from `other_state`.
-    pub fn fill_unknowns_with(&mut self, other_state: &RecipesState) {
+    /// Replaces recipes resulting in `UNKNOWN_STR` with actual results from `other_state`.
+    pub fn fill_unknowns_with(&mut self, other_state: &Self) {
         let mut str_to_num = self.get_str_to_num_map();
         let other_map = other_state.get_str_to_num_map();
 
@@ -421,7 +415,7 @@ impl RecipesState {
                         let result_name = &other_state.num_to_str[o_res as usize];
                         
                         if o_res != UNKNOWN_ID {
-                            updates.push(((id1, id2), result_name.to_string()));
+                            updates.push(((id1, id2), result_name.clone()));
                         }
                     }
             }
@@ -465,27 +459,24 @@ impl RecipesState {
         new_str_to_num: &mut FxHashMap<String, u32>,
         new_recipes_ing: FxHashMap<(u32, u32), u32>
     ) {
-        println!("  - Merging new Elements: {}, Recipes: {}", new_num_to_str.len(), new_recipes_ing.len());
+        // println!("  - Merging new Elements: {}, Recipes: {}", new_num_to_str.len(), new_recipes_ing.len());
 
-        let neal_case_time = Instant::now();
+        // let neal_case_time = Instant::now();
         let mut new_neal_case_map: Vec<u32> = Vec::with_capacity(new_num_to_str.len());
         let mut added: Vec<String> = Vec::new();
 
         for str in new_num_to_str.iter() {
             let neal_str = start_case_unicode(str);
-            match new_str_to_num.get(&neal_str) {
-                Some(x) => {
-                    // neal case version exists, link to it
-                    new_neal_case_map.push(*x);
-                }
-                None => {
-                    // neal case version does not exist, create it and link to it
-                    let neal_id = (new_num_to_str.len() + added.len()) as u32;
-                    new_str_to_num.insert(neal_str.clone(), neal_id);
-                    added.push(neal_str.clone());
+            if let Some(x) = new_str_to_num.get(&neal_str) {
+                // neal case version exists, link to it
+                new_neal_case_map.push(*x);
+            } else {
+                // neal case version does not exist, create it and link to it
+                let neal_id = (new_num_to_str.len() + added.len()) as u32;
+                new_str_to_num.insert(neal_str.clone(), neal_id);
+                added.push(neal_str.clone());
 
-                    new_neal_case_map.push(neal_id);
-                }
+                new_neal_case_map.push(neal_id);
             }
         }
         // add all added neal_cased elements into num_to_str
@@ -493,13 +484,13 @@ impl RecipesState {
         let indices_to_add = new_neal_case_map.len()..new_num_to_str.len();
         new_neal_case_map.extend(indices_to_add.map(|i| i as u32));
 
-        println!("  - nealcase map complete: {:?}", neal_case_time.elapsed());
+        // println!("  - nealcase map complete: {:?}", neal_case_time.elapsed());
 
 
 
         // --- Merge with existing Variables ---
         // maps new ids to the old existing ids
-        let newnum_to_existingnum_time = Instant::now();
+        // let newnum_to_existingnum_time = Instant::now();
 
         let mut newnum_to_existingnum: Vec<Option<u32>> = vec![None; new_num_to_str.len()];
         for (existingnum, existingstr) in self.num_to_str.iter().enumerate() {
@@ -523,18 +514,18 @@ impl RecipesState {
         }
 
         // finally, merge the neal map
-        for newnum in neal_queue.into_iter() {
+        for newnum in neal_queue {
             self.neal_case_map.push(newnum_to_existingnum[new_neal_case_map[newnum] as usize].unwrap());
         }
-        println!("  - newnum to existingnum map complete: {:?}", newnum_to_existingnum_time.elapsed());
+        // println!("  - newnum to existingnum map complete: {:?}", newnum_to_existingnum_time.elapsed());
 
 
         // merge recipes_ing
         let recipes_ing_merge_time = Instant::now();
 
         let transformed_recipes: Vec<((Element, Element), Element)> = new_recipes_ing
-            .par_iter()
-            .filter_map(|(&(first, second), &result)| {
+            .into_par_iter()
+            .filter_map(|((first, second), result)| {
                 let existing_first = newnum_to_existingnum[first as usize].expect("Missing existing ID for first ingredient");
                 let existing_second = newnum_to_existingnum[second as usize].expect("Missing existing ID for second ingredient");
                 let existing_result = newnum_to_existingnum[result as usize].expect("Missing existing ID for result");
@@ -550,7 +541,6 @@ impl RecipesState {
             .collect();
 
         self.recipes_ing.extend(transformed_recipes);
-        self.num_to_str_len = Self::get_num_to_str_len(&self.num_to_str);
 
         println!("  - Merging recipes_ing complete: {:?}", recipes_ing_merge_time.elapsed());
 
@@ -563,46 +553,13 @@ impl RecipesState {
 
     pub fn verify_recipe_stuff(&self) {
         if self.recipes_ing.get(
-            &sort_recipe_tuple((self.str_to_num_fn("Fire"), self.str_to_num_fn("Water")))
-        ) != Some(&self.str_to_num_fn("Steam")) {
-            println!("Water + Fire = Steam is not in recipes_ing")
+            &sort_recipe_tuple((self.str_to_num_fn("Fire").unwrap(), self.str_to_num_fn("Water").unwrap()))
+        ) != self.str_to_num_fn("Steam").as_ref() {
+            println!("Water + Fire = Steam is not in recipes_ing");
         }
-        assert_eq!(self.str_to_num_fn("Nothing"), 0);  // nothing needs to have id 0
+        assert_eq!(self.str_to_num_fn("Nothing").unwrap(), NOTHING_ID);
+        assert_eq!(self.str_to_num_fn("=unknown=").unwrap(), UNKNOWN_ID);
         assert_eq!(self.num_to_str.len(), self.neal_case_map.len());  // if these don't match something went wrong...
-    }
-
-
-
-
-
-
-
-
-
-
-    pub fn retain_only_recipes_from_end_of_lineages_file(&mut self, path: String, extra_elements_to_use: &[Element], less_than_depth: usize) {
-        // element name -> depth
-        // "D:/InfiniteCraft/Codes/rust/Lineages Files/lel.json"
-        let json_content = fs::read_to_string(path).unwrap();
-        let mut data: FxHashMap<String, usize> = if LINEAGES_FILE_COOL_JSON_MODE {
-            let parsed_data: CoolJsonLineagesFile = serde_json::from_str(&json_content).unwrap();
-            parsed_data.elements.into_iter().map(|(element_name, lineages)| (element_name, lineages.len())).collect()
-        }
-        else {
-            serde_json::from_str(&json_content).unwrap()
-        };
-        data.retain(|_, lineages_len| *lineages_len < less_than_depth);
-
-        let str_to_num = self.get_str_to_num_map();
-        let mut elements_to_use: FxHashSet<Element> = data.into_keys().map(|x| *str_to_num.get(&start_case_unicode(&x)).unwrap()).collect();
-        drop(str_to_num);
-        elements_to_use.extend(BASE_IDS.chain(extra_elements_to_use.iter().cloned()));
-
-        println!("elements to use {}", elements_to_use.len());
-
-        println!("before recipe retain: {}", self.recipes_ing.len());
-        self.recipes_ing.retain(|(f, s), _| elements_to_use.contains(f) && elements_to_use.contains(s));
-        println!("after recipe retain: {}", self.recipes_ing.len());
     }
 
 
@@ -625,10 +582,10 @@ impl RecipesState {
 
 
     pub fn load_recipes_from_lineages_file(&mut self, file_name: &str) -> io::Result<()> {
-        println!("Loading lineages file: {}", file_name);
+        println!("Loading lineages file: {file_name}");
         let start_time = Instant::now();
 
-        let file_path = format!("{}/{}", RECIPE_FILES_FOLDER, file_name);
+        let file_path = format!("{RECIPE_FILES_FOLDER}/{file_name}");
         let file = File::open(&file_path)?;
         let reader = BufReader::new(file);
 

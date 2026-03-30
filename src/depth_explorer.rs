@@ -1,22 +1,13 @@
-use std::collections::hash_map;
-use std::hash::Hash;
-use std::sync::Arc;
-use std::time::Instant;
-use std::cmp;
-use std::fmt::Write as FmtWrite;
-use std::fs::{self, File};
-use std::io::{self, Write, BufWriter};
-use std::path::PathBuf;
-use std::cell::RefCell;
+use std::{cmp, collections::hash_map, fmt::Write as FmtWrite, hash::Hash, sync::Arc, time::Instant, cell::RefCell, fs::{self, File}, io::{self, BufWriter, Write}, path::PathBuf};
 use dashmap::DashSet;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 use async_recursion::async_recursion;
 use rayon::prelude::*;
 use tinyvec::ArrayVec;  // can't move to heap
 use colored::Colorize;
 
 use crate::{DEPTH_EXPLORER_DEPTH_GROW_FACTOR_GUESS, DEPTH_EXPLORER_JUST_MARK_UNKNOWN_NO_REQUESTS_NO_ENCOUNTERED, DEPTH_EXPLORER_MAX_STEPS, LINEAGES_FILE_COOL_JSON_MODE};
-use crate::structures::*;
+use crate::structures::{Element, RecipesState, BASE_IDS, sort_recipe_tuple, NOTHING_ID};
 
 
 
@@ -83,6 +74,7 @@ struct DepthExplorerPrivateStructures {
     encountered: EncounteredMap,
     
     element_base_cache: ElementBaseCacheMap,
+    num_to_str_len: Box<[usize]>,
 
     start_time: Instant,
 }
@@ -115,11 +107,11 @@ impl RecipesState {
             new_de_vars.lineage_elements.push(element);
             new_de_vars.stop_after_depth -= 1;
             new_de_vars.split_start -= 1;
-            new_de_vars.split_start_msg += &format!("{}/{} {} > ",
+            write!(new_de_vars.split_start_msg, "{}/{} {} > ",
                 ({ process_count += 1; process_count }).to_string().purple(),
                 total_to_process.to_string().purple(),
                 self.num_to_str_fn(element).purple()
-            );
+            ).unwrap();
             new_de_vars.exclude_depth1_elements = excluded_depth1_elements;
             new_de_vars.disable_depth_logs = true;
 
@@ -143,7 +135,7 @@ impl RecipesState {
         // sequential processing
         let mut collected_encountereds = initial_split_encountered.clone();
 
-        for element in initial_split_encountered.into_keys().collect::<Vec<Element>>().into_iter()/* .rev() */ {
+        for element in initial_split_encountered.into_keys() /* .collect::<Vec<Element>>().into_iter().rev() */ {
             let element_encountered = process_element(element, initial_split_de_vars.exclude_depth1_elements.clone()).await;
             if !DEPTH_EXPLORER_JUST_MARK_UNKNOWN_NO_REQUESTS_NO_ENCOUNTERED {
                 collected_encountereds = merge_encountered_maps(collected_encountereds, element_encountered);
@@ -189,6 +181,7 @@ impl RecipesState {
             encountered: FxHashMap::default(),
 
             element_base_cache: Vec::new(),
+            num_to_str_len: Self::get_num_to_str_len(&self.num_to_str),
 
             start_time: Instant::now(),
         };
@@ -200,7 +193,7 @@ impl RecipesState {
             self.all_combination_results(&de_struc.base_lineage_vec, &mut depth1, &de_struc, false);
             if !self.to_request_recipes.is_empty() {
                 if DEPTH_EXPLORER_JUST_MARK_UNKNOWN_NO_REQUESTS_NO_ENCOUNTERED { self.mark_all_to_request_recipes_unknown(); }
-                else { self.process_all_to_request_recipes().await; }
+                else { self.process_all_to_request_recipes("Depth 1").await; }
                 continue;
             }
         
@@ -213,7 +206,7 @@ impl RecipesState {
             let depth1_ic: Vec<Element> = depth1
                 .into_iter()
                 .map(|x| self.neal_case_map[x as usize])
-                .filter(|&x| self.num_to_str_len[x as usize] <= 30)
+                .filter(|&x| de_struc.num_to_str_len[x as usize] <= 30)
                 .collect();
 
             de_struc.base_lineage_depth1.extend(depth1_ic.iter());
@@ -286,7 +279,7 @@ impl RecipesState {
                     self.mark_all_to_request_recipes_unknown();
                     break;
                 }
-                else { self.process_all_to_request_recipes().await; }
+                else { self.process_all_to_request_recipes(&format!("Depth {}", de_struc.depth + 1)).await; }
             }
         }
 
@@ -329,7 +322,7 @@ impl RecipesState {
 
         if final_depth {
             if !DEPTH_EXPLORER_JUST_MARK_UNKNOWN_NO_REQUESTS_NO_ENCOUNTERED {
-                for &result in all_results.iter() {
+                for &result in &all_results {
                     add_to_local_encountered(result, seed, local_encountered, &de_struc.encountered);
                 }
             }
@@ -337,7 +330,7 @@ impl RecipesState {
         else {
             let mut count_depth1s: i32 = 0;
 
-            for result in seed.elems.iter() {
+            for result in &seed.elems {
                 if de_struc.depth1.contains(result) { count_depth1s += 1; }
             }
 
@@ -345,7 +338,7 @@ impl RecipesState {
             if 3*(count_depth1s + 1) - 2*(de_struc.depth as i32) <= 4 {
 
                 // extend seed with depth1 elements
-                for d1 in de_struc.depth1.iter() {
+                for d1 in &de_struc.depth1 {
                     if !seed.elems.contains(d1) {
                         let mut new_seed = seed.clone();
                         new_seed.add_element(*d1);
@@ -356,10 +349,10 @@ impl RecipesState {
             }
 
 
-            for &result in all_results.iter() {
+            for &result in &all_results {
                 add_to_local_encountered(result, seed, local_encountered, &de_struc.encountered);
 
-                if self.num_to_str_len[result as usize] > 30 { continue; }
+                if de_struc.num_to_str_len[result as usize] > 30 { continue; }
             
 
                 // eliminate seeds with too many depth1s
@@ -456,15 +449,15 @@ impl RecipesState {
         de_struc.element_base_cache.resize(self.neal_case_map.len(), None);
 
 
-        for (&element, seeds) in de_struc.encountered.iter() {
-            if self.num_to_str_len[element as usize] > 30 || seeds.first().unwrap().len() >= de_struc.depth { continue; }
+        for (&element, seeds) in &de_struc.encountered {
+            if de_struc.num_to_str_len[element as usize] > 30 || seeds.first().unwrap().len() >= de_struc.depth { continue; }
             let neal_element = self.neal_case_map[element as usize];
 
             if de_struc.element_base_cache[neal_element as usize].is_none() {
                 // cache results
                 let mut cache_results = Vec::new();
 
-                for &base_element in de_struc.base_lineage_vec.iter() {
+                for &base_element in &de_struc.base_lineage_vec {
                     let comb = sort_recipe_tuple((neal_element, base_element));
                     if let Some(&result) = self.recipes_ing.get(&comb) {
                         if result != NOTHING_ID && !de_struc.base_lineage_depth1.contains(&result) && !cache_results.contains(&result) {
@@ -519,29 +512,28 @@ impl RecipesState {
                 let mut changes = false;
 
                 to_craft.retain(|to_craft_element| {
-                        if let Some(recipe) = real_recipes_result
+                        real_recipes_result
                             .get(to_craft_element)
                             .expect("to_craft_element not in real_recipes_result")
                             .iter()
-                            .find(|&rec| crafted.contains(&rec.0) && crafted.contains(&rec.1)) {
-                            
-                            crafted.insert(*to_craft_element);
+                            .find(|&rec| crafted.contains(&rec.0) && crafted.contains(&rec.1))
+                            .is_none_or(|recipe| {
+                                crafted.insert(*to_craft_element);
 
-                            if let Some(actual_caps_result) = recipe.2 {
-                                caps_map.insert(*to_craft_element, actual_caps_result);
-                            }
-                            
-                            lineage.push([
-                                *caps_map.get(&recipe.0).unwrap_or(&recipe.0),
-                                *caps_map.get(&recipe.1).unwrap_or(&recipe.1),
-                                *caps_map.get(to_craft_element).unwrap_or(to_craft_element),
-                            ]);
-                            changes = true;
-                            false  // filter out
-                        }
-                        else { true }  // keep
+                                if let Some(actual_caps_result) = recipe.2 {
+                                    caps_map.insert(*to_craft_element, actual_caps_result);
+                                }
+
+                                lineage.push([
+                                    *caps_map.get(&recipe.0).unwrap_or(&recipe.0),
+                                    *caps_map.get(&recipe.1).unwrap_or(&recipe.1),
+                                    *caps_map.get(to_craft_element).unwrap_or(to_craft_element),
+                                ]);
+                                changes = true;
+                                false  // filter out
+                            })  // keep
                     });
-                if !changes { panic!("could not generate lineage...\n - lineage: {:?}\n - to_craft: {:?}", lineage, self.debug_element_vec(&to_craft)); }
+                assert!(changes, "could not generate lineage...\n - lineage: {:?}\n - to_craft: {:?}", lineage, self.debug_elements(&to_craft));
 
             };
 
@@ -560,15 +552,15 @@ impl RecipesState {
             ]);
 
 
-            let lineage_string = if LINEAGES_FILE_COOL_JSON_MODE { self.format_lineage_json_no_goals(lineage) }
-            else { self.format_lineage_no_goals(lineage) };
+            let lineage_string = if LINEAGES_FILE_COOL_JSON_MODE { self.format_lineage_json_no_goals(&lineage) }
+            else { self.format_lineage_no_goals(&lineage) };
 
             if i != 0 {
                 if LINEAGES_FILE_COOL_JSON_MODE { write!(message, ",").unwrap(); }
                 else { write!(message, " ...").unwrap(); }
             }
-            if LINEAGES_FILE_COOL_JSON_MODE { write!(message, "{}", lineage_string).unwrap(); }
-            else { writeln!(message, "{}", lineage_string).unwrap(); }
+            if LINEAGES_FILE_COOL_JSON_MODE { write!(message, "{lineage_string}").unwrap(); }
+            else { writeln!(message, "{lineage_string}").unwrap(); }
         };
         if LINEAGES_FILE_COOL_JSON_MODE { write!(message, "]").unwrap(); }
         else { write!(message, "\n\n").unwrap(); }
@@ -584,13 +576,13 @@ impl RecipesState {
 
 
     pub fn generate_lineages_file<S: IsSeed>(
-        &self, lineage_elements: &[Element], max_depth: usize, encountered: FxHashMap<Element, Vec<S>>
+        &self, lineage_elements: &[Element], max_depth: usize, encountered: &FxHashMap<Element, Vec<S>>
     ) -> io::Result<()> {
         // required for this function:
         let start_time = Instant::now();
 
         let mut real_recipes_result: RealRecipesResult = FxHashMap::with_capacity_and_hasher(
-            self.neal_case_map.len(), Default::default()
+            self.neal_case_map.len(), FxBuildHasher
         );
 
         for (&(first, second), &result) in &self.recipes_ing {
@@ -605,21 +597,20 @@ impl RecipesState {
                 // if result is not neal case
                 real_recipes_result.entry(r).or_default().push((f, s, Some(result)));
                 real_recipes_result.entry(result).or_default().push((f, s, None));
-            };
+            }
         };
         println!("made recipes_result in {:?}", start_time.elapsed());
 
 
-        let base_lineage_vec: Vec<u32> = BASE_IDS.chain(lineage_elements.iter().copied()).collect();
-        let base_lineage_string_vec: Vec<String> = base_lineage_vec.iter().map(|x| self.num_to_str_fn(*x)).collect();
-        let initial_crafted: FxHashSet<Element> = base_lineage_vec.iter().copied().collect();
+        let lineage_elements_str: Vec<String> = lineage_elements.iter().map(|x| self.num_to_str_fn(*x)).collect();
+        let initial_crafted: FxHashSet<Element> = lineage_elements.iter().copied().collect();
 
 
         let start_time = Instant::now();
 
         let folder_name = "Lineages Files";
         let file_name = format!("{} Seed - {} Steps.{}",
-            &self.num_to_str_fn(*base_lineage_vec.last().unwrap()),
+            &self.num_to_str_fn(*lineage_elements.last().unwrap()),
             max_depth,
             if LINEAGES_FILE_COOL_JSON_MODE {"json"} else {"txt"}
         );
@@ -646,8 +637,8 @@ impl RecipesState {
         keyed_entries.par_sort_unstable_by_key(|(seed_len, element, ..)| (*seed_len, self.num_to_str_fn(*element)));
 
 
-        let mut elements_per_depth_count = vec![0; max_depth];
-        for (seed_len, ..) in keyed_entries.iter() {
+        let mut elements_per_depth_count = vec![0; max_depth]; // ---------------------------------------------------------
+        for (seed_len, ..) in &keyed_entries {
             elements_per_depth_count[*seed_len] += 1;
         }
 
@@ -658,7 +649,7 @@ impl RecipesState {
         // --- Writing ---
         if LINEAGES_FILE_COOL_JSON_MODE {
             writeln!(writer, "{{")?;
-            writeln!(writer, "\"elements_ran\": {},\n", serde_json::to_string(&base_lineage_string_vec).unwrap())?;
+            writeln!(writer, "\"elements_ran\": [{}],\n", lineage_elements_str.iter().map(|x| serde_json::to_string(x).unwrap()).collect::<Vec<_>>().join(", "))?;
 
             writeln!(writer, "\"element_count_stats\": {{").unwrap();
             for (i, count) in elements_per_depth_count.into_iter().enumerate() {
@@ -681,7 +672,7 @@ impl RecipesState {
             write!(writer, "}}")?;
         }
         else {
-            writeln!(writer, "TODO...  // {}\n\n\n", base_lineage_vec.len() - 4)?;
+            writeln!(writer, "TODO...  // {}\n\n\n", lineage_elements.len() - 4)?;
 
             for (i, count) in elements_per_depth_count.into_iter().enumerate() {
                 writeln!(writer, "{} Steps - {} Elements", i + 1, count)?;
@@ -690,7 +681,7 @@ impl RecipesState {
 
 
 
-            for (_, _, entry_string) in keyed_entries.iter() {
+            for (_, _, entry_string) in &keyed_entries {
                 writer.write_all(entry_string.as_bytes())?;
             }
             // --- JSON Generation ---
@@ -795,7 +786,7 @@ fn merge_encountered_maps(mut main_map: EncounteredMap, mut merge_map: Encounter
                     }
                     cmp::Ordering::Equal => {
                         // Same length, add seeds from local map if not already present
-                        for seed in local_seeds.into_iter() {
+                        for seed in local_seeds {
                             if !main_seeds.contains(&seed) {
                                 main_seeds.push(seed);
                             }
@@ -817,12 +808,10 @@ fn merge_encountered_maps(mut main_map: EncounteredMap, mut merge_map: Encounter
 
 
 fn extend_encountered_seeds(mut encountered: EncounteredMap, add_element: Element) -> EncounteredMap {
-    encountered.iter_mut()
-        .for_each(|(_, original_seeds)| {
-            original_seeds.iter_mut()
-                .for_each(|original_seed| {
-                    original_seed.add_element(add_element);
-                });
-        });
+    for original_seeds in encountered.values_mut() {
+        for original_seed in original_seeds.iter_mut() {
+            original_seed.add_element(add_element);
+        }
+    }
     encountered
 }

@@ -2,7 +2,10 @@ use std::time::Instant;
 use std::fmt::Write;
 use rustc_hash::{FxHashMap, FxHashSet};
 
-use crate::{depth_explorer::*, structures::*};
+use crate::{
+    depth_explorer::{DepthExplorerVars, Seed},
+    structures::{Element, RecipesState, sort_recipe_tuple, ElementHeuristicMap, RecipesResultICMap, RecipesUsesICMap, is_base_element, update_heuristic_map, start_case_unicode, BASE_IDS}
+};
 
 
 
@@ -76,10 +79,10 @@ impl RecipesState {
 
 
 
-    pub fn format_lineage_no_goals(&self, lineage: Vec<[u32; 3]>) -> String {
+    pub fn format_lineage_no_goals(&self, lineage: &[[u32; 3]]) -> String {
         let mut output = String::with_capacity(lineage.len() * 21);
 
-        for &[f, s, r] in lineage.iter() {
+        for &[f, s, r] in lineage {
             write!(output,
                 "\n{} + {} = {}",
                 self.num_to_str_fn(f),
@@ -92,7 +95,7 @@ impl RecipesState {
         output
     }
 
-    pub fn format_lineage_json_no_goals(&self, lineage: Vec<[u32; 3]>) -> String {
+    pub fn format_lineage_json_no_goals(&self, lineage: &[[u32; 3]]) -> String {
         let mut output = String::with_capacity(lineage.len() * 21);
         write!(output, "[").unwrap();
         
@@ -132,9 +135,9 @@ impl RecipesState {
             .map(|line| line.split_once(" //").map_or(line, |(x, _)| x).trim())
             .filter(|line| !line.is_empty())
             .map(|line| {
-                let (first_second, result) = line.split_once(" = ").unwrap_or_else(|| panic!("no ' = ' found: {}", line));
-                let (first, second) = first_second.split_once(" + ").unwrap_or_else(|| panic!("no ' + ' found: {}", line));
-                if second.contains(" + ") { panic!("ambiguos ' + ': {}", line); }
+                let (first_second, result) = line.split_once(" = ").unwrap_or_else(|| panic!("no ' = ' found: {line}"));
+                let (first, second) = first_second.split_once(" + ").unwrap_or_else(|| panic!("no ' + ' found: {line}"));
+                assert!(!second.contains(" + "), "ambiguos ' + ': {line}");
 
                 let mut f = self.variables_add_element_str(first.trim(), &mut str_to_num);
                 let mut s = self.variables_add_element_str(second.trim(), &mut str_to_num);
@@ -172,10 +175,7 @@ impl RecipesState {
             let recipe_cost = f_cost.saturating_add(s_cost);
 
             // if its the first recipe processed, or its better than the previous best
-            let better = match lowest_cost_opt {
-                None => true,
-                Some(lowest_cost) => recipe_cost < lowest_cost
-            };
+            let better = lowest_cost_opt.is_none_or(|lowest_cost| recipe_cost < lowest_cost);
             if better {
                 if recipe_cost == 0 { return Some(*recipe); }
                 lowest_cost_opt = Some(recipe_cost);
@@ -210,8 +210,7 @@ impl RecipesState {
 
 
             let check_first_element_first = match recalc {
-                LineageRecalc::NoRecalc => true,
-                LineageRecalc::Left => true,
+                LineageRecalc::NoRecalc | LineageRecalc::Left => true,
                 LineageRecalc::Right => false,
                 LineageRecalc::Max => heuristic_map[best_recipe.0 as usize] > heuristic_map[best_recipe.1 as usize],
                 LineageRecalc::Min => heuristic_map[best_recipe.0 as usize] < heuristic_map[best_recipe.1 as usize],
@@ -229,25 +228,22 @@ impl RecipesState {
                 is_element_needed(best_recipe.1).or_else(|| is_element_needed(best_recipe.0))
             };
 
-            match needed_ing {
-                Some(ing) => {
-                    // add the element and one ingredient back to the queue
-                    element_queue.push(element);
-                    element_queue.push(ing);
-                }
-                None => {
-                    // element can be added to lineage!
-                    lineage.push([best_recipe.0, best_recipe.1, element]);
-                    crafted.insert(element);
+            if let Some(ing) = needed_ing {
+                // add the element and one ingredient back to the queue
+                element_queue.push(element);
+                element_queue.push(ing);
+            } else {
+                // element can be added to lineage!
+                lineage.push([best_recipe.0, best_recipe.1, element]);
+                crafted.insert(element);
 
-                    if recalc != LineageRecalc::NoRecalc && element_queue.len() > 1 {
-                        heuristic_map[element as usize] = 0;
-                        let max_goal_heuristic = goals.iter()
-                            .map(|&goal_element| heuristic_map[goal_element as usize])
-                            .max()
-                            .unwrap();
-                        update_heuristic_map(heuristic_map, &[element], recipes_uses_map, max_goal_heuristic);
-                    }
+                if recalc != LineageRecalc::NoRecalc && element_queue.len() > 1 {
+                    heuristic_map[element as usize] = 0;
+                    let max_goal_heuristic = goals.iter()
+                        .map(|&goal_element| heuristic_map[goal_element as usize])
+                        .max()
+                        .unwrap();
+                    update_heuristic_map(heuristic_map, &[element], recipes_uses_map, max_goal_heuristic);
                 }
             }
         }
@@ -269,7 +265,7 @@ impl RecipesState {
         recipes_uses_map: &RecipesUsesICMap,
         print_every_lineage: bool,
     ) -> AltLineages {
-        let goals: Vec<Element> = goals_str.iter().map(|&x| self.str_to_num_fn(&start_case_unicode(x))).collect();
+        let goals: Vec<Element> = goals_str.iter().map(|&x| self.str_to_num_fn(&start_case_unicode(x)).unwrap()).collect();
     
         let lineage_methods: Vec<(&str, Box<dyn FnMut() -> Lineage + '_>)> = vec![
             ("Simple Generational", Box::new(|| self.generate_lineage(&goals, &mut heuristic_map.clone(), recipes_result_map, recipes_uses_map, LineageRecalc::NoRecalc))),
@@ -345,8 +341,8 @@ impl RecipesState {
     
                 let encountered = self.depth_explorer_split_start(&de_vars).await;
     
-                for (element, seeds) in encountered.into_iter() {
-                    for seed in seeds.into_iter() {
+                for (element, seeds) in encountered {
+                    for seed in seeds {
                         let mut seed_and_element = seed;
                         seed_and_element.elems.push(self.neal_case_map[element as usize]);
     
@@ -378,25 +374,24 @@ impl RecipesState {
     pub fn generate_lineage_from_results(&self, seed: Seed, initial_crafted: FxHashSet<Element>, recipes_result_map: &RecipesResultICMap) -> Vec<LineageStep> {
         let mut lineage: Vec<LineageStep> = Vec::with_capacity(seed.len());
         let mut to_craft: Vec<Element> = seed.elems.iter().copied().collect();
-        let mut crafted: FxHashSet<Element> = initial_crafted.clone();
+        let mut crafted: FxHashSet<Element> = initial_crafted;
     
         while !to_craft.is_empty() {
             let mut changes = false;
     
             to_craft.retain(|&to_craft_element| {
-                    if let Some(recipe) = recipes_result_map[to_craft_element as usize]
+                    recipes_result_map[to_craft_element as usize]
                         .iter()
-                        .find(|&&rec| crafted.contains(&rec.0) && crafted.contains(&rec.1)) {
-                        
-                        crafted.insert(to_craft_element);
-                        
-                        lineage.push([recipe.0, recipe.1, to_craft_element]);
-                        changes = true;
-                        false  // filter out
-                    }
-                    else { true }  // keep
+                        .find(|&&rec| crafted.contains(&rec.0) && crafted.contains(&rec.1))
+                        .is_none_or(|recipe| {
+                            crafted.insert(to_craft_element);
+                            
+                            lineage.push([recipe.0, recipe.1, to_craft_element]);
+                            changes = true;
+                            false  // filter out
+                        })
                 });
-            if !changes { panic!("could not generate lineage...\n - lineage: {:?}\n - to_craft: {:?}", lineage, self.debug_element_vec(&to_craft)); }
+            assert!(changes, "could not generate lineage...\n - lineage: {:?}\n - to_craft: {:?}", lineage, self.debug_elements(&to_craft));
         };
     
         lineage
@@ -426,16 +421,13 @@ impl RecipesState {
                 else if !is_base_element(recipe.1) && !crafted.contains(&recipe.1) { Some(&recipe.1) }
                 else { None };
     
-            match needed_ing {
-                Some(&ing) => {
-                    element_queue.push(element);
-                    element_queue.push(ing);
-                }
-                None => {
-                    // recipe can be added to lineage!
-                    new_lineage.push([recipe.0, recipe.1, element]);
-                    crafted.insert(element);
-                }
+            if let Some(&ing) = needed_ing {
+                element_queue.push(element);
+                element_queue.push(ing);
+            } else {
+                // recipe can be added to lineage!
+                new_lineage.push([recipe.0, recipe.1, element]);
+                crafted.insert(element);
             }
         }
         Lineage {
@@ -473,7 +465,7 @@ impl RecipesState {
             let mut changes = Vec::new();
             let mut removeable = true;
     
-            for &r_use in local_used_map.get(r).expect("r not in used_map").iter() {
+            for &r_use in local_used_map.get(r).expect("r not in used_map") {
                 if let Some(&replacement_recipe) = recipes_result_map[r_use as usize]
                     .iter()
                     .find(|(f, s)|
@@ -529,8 +521,8 @@ pub struct AltLineages {
     to_process: Vec<Lineage>,
 }
 impl AltLineages {
-    pub fn new(max_longer_than_shortest: usize) -> AltLineages {
-        AltLineages {
+    pub fn new(max_longer_than_shortest: usize) -> Self {
+        Self {
             max_longer_than_shortest,
             ..Default::default()
         }

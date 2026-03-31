@@ -66,12 +66,17 @@ pub async fn combine(first: &str, second: &str) -> Option<CombineResponse> {
     });
 
     let mut attempt = 0;
+    let mut connection_failures = 0;
     while attempt < COMBINE_RETRIES {
         // println!("Rust: Sending request to server: {}", request_url);
         let response = match client.get(&request_url).send().await {
             Ok(res) => { res },
             Err(e) => {
-                eprintln!("Error (NOT saving this as 'Nothing') {e}");
+                if connection_failures % 10 == 1 {
+                    eprintln!("{REQUEST_SERVER_URL} is down or unreachable. Retrying in 10s... {e}");
+                }
+                connection_failures += 1;
+                tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
                 continue;
             }
         };

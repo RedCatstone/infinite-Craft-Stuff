@@ -53,7 +53,7 @@ impl RecipesState {
             auto_save: None,
             recipes_updated_total: 0
         };
-        state.verify_recipe_stuff();
+        state.verify_recipe_stuff().unwrap();
         state
     }
 

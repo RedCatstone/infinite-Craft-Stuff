@@ -139,7 +139,7 @@ pub async fn test_layer_explorer() {
 
 
 pub async fn requests_go_brr(file_name: &str, file_mode: RecipesFile) {
-    let mut state = RecipesState::with_autosave(file_name, file_mode, 100_000);
+    let mut state = RecipesState::with_autosave(file_name, file_mode, 500_000);
     state.load(file_name, file_mode).unwrap();
     state.request_all_unknown_recipes().await;
     state.rerequest_all_nothing_recipes().await;

@@ -167,7 +167,7 @@ impl RecipesState {
                 
                     self.recipes_updated_total += 1;
                     if let Some(auto_save) = &self.auto_save
-                    && self.recipes_updated_total % auto_save.every_changed_recipes + 1 == 0 {
+                    && (self.recipes_updated_total + 1).is_multiple_of(auto_save.every_changed_recipes) {
                         self.auto_save();
                     }
                 } else {

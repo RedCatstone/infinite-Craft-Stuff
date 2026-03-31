@@ -1,3 +1,5 @@
+#![deny(clippy::unwrap_used)]
+
 use serde::{Deserialize, Serialize};
 use std::{fs::File, io::{self, BufRead, BufReader, BufWriter, Read, Write}, time::{Instant, SystemTime, UNIX_EPOCH}};
 use rustc_hash::{FxBuildHasher, FxHashMap};
@@ -127,8 +129,7 @@ impl RecipesState {
         }
         println!("  - Recipe processing complete: {:?}", recipe_process_time.elapsed());
 
-        self.merge_new_variables_with_new(&mut data.num_to_str, &mut str_to_num, recipes_ing);
-        Ok(())
+        self.merge_new_variables_with_new(&mut data.num_to_str, &mut str_to_num, recipes_ing)
     }
 
 
@@ -144,10 +145,7 @@ impl RecipesState {
             recipes.entry(recipe.0).or_default().insert(recipe.1, result);
         }
 
-        let data = RecipesNum {
-            recipes,
-            num_to_str: self.num_to_str.clone(),
-        };
+        let data = RecipesNum { recipes, num_to_str: self.num_to_str.clone() };
         println!("  - Recipe Processing complete: {:?}", recipe_process_time.elapsed());
 
 
@@ -202,8 +200,7 @@ impl RecipesState {
             recipes_ing.insert(comb, get_id(result));
         }
 
-        self.merge_new_variables_with_new(&mut num_to_str, &mut str_to_num, recipes_ing);
-        Ok(())
+        self.merge_new_variables_with_new(&mut num_to_str, &mut str_to_num, recipes_ing)
     }
 
 
@@ -222,13 +219,8 @@ impl RecipesState {
             let second = &self.num_to_str[s as usize];
             let result = self.num_to_str[r as usize].clone();
 
-            let string_recipe = if f < s { (first, second) } else { (second, first) };
-            // let comb = format!("{}={}", a.0, a.1);
-
-            let mut comb = String::with_capacity(string_recipe.0.len() + 1 + string_recipe.1.len());
-            comb.push_str(string_recipe.0);
-            comb.push('=');
-            comb.push_str(string_recipe.1);
+            let sr = if f < s { (first, second) } else { (second, first) };
+            let comb = format!("{}={}", sr.0, sr.1);
 
             recipes.insert(comb, result);
         }
@@ -265,7 +257,9 @@ impl RecipesState {
 
         // 2. Get expected size from GZIP footer
         if gz_buffer.len() < 4 { return Err(io::Error::new(io::ErrorKind::InvalidData, "Gzip data too short")); }
-        let isize = u32::from_le_bytes(gz_buffer[gz_buffer.len()-4..].try_into().unwrap()) as usize;
+        let isize = u32::from_le_bytes(
+            gz_buffer[gz_buffer.len()-4..].try_into().map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "gz_buffer issue..."))?
+        ) as usize;
 
         // 3. Decompress
         let mut decompressor = Decompressor::new();
@@ -295,8 +289,7 @@ impl RecipesState {
             }
         }
 
-        self.merge_new_variables_with_new(&mut num_to_str, &mut str_to_num, recipes_ing);
-        Ok(())
+        self.merge_new_variables_with_new(&mut num_to_str, &mut str_to_num, recipes_ing)
     }
 
 
@@ -330,7 +323,7 @@ impl RecipesState {
 
         let now_ms = SystemTime::now()
             .duration_since(UNIX_EPOCH)
-            .expect("SystemTime before UNIX EPOCH!")
+            .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "System time before UNIX_EPOCH?!?"))?
             .as_millis();
 
         let gzip_save_data = RecipesGzip {
@@ -458,7 +451,7 @@ impl RecipesState {
         new_num_to_str: &mut Vec<String>,
         new_str_to_num: &mut FxHashMap<String, u32>,
         new_recipes_ing: FxHashMap<(u32, u32), u32>
-    ) {
+    ) -> io::Result<()> {
         // println!("  - Merging new Elements: {}, Recipes: {}", new_num_to_str.len(), new_recipes_ing.len());
 
         // let neal_case_time = Instant::now();
@@ -515,7 +508,10 @@ impl RecipesState {
 
         // finally, merge the neal map
         for newnum in neal_queue {
-            self.neal_case_map.push(newnum_to_existingnum[new_neal_case_map[newnum] as usize].unwrap());
+            self.neal_case_map.push(
+                newnum_to_existingnum[new_neal_case_map[newnum] as usize]
+                    .ok_or_else(|| io::Error::other(format!("this should just work ({newnum})...")))?
+            );
         }
         // println!("  - newnum to existingnum map complete: {:?}", newnum_to_existingnum_time.elapsed());
 
@@ -545,21 +541,37 @@ impl RecipesState {
         println!("  - Merging recipes_ing complete: {:?}", recipes_ing_merge_time.elapsed());
 
 
-        self.verify_recipe_stuff();
+        self.verify_recipe_stuff()
     }
 
 
 
 
-    pub fn verify_recipe_stuff(&self) {
-        if self.recipes_ing.get(
-            &sort_recipe_tuple((self.str_to_num_fn("Fire").unwrap(), self.str_to_num_fn("Water").unwrap()))
-        ) != self.str_to_num_fn("Steam").as_ref() {
-            println!("Water + Fire = Steam is not in recipes_ing");
+    pub fn verify_recipe_stuff(&self) -> io::Result<()> {
+        if let (Some(fire), Some(water)) = (self.str_to_num_fn("Fire"), self.str_to_num_fn("Water")) {
+            let comb = sort_recipe_tuple((fire, water));
+            if self.recipes_ing.get(&comb) != self.str_to_num_fn("Steam").as_ref() {
+                println!("Water + Fire = Steam is not in recipes_ing");
+            }
+        } else {
+            println!("Warning: 'Fire' or 'Water' is missing from the dictionary!");
         }
-        assert_eq!(self.str_to_num_fn("Nothing").unwrap(), NOTHING_ID);
-        assert_eq!(self.str_to_num_fn("=unknown=").unwrap(), UNKNOWN_ID);
-        assert_eq!(self.num_to_str.len(), self.neal_case_map.len());  // if these don't match something went wrong...
+
+        let nothing_id = self.str_to_num_fn("Nothing").ok_or_else(|| io::Error::other("Element 'Nothing' is completely missing"))?;
+        let unknown_id = self.str_to_num_fn("=unknown=").ok_or_else(|| io::Error::other("Element '=unknown=' is completely missing"))?;
+        
+        if nothing_id != NOTHING_ID {
+            return Err(io::Error::other(format!("'Nothing' has ID {nothing_id}, but expected {NOTHING_ID}")));
+        }
+        if unknown_id != UNKNOWN_ID {
+            return Err(io::Error::other(format!("'=unknown=' has ID {unknown_id}, but expected {UNKNOWN_ID}")));
+        }
+        if self.num_to_str.len() != self.neal_case_map.len() {
+            return Err(io::Error::other(format!(
+                "Array length mismatch: num_to_str ({}) != neal_case_map ({})", self.num_to_str.len(), self.neal_case_map.len()
+            )));
+        }
+        Ok(())
     }
 
 
@@ -626,10 +638,6 @@ impl RecipesState {
         println!("  - Lineage file parsing complete: {:?}", start_time.elapsed());
         
         // Merge the newly loaded data into the main application state.
-        self.merge_new_variables_with_new(&mut num_to_str, &mut str_to_num, recipes_ing);
-
-        println!("  - Merging complete! ({:?})", start_time.elapsed());
-        
-        Ok(())
+        self.merge_new_variables_with_new(&mut num_to_str, &mut str_to_num, recipes_ing)
     }
 }

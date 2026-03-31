@@ -1,5 +1,6 @@
 /target
-js-lib
+js/
+dead_elements.txt
 Cargo.lock
 Recipe Files/*
 !Recipe Files/a.ic

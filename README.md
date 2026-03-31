@@ -9,17 +9,19 @@ This includes 3 things:
 1. install rust
 2. clone the repository
 ```
-git clone -b master --single-branch https://github.com/RedCatstone/infinite-Craft-Stuff.git
+git clone https://github.com/RedCatstone/infinite-Craft-Stuff
+```
+```
 cd rust
 ```
-3. this does not have a fancy ui, so you will have to modify main.rs to do pretty much anything
-4. run the release version
+3. this does not have a fancy ui, so you will have to modify main.rs to do pretty much anything. There are a bunch of example functions tho!
+4. run the release version (debug is simply too slow for recipe file loading...)
 ```
 cargo run --release
 ```
 
-5. if you want the code to do actual requests, setup a "combination-proxy" server YOURSELF which does:
-`http://localhost:3000/?first=Fire&second=Water` -> `{ result: result_text, emoji: result_emoji, isNew: result_isNew }`  
+5. if you want the code to do actual requests, setup a "combination-proxy" server **YOURSELF** which does:
+`http://localhost:3000/?first=Fire&second=Water` -> `{ result: ..., emoji: ..., isNew: ... }`  
 (forwarding a request directly from https://neal.fun/infinite-craft/)
 > [!WARNING]  
 > this repo does not include the setup for that proxy.

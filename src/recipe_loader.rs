@@ -46,6 +46,22 @@ struct RecipesGzipItemData {
     recipes: Vec<(u32, u32)>,
 }
 
+#[derive(Serialize)]
+struct RecipesGzipRef<'a> {
+    name: &'a str,
+    version: &'a str,
+    created: u128,
+    updated: u128,
+    instances: Vec<serde_json::Value>,
+    items: Vec<RecipesGzipItemDataRef<'a>>,
+}
+#[derive(Serialize)]
+struct RecipesGzipItemDataRef<'a> {
+    id: u32,
+    text: &'a str,
+    recipes: &'a [(u32, u32)],
+}
+
 #[derive(Deserialize, Debug)]
 struct CoolJsonLineagesFile {
     elements: FxHashMap<String, Vec<Vec<Vec<String>>>>,
@@ -312,13 +328,12 @@ impl RecipesState {
         let build_items_vec_time = Instant::now();
         let mut items = Vec::with_capacity(self.num_to_str.len());
         for (id, text) in self.num_to_str.iter().enumerate() {
-            items.push(RecipesGzipItemData {
+            items.push(RecipesGzipItemDataRef {
                 id: id as u32,
-                text: text.clone(),
-                recipes: exact_recipes_result[id].clone(),
+                text,
+                recipes: &exact_recipes_result[id],
             });
         }
-        drop(exact_recipes_result);
         println!("  - built items vector: {:?}", build_items_vec_time.elapsed());
 
         let now_ms = SystemTime::now()
@@ -326,9 +341,9 @@ impl RecipesState {
             .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "System time before UNIX_EPOCH?!?"))?
             .as_millis();
 
-        let gzip_save_data = RecipesGzip {
-            name: String::from("pee pee, Poo Poo"),
-            version: String::from("1.0"),
+        let gzip_save_data = RecipesGzipRef {
+            name: "pee pee, Poo Poo",
+            version: "1.0",
             created: now_ms,
             updated: now_ms,
             instances: Vec::new(),
@@ -341,6 +356,7 @@ impl RecipesState {
 
         // Step 1: Serialize to an in-memory buffer (uses RAM)
         let uncompressed_data = serde_json::to_vec(&gzip_save_data)?;
+        drop(gzip_save_data);
 
         // Step 2: Compress the buffer using libdeflate
         let mut compressor = Compressor::new(CompressionLvl::new(1)

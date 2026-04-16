@@ -3,7 +3,7 @@ use std::fmt::Write;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::{
-    depth_explorer::{DepthExplorerVars, Seed},
+    old_depth_explorer::{DepthExplorerVars, Seed},
     structures::{Element, RecipesState, sort_recipe_tuple, ElementHeuristicMap, RecipesResultICMap, RecipesUsesICMap, is_base_element, update_heuristic_map, start_case_unicode, BASE_IDS}
 };
 

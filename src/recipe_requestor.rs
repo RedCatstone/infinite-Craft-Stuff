@@ -13,7 +13,7 @@ use crate::structures::RecipesState;
 
 
 const REQUEST_SERVER_URL: &str = "http://localhost:3000";
-const COMBINE_RETRIES: u64 = 50;
+const COMBINE_RETRIES: u64 = 5;
 
 /// the timeout from rust to the local:3000 server
 const COMBINE_TIMEOUT: Duration = Duration::from_mins(5);
@@ -46,7 +46,8 @@ pub struct CombineResponse {
     pub result: String,
     pub emoji: String,
     #[serde(rename = "isNew")]
-    pub is_new: bool,
+    #[serde(default)]
+    pub is_new: Option<bool>,
 }
 
 

@@ -3,13 +3,13 @@
 mod structures;
 mod recipe_loader;
 mod lineage;
-mod depth_explorer;
+mod old_depth_explorer;
 mod recipe_requestor;
 mod layer_explorer;
 
-use std::io;
+use std::{fs, io};
 
-use crate::depth_explorer::DepthExplorerVars;
+use crate::old_depth_explorer::DepthExplorerVars;
 use crate::layer_explorer::LayerExplorer;
 use crate::recipe_loader::RecipesFile;
 use crate::structures::{Element, RecipesState, UNKNOWN_ID, sort_recipe_tuple};
@@ -50,8 +50,15 @@ async fn main() {
     // state.load("full_db.ic", recipe_loader::RecipeFileFormat::ICSaveFile).unwrap();
 
     // you can comment this panic out
-    panic!("please look at src/main.rs and change what you need! (you can comment this panic out over there)");
+    // panic!("please look at src/main.rs and change what you need! (you can comment this panic out over there)");
 
+
+
+    // -1000 means "do not kill under any circumstances".
+    // Note: This requires the app to be run with `sudo`, otherwise it will just print the warning and continue.
+    if let Err(e) = fs::write("/proc/self/oom_score_adj", "-1000") {
+        eprintln!("⚠️ Could not set OOM immunity (Run with sudo to protect Rust from OOM killer): {}", e);
+    }
 
     // fill_in_recipes().unwrap();
     // test_layer_explorer().await;

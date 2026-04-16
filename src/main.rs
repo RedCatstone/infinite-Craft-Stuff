@@ -53,9 +53,17 @@ async fn main() {
     panic!("please look at src/main.rs and change what you need! (you can comment this panic out over there)");
 
 
-    fill_in_recipes().unwrap();
+    // fill_in_recipes().unwrap();
     // test_layer_explorer().await;
     // requests_go_brr("13_missing_recipes_batch0.ic", RecipesFile::ICSaveFile).await;
+}
+
+
+fn keep_only_unknown(name: &str) {
+    let mut all = RecipesState::without_autosave();
+    all.load(name, RecipesFile::ICSaveFile).unwrap();
+    all.remove_recipes_not_resulting_in(&[UNKNOWN_ID]);
+    all.save(name, RecipesFile::ICSaveFile).unwrap();
 }
 
 
@@ -112,27 +120,27 @@ pub fn calc_depth_13() {
 
 pub async fn test_layer_explorer() {
     let mut state = RecipesState::without_autosave();
-    state.load("from_base 11 (i think).json", RecipesFile::JSONRecipesNum).unwrap();
+    state.load("13_missing_recipes.ic", RecipesFile::ICSaveFile).unwrap();
 
-    let lineage_elems: Vec<Element> = state.string_lineage_results(true, r#"
-        Earth + Wind = Dust
-        Water + Dust = Mud
-        Earth + Dust = Planet
-        Fire + Mud = Brick
-        Brick + Planet = Mars
-        Brick + Brick = Wall
-        Earth + Mars = Life
-        Earth + Life = Human
-        Mars + Life = Alien
-        Wall + Life = Prison
-        Alien + Human = Hybrid
-        Life + Prison = Sentence
-        Hybrid + Sentence = Hyphen
-    "#);
-    let max_steps = 3;
+    let lineage_elems: Vec<Element> = state.string_lineage_results(true, "");
+        // Earth + Wind = Dust
+        // Water + Dust = Mud
+        // Earth + Dust = Planet
+        // Fire + Mud = Brick
+        // Brick + Planet = Mars
+        // Brick + Brick = Wall
+        // Earth + Mars = Life
+        // Earth + Life = Human
+        // Mars + Life = Alien
+        // Wall + Life = Prison
+        // Alien + Human = Hybrid
+        // Life + Prison = Sentence
+        // Hybrid + Sentence = Hyphen
+
+    let max_steps = 9;
     
     LayerExplorer::start_step_by_step_with_requests(
-        &mut state, &lineage_elems, max_steps, true, true
+        &mut state, &lineage_elems, max_steps, true, false
     ).await;
 }
 
@@ -143,6 +151,7 @@ pub async fn requests_go_brr(file_name: &str, file_mode: RecipesFile) {
     state.load(file_name, file_mode).unwrap();
     state.request_all_unknown_recipes().await;
     state.rerequest_all_nothing_recipes().await;
+    // state.rerequest_all_nothing_recipes().await;
 }
 
 

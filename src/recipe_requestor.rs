@@ -42,6 +42,7 @@ pub struct RequestStats {
 // Structure to match the JSON response from the Request server
 #[derive(Deserialize, Debug)]
 pub struct CombineResponse {
+    #[serde(alias = "text")]
     pub result: String,
     pub emoji: String,
     #[serde(rename = "isNew")]

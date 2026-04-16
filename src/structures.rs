@@ -67,6 +67,12 @@ impl RecipesState {
         s
     }
 
+    pub fn with_autoload_and_save(file_name: &str, file_mode: RecipesFile, every_changed_recipes: usize) -> Self {
+        let mut s = Self::with_autosave(file_name, file_mode, every_changed_recipes);
+        s.load(file_name, file_mode).unwrap();
+        s
+    }
+
     pub fn auto_save(&self) {
         if let Some(auto_save) = &self.auto_save {
             self.save(&auto_save.file_name, auto_save.file_mode).unwrap_or_else(
@@ -251,6 +257,9 @@ impl RecipesState {
 
     pub fn remove_recipes_resulting_in(&mut self, elems: &[Element]) {
         self.recipes_ing.retain(|_, result| !elems.contains(result));
+    }
+    pub fn remove_recipes_not_resulting_in(&mut self, elems: &[Element]) {
+        self.recipes_ing.retain(|_, result| elems.contains(result));
     }
 
 

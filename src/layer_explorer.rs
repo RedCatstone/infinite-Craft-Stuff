@@ -59,32 +59,6 @@ pub struct LayerData {
 
 
 impl LayerExplorer<'_> {
-    pub async fn start_step_by_step_with_requests(
-        recipes: &mut RecipesState, base_elements: &[Element], max_steps: usize, multi_thread: bool, generate_lineages_file: bool
-    ) -> EncounteredElements {
-        let start_time = Instant::now();
-
-        for i in 1..=max_steps {
-            let encountered = Self::start(recipes, base_elements, i, multi_thread, false);
-            if generate_lineages_file {
-                recipes.generate_lineages_file(base_elements, max_steps, &encountered.elements)
-                    .unwrap_or_else(|e| eprintln!("could not generate Lineages File... {e}"));
-            }
-
-            println!("Finished processing {i}-step elements ({}). To-request: {}",
-                format!("{:?}", start_time.elapsed()).yellow(),
-                recipes.to_request_recipes.len()
-            );
-            if !recipes.to_request_recipes.is_empty() {
-                recipes.process_all_to_request_recipes(&format!("{i}-step")).await;
-            } else if i == max_steps {
-                // we can return early
-                return encountered;
-            }
-        }
-        Self::start(recipes, base_elements, max_steps, multi_thread, generate_lineages_file)
-    }
-
     pub fn start(
         recipes: &RecipesState, base_elements: &[Element], max_steps: usize, multi_thread: bool, generate_lineages_file: bool
     ) -> EncounteredElements {
@@ -161,6 +135,34 @@ impl LayerExplorer<'_> {
                 .unwrap_or_else(|e| eprintln!("could not generate Lineages File... {e}"));
         }
         final_encountered
+    }
+
+
+    pub async fn start_step_by_step_with_requests(
+        recipes: &mut RecipesState, base_elements: &[Element], max_steps: usize, multi_thread: bool, generate_lineages_file: bool
+    ) -> EncounteredElements {
+        let start_time = Instant::now();
+
+        for i in 1..=max_steps {
+            let encountered = Self::start(recipes, base_elements, i, multi_thread, false);
+            if generate_lineages_file {
+                recipes.generate_lineages_file(base_elements, max_steps, &encountered.elements)
+                    .unwrap_or_else(|e| eprintln!("could not generate Lineages File... {e}"));
+            }
+
+            println!("Finished processing {i}-step elements ({}). To-request: {}",
+                format!("{:?}", start_time.elapsed()).yellow(),
+                recipes.to_request_recipes.len()
+            );
+            if !recipes.to_request_recipes.is_empty() {
+                recipes.process_all_to_request_recipes(&format!("{i}-step")).await;
+            }
+            else if i == max_steps {
+                // we can return early
+                return encountered;
+            }
+        }
+        Self::start(recipes, base_elements, max_steps, multi_thread, generate_lineages_file)
     }
 
 
@@ -273,7 +275,7 @@ pub struct SubsetIter {
 }
 
 impl SubsetIter {
-    /// `SubsetIter::new(vec![1, 2, 3], 3)`
+    /// `SubsetIter::new(vec![1, 2, 3, 4], 3)`
     /// -> `[1], [2], [3], [4], [1, 2], [1, 3], [1, 4], [2, 3], [2, 4], [3, 4], [1, 2, 3], [1, 2, 4], [1, 3, 4], [2, 3, 4]`
     pub fn new(elements: Box<[Element]>, max_len: usize) -> Self {
         let max_len = max_len.min(elements.len());

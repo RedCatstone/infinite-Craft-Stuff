@@ -609,51 +609,38 @@ impl RecipesState {
 
 
 
-    pub fn load_recipes_from_lineages_file(&mut self, file_name: &str) -> io::Result<()> {
-        println!("Loading lineages file: {file_name}");
+    /// `is_json_format == false`
+    /// tries to just add all lines that have a ` + ` and a ` = ` afterwards
+    /// e.g. `  Water + Fire = Steam`
+    /// 
+    /// `is_json_format == true`
+    /// tries to just add all lines that have a `[String; 3]`
+    /// e.g. ` ["Water", "Fire", "Steam"]`
+    pub fn load_recipes_from_lineages_file(&mut self, file_name: &str, is_json_format: bool) -> io::Result<()> {
+        println!("Loading recipes from lineages file: {file_name}");
         let start_time = Instant::now();
+        let mut str_to_num: FxHashMap<String, u32> = self.get_str_to_num_map();
 
-        let file_path = format!("{RECIPE_FILES_FOLDER}/{file_name}");
+        let file_path = format!("{RECIPE_FILES_FOLDER}/../Lineages Files/{file_name}");
         let file = File::open(&file_path)?;
         let reader = BufReader::new(file);
-
-        let mut num_to_str: Vec<String> = Vec::new();
-        let mut str_to_num: FxHashMap<String, u32> = FxHashMap::default();
-        let mut recipes_ing: FxHashMap<(u32, u32), u32> = FxHashMap::default();
-
-        // Helper closure to get or create an ID for an element string.
-        let mut get_id = |elem: &str| {
-            let trimmed_elem = elem.trim();
-            if let Some(&id) = str_to_num.get(trimmed_elem) {
-                id
-            } else {
-                let id = num_to_str.len() as u32;
-                num_to_str.push(trimmed_elem.to_string());
-                str_to_num.insert(trimmed_elem.to_string(), id);
-                id
-            }
-        };
-
+        
         // Process each line in the file.
-        for line_result in reader.lines() {
-            let line = line_result?;
-            // Split the line into "ing1 + ing2" and "result" parts
-            if let Some((ingredients_part, result_part)) = line.split_once(" = ") {
-                // Split the ingredients part into "ing1" and "ing2"
-                if let Some((first_part, second_part)) = ingredients_part.split_once(" + ") {
-                    let first_id = get_id(first_part);
-                    let second_id = get_id(second_part);
-                    let result_id = get_id(result_part);
-
-                    let recipe = sort_recipe_tuple((first_id, second_id));
-                    recipes_ing.insert(recipe, result_id);
+        for line in reader.lines() {
+            if !is_json_format {
+                // Split the line into "ing1 + ing2" and "result" parts
+                if let Some((ings, r)) = line?.split_once(" = ")
+                && let Some((f, s)) = ings.split_once(" + ") {
+                    self.variables_add_recipe(f, s, r, &mut str_to_num);
+                }
+            } else {
+                if let Ok([f, s, r]) = serde_json::from_str::<[Box<str>; 3]>(&line?) {
+                    self.variables_add_recipe(&f, &s, &r, &mut str_to_num);
                 }
             }
         }
 
-        println!("  - Lineage file parsing complete: {:?}", start_time.elapsed());
-        
-        // Merge the newly loaded data into the main application state.
-        self.merge_new_variables_with_new(&mut num_to_str, &mut str_to_num, recipes_ing)
+        println!("  - Lineage file parsing complete: {:?} - {}", start_time.elapsed(), self.pretty_element_and_recipe_count());
+        Ok(())
     }
 }

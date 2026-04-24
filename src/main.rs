@@ -7,7 +7,7 @@ mod old_depth_explorer;
 mod recipe_requestor;
 mod layer_explorer;
 
-use std::{fs, io};
+use std::io;
 
 use crate::old_depth_explorer::DepthExplorerVars;
 use crate::layer_explorer::LayerExplorer;
@@ -50,15 +50,12 @@ async fn main() {
     // state.load("full_db.ic", recipe_loader::RecipeFileFormat::ICSaveFile).unwrap();
 
     // you can comment this panic out
-    // panic!("please look at src/main.rs and change what you need! (you can comment this panic out over there)");
+    panic!("please look at src/main.rs and change what you need! (you can comment this panic out over there)");
 
 
-
-    // -1000 means "do not kill under any circumstances".
-    // Note: This requires the app to be run with `sudo`, otherwise it will just print the warning and continue.
-    if let Err(e) = fs::write("/proc/self/oom_score_adj", "-1000") {
-        eprintln!("⚠️ Could not set OOM immunity (Run with sudo to protect Rust from OOM killer): {}", e);
-    }
+    // let mut rec = RecipesState::without_autosave();
+    // rec.load_recipes_from_lineages_file("Wind Seed - 13 Steps (1893545e).json", true).unwrap();
+    // rec.save("13-step explorer.ic", RecipesFile::ICSaveFile).unwrap();
 
     // fill_in_recipes().unwrap();
     // test_layer_explorer().await;
@@ -127,7 +124,7 @@ pub fn calc_depth_13() {
 
 pub async fn test_layer_explorer() {
     let mut state = RecipesState::without_autosave();
-    state.load("13_missing_recipes.ic", RecipesFile::ICSaveFile).unwrap();
+    state.load("from_base 11 (i think).json", RecipesFile::JSONRecipesNum).unwrap();
 
     let lineage_elems: Vec<Element> = state.string_lineage_results(true, "");
         // Earth + Wind = Dust
@@ -146,9 +143,7 @@ pub async fn test_layer_explorer() {
 
     let max_steps = 9;
     
-    LayerExplorer::start_step_by_step_with_requests(
-        &mut state, &lineage_elems, max_steps, true, false
-    ).await;
+    LayerExplorer::start(&state, &lineage_elems, max_steps, true, false);
 }
 
 

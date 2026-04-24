@@ -350,7 +350,7 @@ impl EncounteredElements {
                             existing.push(seed.into());
                         }
                     },
-                    std::cmp::Ordering::Greater => { /* new seed is longer, do nothing */ },
+                    std::cmp::Ordering::Greater => { }, // new seed is longer, do nothing
                 }
             }
             hash_map::Entry::Vacant(vac) => {

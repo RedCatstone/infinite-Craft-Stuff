@@ -11,10 +11,12 @@ use crate::recipe_loader::RecipesFile;
 
 
 
-pub const NOTHING_ID: Element = 0;
-pub const UNKNOWN_ID: Element = 1;
-pub const BASE_ELEMENTS: &[&str] = &["Water" /* id: 1 */, "Fire" /* id: 2 */, "Earth" /* id: 3 */, "Wind" /* id: 4 */];
-pub const BASE_IDS: std::ops::Range<Element> = 2..(2 + BASE_ELEMENTS.len() as u32);
+// base elements are only encoded here because the
+// old_depth_explorer for some reason hardcoded them...
+pub const HARDCODED_IDS: &[&str] = &["Water", "Fire", "Earth", "Wind", "Nothing", "=unknown="];
+pub const BASE_IDS: std::ops::Range<Element> = 0..3;
+pub const NOTHING_ID: Element = 4;
+pub const UNKNOWN_ID: Element = 5;
 
 
 pub fn is_base_element(element: Element) -> bool {
@@ -24,7 +26,7 @@ pub fn is_base_element(element: Element) -> bool {
 
 
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct RecipesState {
     pub num_to_str: Vec<String>,
     pub neal_case_map: Vec<u32>,
@@ -35,7 +37,7 @@ pub struct RecipesState {
     pub recipes_updated_total: usize
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct AutoSaveRecipes {
     pub every_changed_recipes: usize,
     pub file_name: String,
@@ -44,10 +46,10 @@ pub struct AutoSaveRecipes {
 
 impl RecipesState {
     pub fn without_autosave() -> Self {
-        let num_to_str: Vec<String> = ["Nothing", "=unknown="].into_iter().chain(BASE_ELEMENTS.iter().copied()).map(|x| x.to_string()).collect();
+        let num_to_str: Vec<String> = HARDCODED_IDS.iter().map(|x| x.to_string()).collect();
         let state = Self {
             num_to_str,
-            neal_case_map: [NOTHING_ID, UNKNOWN_ID].into_iter().chain(BASE_IDS).collect(),
+            neal_case_map: (0..HARDCODED_IDS.len() as u32).collect(),
             recipes_ing: FxHashMap::default(),
             to_request_recipes: DashSet::new(),
             auto_save: None,

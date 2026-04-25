@@ -6,7 +6,7 @@ This includes 3 things:
 
 
 # To get it running:
-1. install rust
+1. install rust - https://rust-lang.org/tools/install/
 2. clone the repository
 ```
 git clone https://github.com/RedCatstone/infinite-Craft-Stuff

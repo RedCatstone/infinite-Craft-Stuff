@@ -644,3 +644,42 @@ impl RecipesState {
         Ok(())
     }
 }
+
+
+pub fn strip_alts_from_json_lineages_file(input_file: &str, output_file: &str) -> io::Result<()> {
+    println!("stripping alts from json lineages file: {input_file}");
+    let start_time = Instant::now();
+    
+    let input_path = format!("{RECIPE_FILES_FOLDER}/../Lineages Files/{input_file}");
+    let output_path = format!("{RECIPE_FILES_FOLDER}/../Lineages Files/{output_file}");
+    let file = File::open(input_path)?;
+    let reader = BufReader::new(file);
+    
+    let out = File::create(output_path)?;
+    let mut writer = BufWriter::new(out);
+
+    let mut skipping_extra_lineages = false;
+
+    for line in reader.lines() {
+        let line = line?;
+        let trimmed = line.trim();
+
+        // its looking for the end of the element entry: "]]," or "]]"
+        if trimmed == "]]," || trimmed == "]]" {
+            // found the end of a lineage alts block, stop skipping
+            skipping_extra_lineages = false;
+        }
+        // find the end of the first lineage and start of an alt
+        if trimmed == "],[" {
+            skipping_extra_lineages = true;
+        }
+        
+        if !skipping_extra_lineages {
+            // If we aren't skipping, just pipe the line through to the new file
+            writeln!(writer, "{}", line)?;
+        }
+    }
+
+    println!("Finished reducing lineages! Saved to: {output_file} - {:?}", start_time.elapsed());
+    writer.flush()
+}

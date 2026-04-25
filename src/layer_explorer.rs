@@ -11,25 +11,48 @@ use crate::{DEPTH_EXPLORER_MAX_STEPS, structures::{Element, NOTHING_ID, RecipesS
 /// 
 /// # How it works:
 /// the way to make this kind of dfs algorithm fast is by trying to dedupe gamestates/seeds.
-/// previously i did this by using a ginourmous ``HashSet`` that collects all gamestates and eats insane amounts of RAM.
+/// previously i did this by using a ginourmous `HashSet` that collects all gamestates and eats insane amounts of RAM.
+/// like 12GB of ram at all 12-step elements. that would have been like 200GB of ram for all 13-step elements...
 /// 
-/// This algorithm does actually perfectly deduplicate gamestates, simply by being smart.\
-/// It crafts elements in Layers. Layer 0 is the ``base_element`` layer.\
-/// Layer 1 is all elements you can craft from just base elements. (excluding ``base_elements``)\
-/// Layer 2 is all elements you can craft from L0 and L1. (exlcuding elements you could have already crafted from L0)\
-/// Layer N is all elements you can craft from previous layers (excluding elements you could have already crafted in previous-1 layers)\
+/// This algorithm perfectly deduplicate gamestates while using barely any memory, simply by being smart.\
+/// It crafts elements in Layers:\
+/// **Layer 0:** `base_elements` (e.g. Water, Fire, Earth, Wind)\
+/// **Layer 1:** Everything you can craft using Layer 0.\
+/// **Layer 2:** Everything you can craft from L0 and L1. (excluding elements that were already craftable in L1)\
+/// **Layer 3:** Everything you can craft from L0, L1 and L2. (excluding elements that were already craftable in L2)\
 /// and so on...
 /// 
-/// when it has all elements for one layer it adds them to the current gamestate in subsets.
-/// example, the Layer 1 items are `[Plant, Lava, Dust]`, it will add `[Plant]` and calculate future layers, then
-/// it will add `[Lava]` and calculate, then `[Dust], [Plant, Lava], [Plant, Dust], [Lava, Dust]` and finally `[Plant, Lava, Dust]`
-/// we can optimize this by only allowing subsets for example up to length 3 if we only have 5 steps left. (explained later in the code)
+/// ## Layer Subsets
+/// when it has all elements for one layer, it adds them to the current gamestate in subsets.
+/// example, the Layer 1 items are `[Plant, Lava, Dust]` it doesn't just dumb them into the current "inventory".
+/// it will calculate future paths using first `[Plant]`, then `[Lava]`, then `[Dust]. Then it starts adding pairs: [Plant, Lava], [Plant, Dust], [Lava, Dust]`
+/// and finally all 3: `[Plant, Lava, Dust]`.
 /// 
-/// if an element requires all of `[Plant, Lava, Dust]`, it gives it upfront, just so it can fully ban those elements for future layers.
-/// this also means that processing a layer only requires combining the current layer elements with all previous elements. SPEEEED
+/// **Subset Optimization**: If it only has 3-steps left, a subset of 3 or more items is useless. so only subsets of 1 or 2 long are allowed then.
+/// (explained further later in the code)
+/// 
+/// When it adds these subset elements to the current inventory, it combines all of them with all other elements in the inventory.
+/// This then produces the new layer and it adds that to the inventory in subsets and combines it and this recursive cycle keeps repeating.
+/// 
+/// Now, because elements that could be crafted in any layer are banned for all future layers, this perfectly deduplicates the gamestates.
+/// Meaning that if it has some set of elements in the "inventory", then it will never have those exact same elements in there at a future point in time. 
+/// 
+/// ## Example
+/// When this algorithm reaches `Cactus` it looks like this:
+/// inventory: [Water, Fire, Earth, Wind, Plant, Dust, Sandstorm]
+/// Layer 0 - curr subset: [Water, Fire, Earth, Wind]  - next subset: none (the algorithm is done if it tries to get the next subset here)
+/// Layer 1 - curr subset: [Plant, Dust]  - next subset: [Plant, Tornado]
+/// Layer 2 - curr subset: [Sandstorm]  - next subset: [Mud]
+/// 
+/// ... now its combining Layer 2 (which is only Sandstorm) with all other elements in the inventory.
+/// it tries `Sandstorm + Plant = Cactus` and boom it finds Cactus.
 /// 
 /// for now (26.3.2026) its able to process depth 11 (156992 elements) in 144 seconds (multi-threaded)
 /// now (27.3.2026) its 113 sec
+/// (28.3.2026) i managed to successfully calculate 13-step elements. and got (618_465)
+/// (10.4.2026) i requested almost all required recipes. 13-step elements are now at (1_777_063)
+/// (22.4.2026) there was a bug with savefile merging where base element recipes would get shadowed and deleted, but now its fixed, now at (1_893_545)
+/// (22.4.2026) rerequested all nothings, just to be REALLLY sure, now at (1_893_848) yay!
 
 #[derive(Clone)]
 pub struct LayerExplorer<'a> {

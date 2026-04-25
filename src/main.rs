@@ -11,7 +11,7 @@ use std::io;
 
 use crate::old_depth_explorer::DepthExplorerVars;
 use crate::layer_explorer::LayerExplorer;
-use crate::recipe_loader::RecipesFile;
+use crate::recipe_loader::{RecipesFile, strip_alts_from_json_lineages_file};
 use crate::structures::{Element, RecipesState, UNKNOWN_ID, sort_recipe_tuple};
 
 
@@ -50,8 +50,14 @@ async fn main() {
     // state.load("full_db.ic", recipe_loader::RecipeFileFormat::ICSaveFile).unwrap();
 
     // you can comment this panic out
-    panic!("please look at src/main.rs and change what you need! (you can comment this panic out over there)");
+    // panic!("please look at src/main.rs and change what you need! (you can comment this panic out over there)");
 
+
+    strip_alts_from_json_lineages_file("13 step elements (all alts) (1893848).json", "13 step elements (single best) (1893848).json").unwrap();
+
+    let mut all = RecipesState::without_autosave();
+    all.load_recipes_from_lineages_file("13 step elements (all alts) (1893848).json", true).unwrap();
+    all.save("13 step optimal recipes.ic", RecipesFile::ICSaveFile).unwrap();
 
     // let mut rec = RecipesState::without_autosave();
     // rec.load_recipes_from_lineages_file("Wind Seed - 13 Steps (1893545e).json", true).unwrap();

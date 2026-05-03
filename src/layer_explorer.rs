@@ -115,7 +115,7 @@ impl LayerExplorer<'_> {
         }
         // ban anything > 30 chars (dead elements)
         for (i, b) in le.banned_elems.iter_mut().enumerate() {
-            if recipes.num_to_str[i].len() > 30 {
+            if recipes.is_element_name_dead(&recipes.num_to_str[i]) {
                 *b = true;
             }
         }

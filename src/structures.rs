@@ -1,4 +1,4 @@
-use std::{cmp::Reverse, collections::BinaryHeap, fs::File, io::{self, BufWriter}, time::Instant};
+use std::{cmp::Reverse, collections::BinaryHeap, fs::File, io::{self, BufRead, BufReader, BufWriter}, time::Instant};
 use dashmap::DashSet;
 use num_format::ToFormattedString;
 use rayon::{iter::{IntoParallelRefIterator, ParallelIterator}, slice::ParallelSliceMut};
@@ -6,7 +6,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use std::io::Write;
 use colored::Colorize;
 
-use crate::lineage::LineageStep;
+use crate::{RECIPE_FILES_FOLDER, lineage::LineageStep};
 use crate::recipe_loader::RecipesFile;
 
 
@@ -283,25 +283,112 @@ impl RecipesState {
         splits
     }
 
+    pub fn prune_unused_elements(&mut self) {
+        let old_len = self.num_to_str.len();
+        let mut is_used = vec![false; old_len];
+        
+        // 1. PROTECT BASE IDS: IDs 0 to 5 (Nothing, unknown, Water, Fire, Earth, Wind) 
+        // MUST NEVER be deleted so they stay at exactly indices 0 to 5.
+        for x in &mut is_used[0..6.min(old_len)] {
+            *x = true;
+        }
+
+        // 2. Mark all elements used in recipes
+        for (&(ing1, ing2), &result) in &self.recipes_ing {
+            is_used[ing1 as usize] = true;
+            is_used[ing2 as usize] = true;
+            is_used[result as usize] = true;
+        }
+
+        // 3. PROTECT NEAL CASES: If "Apple" is used, make sure "apple" is kept too!
+        for i in 0..old_len {
+            if is_used[i] {
+                is_used[self.neal_case_map[i] as usize] = true;
+            }
+        }
+
+        // 4. Build translation map and new arrays
+        let mut old_to_new = vec![0; old_len];
+        let mut new_str = Vec::new();
+        let mut new_neal = Vec::new();
+        // let mut new_len = Vec::new(); // UNCOMMENT IF YOU STILL USE self.num_to_str_len
+
+        for i in 0..old_len {
+            if is_used[i] {
+                old_to_new[i] = new_str.len() as Element; // Record the new ID
+                new_str.push(std::mem::take(&mut self.num_to_str[i]));
+                new_neal.push(self.neal_case_map[i]);
+                // new_len.push(self.num_to_str_len[i]); // UNCOMMENT IF USED
+            }
+        }
+
+        // 5. Translate IDs inside neal_case_map
+        for neal_id in &mut new_neal {
+            *neal_id = old_to_new[*neal_id as usize];
+        }
+
+        // 6. Translate IDs inside recipes
+        let mut new_recipes = rustc_hash::FxHashMap::default();
+        for ((ing1, ing2), result) in self.recipes_ing.drain() {
+            let new_comb = sort_recipe_tuple((old_to_new[ing1 as usize], old_to_new[ing2 as usize]));
+            new_recipes.insert(new_comb, old_to_new[result as usize]);
+        }
+
+        // 7. Save to state
+        self.num_to_str = new_str;
+        self.neal_case_map = new_neal;
+        self.recipes_ing = new_recipes;
+        // self.num_to_str_len = new_len; // UNCOMMENT IF USED
+        
+        // Safety: wipe pending requests because their IDs are now invalid
+        self.to_request_recipes.clear(); 
+        
+        println!("Pruned elements! Reduced from {} to {}", old_len, self.num_to_str.len());
+    }
 
 
+    pub fn print_all_recipes_for(&self, res: &str, recipes_result_map: &RecipesResultICMap) {
+        let Some(x) = self.str_to_num_fn(res) else {
+            println!("{res} is not in the save...");
+            return
+        };
+        let Some(x) = recipes_result_map.get(x as usize) else {
+            println!("no recipes resulting in {res}...");
+            return
+        };
+        for (f, s) in x {
+            println!("{} + {} = {}",
+                self.num_to_str_fn(*f),
+                self.num_to_str_fn(*s),
+                self.num_to_str_fn(*self.recipes_ing.get(&(*f, *s)).unwrap())
+            );
+        }
+    }
 
 
-    pub fn find_and_write_dead_elements(&self, output_file_path: &str) -> io::Result<()> {
+    pub fn is_element_name_dead(&self, name: &str) -> bool {
+        name.len() > 30
+    }
+
+    pub fn find_and_write_dead_elements(&self, output_file: &str, only_ings: bool) -> io::Result<()> {
         println!("Finding dead elements...");
         let start_time = std::time::Instant::now();
     
         // 1. In a single parallel pass, identify "live" ingredients and all ingredients.
-        let (live_elements, used_ingredients): (FxHashSet<Element>, FxHashSet<Element>) = self.recipes_ing
+        let (live_elements, used_elements): (FxHashSet<Element>, FxHashSet<Element>) = self.recipes_ing
             .par_iter()
             .fold(
                 || (FxHashSet::default(), FxHashSet::default()),
                 |(mut live, mut used), (&(f, s), &r)| {
                     used.insert(f);
                     used.insert(s);
+                    if !only_ings { used.insert(r); }
                     if r != NOTHING_ID {
-                        live.insert(f);
-                        live.insert(s);
+                        live.insert(self.neal_case_map[f as usize]);
+                        live.insert(self.neal_case_map[s as usize]);
+                        if r == self.neal_case_map[r as usize] {
+                            live.insert(r);
+                        }
                     }
                     (live, used)
                 },
@@ -316,19 +403,22 @@ impl RecipesState {
             );
     
         // 2. The dead elements are those used but not live.
-        let mut dead_element_names: Vec<String> = used_ingredients
+        let mut dead_element_names: Vec<String> = used_elements
             .par_iter()
-            .filter(|elem| !live_elements.contains(elem))
+            .filter(|&&elem| !live_elements.contains(&self.neal_case_map[elem as usize])
+                && elem != self.neal_case_map[elem as usize]
+                && !self.is_element_name_dead(&self.num_to_str[elem as usize])
+            )
             .map(|&elem| self.num_to_str_fn(elem))
             .collect();
     
         println!("Found {} dead elements in {:?}.", dead_element_names.len(), start_time.elapsed());
     
         // 3. Sort and write the results to the file.
-        println!("Writing dead elements to '{output_file_path}'...");
+        println!("Writing dead elements to '{output_file}'...");
         dead_element_names.par_sort_unstable(); // Parallel sort for speed
-        
-        let file = File::create(output_file_path)?;
+
+        let file = File::create(format!("{RECIPE_FILES_FOLDER}/{output_file}"))?;
         let mut writer = BufWriter::new(file);
         for name in dead_element_names {
             writeln!(writer, "{name}")?;
@@ -336,6 +426,41 @@ impl RecipesState {
         println!("Finished writing.");
     
         Ok(())
+    }
+
+
+
+    pub async fn deadcheck_list(file_name: &str) -> io::Result<()> {
+        let file_path = format!("{RECIPE_FILES_FOLDER}/{file_name}");
+        let file = File::open(&file_path)?;
+        let reader = BufReader::new(file);
+
+        let mut save = RecipesState::with_autosave("deadchecking-file.ic", RecipesFile::ICSaveFile, 100_000);
+        let mut str_to_num = save.get_str_to_num_map();
+
+        let water = save.str_to_num_fn("Water").unwrap();
+        let earth = save.str_to_num_fn("Earth").unwrap();
+        let fire = save.str_to_num_fn("Fire").unwrap();
+        let wind = save.str_to_num_fn("Wind").unwrap();
+        
+        // Process each line in the file.
+        let mut count = 0;
+        for line in reader.lines() {
+            let line = line?;
+            let line = line.trim();
+            count += 1;
+
+            let line_id = save.variables_add_element_str(line, &mut str_to_num);
+
+            save.to_request_recipes.insert(sort_recipe_tuple((line_id, line_id)));
+            save.to_request_recipes.insert(sort_recipe_tuple((line_id, water)));
+            save.to_request_recipes.insert(sort_recipe_tuple((line_id, earth)));
+            save.to_request_recipes.insert(sort_recipe_tuple((line_id, fire)));
+            save.to_request_recipes.insert(sort_recipe_tuple((line_id, wind)));
+        }
+
+        save.process_all_to_request_recipes(&format!("deadchecking {count} elements")).await;
+        save.find_and_write_dead_elements("13-dead-elements-new.txt", true)
     }
 
 

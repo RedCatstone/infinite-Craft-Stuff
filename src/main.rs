@@ -11,7 +11,7 @@ use std::io;
 
 use crate::old_depth_explorer::DepthExplorerVars;
 use crate::layer_explorer::LayerExplorer;
-use crate::recipe_loader::{RecipesFile, strip_alts_from_json_lineages_file};
+use crate::recipe_loader::RecipesFile;
 use crate::structures::{Element, RecipesState, UNKNOWN_ID, sort_recipe_tuple};
 
 
@@ -50,14 +50,29 @@ async fn main() {
     // state.load("full_db.ic", recipe_loader::RecipeFileFormat::ICSaveFile).unwrap();
 
     // you can comment this panic out
-    // panic!("please look at src/main.rs and change what you need! (you can comment this panic out over there)");
+    panic!("please look at src/main.rs and change what you need! (you can comment this panic out over there)");
 
 
-    strip_alts_from_json_lineages_file("13 step elements (all alts) (1893848).json", "13 step elements (single best) (1893848).json").unwrap();
 
-    let mut all = RecipesState::without_autosave();
-    all.load_recipes_from_lineages_file("13 step elements (all alts) (1893848).json", true).unwrap();
-    all.save("13 step optimal recipes.ic", RecipesFile::ICSaveFile).unwrap();
+    // --- this is all a mess down here, but i guess its good examples of how to do stuff --- 
+
+    // let mut all = RecipesState::without_autosave();
+    // all.load("from_base_13.ic", RecipesFile::ICSaveFile).unwrap();
+    // let result = all.get_recipes_result_map();
+    // all.print_all_recipes_for("Cc", &result);
+    // all.print_all_recipes_for("Cq", &result);
+
+    // let mut thirt = RecipesState::without_autosave();
+    // thirt.load_recipes_from_lineages_file("Wind Seed - 13 Steps (1893545e).json", true).unwrap();
+    // thirt.find_and_write_dead_elements("13-dead-elements.txt").unwrap();
+
+    // RecipesState::deadcheck_list("13-dead-elements.txt").await.unwrap();
+
+    // strip_alts_from_json_lineages_file("13 step elements (all alts) (1893848).json", "13 step elements (single best) (1893848).json").unwrap();
+
+    // let mut all = RecipesState::without_autosave();
+    // all.load_recipes_from_lineages_file("13 step elements (all alts) (1893848).json", true).unwrap();
+    // all.save("13 step optimal recipes.ic", RecipesFile::ICSaveFile).unwrap();
 
     // let mut rec = RecipesState::without_autosave();
     // rec.load_recipes_from_lineages_file("Wind Seed - 13 Steps (1893545e).json", true).unwrap();

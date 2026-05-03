@@ -468,9 +468,6 @@ impl RecipesState {
         new_str_to_num: &mut FxHashMap<String, u32>,
         new_recipes_ing: FxHashMap<(u32, u32), u32>
     ) -> io::Result<()> {
-        // println!("  - Merging new Elements: {}, Recipes: {}", new_num_to_str.len(), new_recipes_ing.len());
-
-        // let neal_case_time = Instant::now();
         let mut new_neal_case_map: Vec<u32> = Vec::with_capacity(new_num_to_str.len());
         let mut added: Vec<String> = Vec::new();
 
@@ -493,44 +490,50 @@ impl RecipesState {
         let indices_to_add = new_neal_case_map.len()..new_num_to_str.len();
         new_neal_case_map.extend(indices_to_add.map(|i| i as u32));
 
-        // println!("  - nealcase map complete: {:?}", neal_case_time.elapsed());
-
-
 
         // --- Merge with existing Variables ---
-        // maps new ids to the old existing ids
-        // let newnum_to_existingnum_time = Instant::now();
-
-        let mut newnum_to_existingnum: Vec<Option<u32>> = vec![None; new_num_to_str.len()];
-        for (existingnum, existingstr) in self.num_to_str.iter().enumerate() {
-            if let Some(&newnum) = new_str_to_num.get(existingstr) {
-                newnum_to_existingnum[newnum as usize] = Some(existingnum as u32);
-            }
-        }
-
+        let mut newnum_to_existingnum: Vec<u32> = Vec::with_capacity(new_num_to_str.len());
         let mut neal_queue = Vec::new();
-        // merge new elements over to the existing ones
-        for (newnum, newstr) in new_num_to_str.iter().enumerate() {
-            if newnum_to_existingnum[newnum].is_none() {
-                // newstr is not in existing_num_to_str
-                let new_existing_id = self.num_to_str.len();
+        let mut elements_to_add = Vec::new();
 
-                self.num_to_str.push(newstr.clone());
-                neal_queue.push(newnum);
+        let initial_existing_len = self.num_to_str.len() as u32;
 
-                newnum_to_existingnum[newnum] = Some(new_existing_id as u32);
-            } 
-        }
+        {
+            // Create a temporary mapping directly from our existing elements (no duplicates natively)
+            let mut existing_str_to_num: FxHashMap<&str, u32> = FxHashMap::with_capacity_and_hasher(self.num_to_str.len(), FxBuildHasher);
+            for (i, s) in self.num_to_str.iter().enumerate() {
+                existing_str_to_num.insert(s.as_str(), i as u32);
+            }
+
+            // Track any new elements we come across inside this file itself
+            let mut newly_added_str_to_num: FxHashMap<&str, u32> = FxHashMap::default();
+
+            for (newnum, newstr) in new_num_to_str.iter().enumerate() {
+                if let Some(&existingnum) = existing_str_to_num.get(newstr.as_str()) {
+                    newnum_to_existingnum.push(existingnum);
+                } else if let Some(&existingnum) = newly_added_str_to_num.get(newstr.as_str()) {
+                    newnum_to_existingnum.push(existingnum);
+                } else {
+                    // newstr is not in existing_num_to_str, it is brand new!
+                    let new_existing_id = initial_existing_len + elements_to_add.len() as u32;
+                    
+                    elements_to_add.push(newstr.clone());
+                    newly_added_str_to_num.insert(newstr.as_str(), new_existing_id);
+                    
+                    newnum_to_existingnum.push(new_existing_id);
+                    neal_queue.push(newnum);
+                }
+            }
+        } // Block ensures `existing_str_to_num` dies here so we can safely mutate `self.num_to_str` below
+
+        self.num_to_str.append(&mut elements_to_add);
 
         // finally, merge the neal map
         for newnum in neal_queue {
             self.neal_case_map.push(
                 newnum_to_existingnum[new_neal_case_map[newnum] as usize]
-                    .ok_or_else(|| io::Error::other(format!("this should just work ({newnum})...")))?
             );
         }
-        // println!("  - newnum to existingnum map complete: {:?}", newnum_to_existingnum_time.elapsed());
-
 
         // merge recipes_ing
         let recipes_ing_merge_time = Instant::now();
@@ -538,11 +541,13 @@ impl RecipesState {
         let transformed_recipes: Vec<((Element, Element), Element)> = new_recipes_ing
             .into_par_iter()
             .filter_map(|((first, second), result)| {
-                let existing_first = newnum_to_existingnum[first as usize].expect("Missing existing ID for first ingredient");
-                let existing_second = newnum_to_existingnum[second as usize].expect("Missing existing ID for second ingredient");
-                let existing_result = newnum_to_existingnum[result as usize].expect("Missing existing ID for result");
+                // By using `.get().copied()`, bad data / out-of-bounds IDs from corrupted files just gets cleanly ignored instead of panicking with `.expect()`
+                let existing_first = *newnum_to_existingnum.get(first as usize)?;
+                let existing_second = *newnum_to_existingnum.get(second as usize)?;
+                let existing_result = *newnum_to_existingnum.get(result as usize)?;
 
                 let recipe = sort_recipe_tuple((existing_first, existing_second));
+                
                 // if new recipe is not NOTHING it always gets added
                 // if new recipe is NOTHING it only gets added if the recipe didn't exist at all
                 if (existing_result != NOTHING_ID && existing_result != UNKNOWN_ID) || !self.recipes_ing.contains_key(&recipe) {
@@ -556,7 +561,6 @@ impl RecipesState {
 
         println!("  - Merging recipes_ing complete: {:?}", recipes_ing_merge_time.elapsed());
 
-
         self.verify_recipe_stuff()
     }
 
@@ -566,7 +570,10 @@ impl RecipesState {
     pub fn verify_recipe_stuff(&self) -> io::Result<()> {
         if let (Some(fire), Some(water)) = (self.str_to_num_fn("Fire"), self.str_to_num_fn("Water")) {
             let comb = sort_recipe_tuple((fire, water));
-            if self.recipes_ing.get(&comb) != self.str_to_num_fn("Steam").as_ref() {
+            if self.recipes_ing.get(&comb).is_none() {
+                println!("Water + Fire is not in recipes_ing");
+            }
+            else if self.recipes_ing.get(&comb) != self.str_to_num_fn("Steam").as_ref() {
                 println!("Water + Fire = Steam is not in recipes_ing");
             }
         } else {
